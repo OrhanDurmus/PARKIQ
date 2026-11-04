@@ -22,5 +22,5 @@ export async function onRequestDelete({request,env}){
  let body;try{body=await request.json()}catch{return json({error:'Geçersiz JSON'},400)}
  const id=Number(body?.id);
  if(!Number.isSafeInteger(id)||id<=0||body?.confirm!=='DELETE')return json({error:'Silme onayı geçersiz'},400);
- try{const r=await env.DB.prepare('DELETE FROM business_applications WHERE id=?').bind(id).run();if(!r.meta.changes)return json({error:'Başvuru bulunamadı'},404);return json({ok:true,deletedId:id})}catch{return json({error:'Başvuru silinemedi'},500)}
+ try{const found=await env.DB.prepare('SELECT id FROM business_applications WHERE id=?').bind(id).first();if(!found)return json({error:'Başvuru bulunamadı'},404);await env.DB.batch([env.DB.prepare('DELETE FROM business_occupancy WHERE application_id=?').bind(id),env.DB.prepare('DELETE FROM business_locations WHERE application_id=?').bind(id),env.DB.prepare('DELETE FROM business_applications WHERE id=?').bind(id)]);return json({ok:true,deletedId:id})}catch{return json({error:'Başvuru silinemedi'},500)}
 }
