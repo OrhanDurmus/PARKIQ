@@ -9,9 +9,11 @@ export async function onRequestPost({request,env}){
  if(raw.website)return json({ok:true},202);
  const name=trim(raw.name,100),district=trim(raw.district,300),contact=trim(raw.contact,160);
  if(name.length<2||district.length<5||!contact)return json({error:'İşletme adı, adres ve iletişim bilgisi gerekli.'},400);
+ const lat=Number(raw.lat),lng=Number(raw.lng);if(!Number.isFinite(lat)||!Number.isFinite(lng)||lat<40||lat>42.5||lng<26||lng>31)return json({error:'Haritadan İstanbul içinde geçerli bir konum seçin.'},400);
  const kind=trim(raw.kind,60),capacity=trim(raw.capacity,10),fee=trim(raw.fee,40),details=trim(raw.details,800),requestType=trim(raw.request,100);
  try{
  const r=await env.DB.prepare('INSERT INTO business_applications (name,district,contact,kind,capacity,fee,details,request_type) VALUES (?,?,?,?,?,?,?,?)').bind(name,district,contact,kind,capacity,fee,details,requestType).run();
+ await env.DB.prepare('INSERT INTO business_locations (application_id,lat,lng) VALUES (?,?,?)').bind(r.meta.last_row_id,lat,lng).run();
  return json({ok:true,id:r.meta.last_row_id},201)
  }catch{return json({error:'Başvuru kaydedilemedi.'},500)}
 }
