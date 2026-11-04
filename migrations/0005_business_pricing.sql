@@ -1,0 +1,1 @@
+CREATE TABLE IF NOT EXISTS business_pricing (application_id INTEGER PRIMARY KEY, hourly_price REAL, daily_price REAL, currency TEXT NOT NULL DEFAULT 'TRY', updated_at TEXT NOT NULL DEFAULT (datetime('now')));
