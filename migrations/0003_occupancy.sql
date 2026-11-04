@@ -1,1 +1,1 @@
-CREATE TABLE IF NOT EXISTS business_occupancy (application_id INTEGER PRIMARY KEY, free_spaces INTEGER, updated_at TEXT);
+CREATE TABLE IF NOT EXISTS business_occupancy (application_id INTEGER PRIMARY KEY, token_hash TEXT NOT NULL, free_spaces INTEGER, updated_at TEXT);
