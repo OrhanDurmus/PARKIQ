@@ -13,7 +13,7 @@ export async function onRequestPost({request,env}){
  const kind=trim(raw.kind,60),capacity=trim(raw.capacity,10),fee=trim(raw.fee,40),details=trim(raw.details,800),requestType=trim(raw.request,100);
  try{
  const r=await env.DB.prepare('INSERT INTO business_applications (name,district,contact,kind,capacity,fee,details,request_type) VALUES (?,?,?,?,?,?,?,?)').bind(name,district,contact,kind,capacity,fee,details,requestType).run();
- await env.DB.prepare('INSERT INTO business_locations (application_id,lat,lng) VALUES (?,?,?)').bind(r.meta.last_row_id,lat,lng).run();
+ try{await env.DB.prepare('INSERT INTO business_locations (application_id,lat,lng) VALUES (?,?,?)').bind(r.meta.last_row_id,lat,lng).run()}catch(e){await env.DB.prepare('DELETE FROM business_applications WHERE id=?').bind(r.meta.last_row_id).run();throw e}
  return json({ok:true,id:r.meta.last_row_id},201)
  }catch{return json({error:'Başvuru kaydedilemedi.'},500)}
 }
