@@ -15,8 +15,8 @@ export async function onRequestPost({request,env}){
  const a=await getOwner(request,env);if(!a)return reply({error:"Erişim reddedildi"},401);
  const body=await request.json(),n=body.freeSpaces;
  if(!Number.isSafeInteger(n)||n<0||n>100000)return reply({error:"Geçerli sayı girin"},400);
- const cap=Number(a.capacity);if(a.capacity&&Number.isSafeInteger(cap)&&cap>0&&n>cap)return reply({error:"Kapasite aşıldı"},400);
- await env.DB.prepare("UPDATE business_occupancy SET free_spaces=?,updated_at=datetime('now') WHERE application_id=?").bind(n,a.id).run();
- return reply({ok:true,freeSpaces:n});
+ const cap=body.capacity===undefined?Number(a.capacity):Number(body.capacity);if(body.capacity!==undefined&&(!Number.isSafeInteger(cap)||cap<1||cap>100000))return reply({error:"Kapasite 1 ile 100000 arasında olmalı"},400);if(Number.isSafeInteger(cap)&&cap>0&&n>cap)return reply({error:"Kapasite aşıldı"},400);
+ if(body.capacity!==undefined){await env.DB.batch([env.DB.prepare("UPDATE business_applications SET capacity=?,updated_at=datetime('now') WHERE id=?").bind(String(cap),a.id),env.DB.prepare("UPDATE business_occupancy SET free_spaces=?,updated_at=datetime('now') WHERE application_id=?").bind(n,a.id)]);}else{await env.DB.prepare("UPDATE business_occupancy SET free_spaces=?,updated_at=datetime('now') WHERE application_id=?").bind(n,a.id).run();}
+ return reply({ok:true,freeSpaces:n,capacity:cap||null});
  }catch{return reply({error:"Güncelleme başarısız"},500)}
 }
