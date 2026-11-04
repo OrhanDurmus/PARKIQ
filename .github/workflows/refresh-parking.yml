@@ -1,0 +1,32 @@
+name: Refresh Istanbul parking dataset
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '17 4 * * 0'
+permissions:
+  contents: write
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install osmium
+      - name: Download official regional extract
+        run: curl -fL --retry 3 --connect-timeout 30 -o /tmp/turkey.osm.pbf https://download.geofabrik.de/europe/turkey-latest.osm.pbf
+      - name: Extract parking records
+        run: |
+          mkdir -p data
+          python scripts/import_parking.py /tmp/turkey.osm.pbf data/parking.json
+      - name: Commit verified records
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add data/parking.json
+          if ! git diff --cached --quiet; then
+            git commit -m "Refresh Istanbul OSM parking dataset"
+            git push
+          fi
