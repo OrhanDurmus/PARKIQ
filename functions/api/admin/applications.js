@@ -15,3 +15,12 @@ export async function onRequestPatch({request,env}){
  if(!Number.isSafeInteger(id)||id<=0||!['pending','approved','rejected'].includes(status))return json({error:'Geçersiz istek'},400);
  try{const r=await env.DB.prepare("UPDATE business_applications SET status=?,updated_at=datetime('now') WHERE id=?").bind(status,id).run();return json({ok:r.meta.changes>0})}catch{return json({error:'Güncellenemedi'},500)}
 }
+
+export async function onRequestDelete({request,env}){
+ if(!auth(request,env))return json({error:'Yetkisiz'},401);
+ if(!env.DB)return json({error:'D1 DB bağlantısı yok'},503);
+ let body;try{body=await request.json()}catch{return json({error:'Geçersiz JSON'},400)}
+ const id=Number(body?.id);
+ if(!Number.isSafeInteger(id)||id<=0||body?.confirm!=='DELETE')return json({error:'Silme onayı geçersiz'},400);
+ try{const r=await env.DB.prepare('DELETE FROM business_applications WHERE id=?').bind(id).run();if(!r.meta.changes)return json({error:'Başvuru bulunamadı'},404);return json({ok:true,deletedId:id})}catch{return json({error:'Başvuru silinemedi'},500)}
+}
