@@ -3,11 +3,11 @@ async function getOwner(request,env){
  const token=(request.headers.get("Authorization")||"").replace(/^Bearer /,"");
  if(!/^[0-9a-f]{64}$/.test(token))return null;
  const hash=Array.from(new Uint8Array(await crypto.subtle.digest("SHA-256",new TextEncoder().encode(token))),x=>x.toString(16).padStart(2,"0")).join("");
- return env.DB.prepare("SELECT a.id,a.name,a.capacity,o.free_spaces,o.updated_at,h.opens_at,h.closes_at,h.is_24h FROM business_occupancy o JOIN business_applications a ON a.id=o.application_id LEFT JOIN business_hours h ON h.application_id=a.id WHERE o.token_hash=? AND a.status='approved'").bind(hash).first();
+ return env.DB.prepare("SELECT a.id,a.name,a.capacity,o.free_spaces,o.updated_at,h.opens_at,h.closes_at,h.is_24h,p.hourly_price,p.daily_price FROM business_occupancy o JOIN business_applications a ON a.id=o.application_id LEFT JOIN business_hours h ON h.application_id=a.id LEFT JOIN business_pricing p ON p.application_id=a.id WHERE o.token_hash=? AND a.status='approved'").bind(hash).first();
 }
 export async function onRequestGet({request,env}){
  if(!env.DB)return reply({error:"Veritabanı yok"},503);
- try{await env.DB.prepare("CREATE TABLE IF NOT EXISTS business_hours (application_id INTEGER PRIMARY KEY, opens_at TEXT, closes_at TEXT, is_24h INTEGER NOT NULL DEFAULT 0)").run();const a=await getOwner(request,env);return a?reply({business:a}):reply({error:"Erişim reddedildi"},401)}catch{return reply({error:"Veritabanı hatası"},500)}
+ try{await env.DB.prepare("CREATE TABLE IF NOT EXISTS business_hours (application_id INTEGER PRIMARY KEY, opens_at TEXT, closes_at TEXT, is_24h INTEGER NOT NULL DEFAULT 0)").run();await env.DB.prepare("CREATE TABLE IF NOT EXISTS business_pricing (application_id INTEGER PRIMARY KEY, hourly_price REAL, daily_price REAL, currency TEXT NOT NULL DEFAULT 'TRY', updated_at TEXT NOT NULL DEFAULT (datetime('now')))" ).run();const a=await getOwner(request,env);return a?reply({business:a}):reply({error:"Erişim reddedildi"},401)}catch{return reply({error:"Veritabanı hatası"},500)}
 }
 export async function onRequestPost({request,env}){
  if(!env.DB)return reply({error:"Veritabanı yok"},503);
@@ -24,6 +24,6 @@ export async function onRequestPost({request,env}){
  const cap=body.capacity===undefined?Number(a.capacity):Number(body.capacity);if(body.capacity!==undefined&&(!Number.isSafeInteger(cap)||cap<1||cap>100000))return reply({error:"Kapasite 1 ile 100000 arasında olmalı"},400);if(Number.isSafeInteger(cap)&&cap>0&&n>cap)return reply({error:"Kapasite aşıldı"},400);
  if(body.capacity!==undefined){await env.DB.batch([env.DB.prepare("UPDATE business_applications SET capacity=?,updated_at=datetime('now') WHERE id=?").bind(String(cap),a.id),env.DB.prepare("UPDATE business_occupancy SET free_spaces=?,updated_at=datetime('now') WHERE application_id=?").bind(n,a.id)]);}else{await env.DB.prepare("UPDATE business_occupancy SET free_spaces=?,updated_at=datetime('now') WHERE application_id=?").bind(n,a.id).run();}
  if(hours!==undefined){await env.DB.prepare("INSERT INTO business_hours (application_id,opens_at,closes_at,is_24h) VALUES (?,?,?,?) ON CONFLICT(application_id) DO UPDATE SET opens_at=excluded.opens_at,closes_at=excluded.closes_at,is_24h=excluded.is_24h").bind(a.id,hours.is24h?null:hours.opensAt,hours.is24h?null:hours.closesAt,hours.is24h?1:0).run();}
- return reply({ok:true,freeSpaces:n,capacity:cap||null});
+ if(body.pricing!==undefined){const pr=body.pricing;if(!pr||typeof pr!=='object')return reply({error:"Fiyat bilgisi geçersiz"},400);const parse=x=>x===null||x===''?null:Number(x);const hourly=parse(pr.hourlyPrice),daily=parse(pr.dailyPrice);if([hourly,daily].some(v=>v!==null&&(!Number.isFinite(v)||v<0||v>100000)))return reply({error:"Fiyatlar 0-100000 TL arasında olmalı"},400);await env.DB.prepare("INSERT INTO business_pricing (application_id,hourly_price,daily_price) VALUES (?,?,?) ON CONFLICT(application_id) DO UPDATE SET hourly_price=excluded.hourly_price,daily_price=excluded.daily_price,updated_at=datetime('now')").bind(a.id,hourly,daily).run()}return reply({ok:true,freeSpaces:n,capacity:cap||null});
  }catch{return reply({error:"Güncelleme başarısız"},500)}
 }
