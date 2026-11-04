@@ -7,11 +7,12 @@ async function getOwner(request,env){
 }
 export async function onRequestGet({request,env}){
  if(!env.DB)return reply({error:"Veritabanı yok"},503);
- try{const a=await getOwner(request,env);return a?reply({business:a}):reply({error:"Erişim reddedildi"},401)}catch{return reply({error:"Veritabanı hatası"},500)}
+ try{await env.DB.prepare("CREATE TABLE IF NOT EXISTS business_hours (application_id INTEGER PRIMARY KEY, opens_at TEXT, closes_at TEXT, is_24h INTEGER NOT NULL DEFAULT 0)").run();const a=await getOwner(request,env);return a?reply({business:a}):reply({error:"Erişim reddedildi"},401)}catch{return reply({error:"Veritabanı hatası"},500)}
 }
 export async function onRequestPost({request,env}){
  if(!env.DB)return reply({error:"Veritabanı yok"},503);
  try{
+ await env.DB.prepare("CREATE TABLE IF NOT EXISTS business_hours (application_id INTEGER PRIMARY KEY, opens_at TEXT, closes_at TEXT, is_24h INTEGER NOT NULL DEFAULT 0)").run();
  const a=await getOwner(request,env);if(!a)return reply({error:"Erişim reddedildi"},401);
  const body=await request.json(),n=body.freeSpaces;
  if(!Number.isSafeInteger(n)||n<0||n>100000)return reply({error:"Geçerli sayı girin"},400);
