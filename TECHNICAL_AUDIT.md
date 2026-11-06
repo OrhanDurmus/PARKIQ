@@ -4,6 +4,7 @@ Güncelleme: 2026-11-06 · Kod sürümü: 6.45
 
 ## Doğrulanmış sonuçlar
 
+- **iPhone kullanıcı doğrulaması (2026-11-06):** ROTAPARK 6.50 ile aktif araç navigasyonundan yaya moduna doğrudan geçiş başarılı; rota ve GPS yönlendirmesi devam ediyor. Bu gözlem yaya moduna geçişin çalıştığını doğrular, bütün yaya rota senaryolarını değil.
 - **iPhone üzerinde bildirildi:** ROTAPARK 6.49'da kullanıcı “Konuma izin ver” düğmesine bastığında harita mevcut konuma gidiyor; kullanıcı tarafından doğrulandı (2026-11-06).
 - **iPhone üzerinde bildirildi:** Otoparka “Yol tarifi” dokunulduğunda hiçbir işlem başlamaması sorunu, kullanıcı tarafından **“Düzeldi”** şeklinde doğrulandı (6.43 sonrası).
 - **iPhone üzerinde bildirildi:** Araç ve yaya ulaşım modu seçenekleri arayüzde görünüyor.
