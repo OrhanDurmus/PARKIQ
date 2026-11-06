@@ -1,10 +1,10 @@
-/* PARKIQ Azure speech, isolated from navigation. Uses the same HTMLAudioElement playback as the working voice test. */
+/* RotaPark Azure speech, isolated from navigation. Uses the same HTMLAudioElement playback as the working voice test. */
 (function(){
 'use strict';
 let enabled=true,seq=0,player=null,currentUrl=null;
 const cache=new Map();
 function getPlayer(){if(!player){player=document.createElement('audio');player.setAttribute('playsinline','');player.preload='auto';player.style.display='none';document.body.appendChild(player)}return player}
-function report(message){const el=document.getElementById('routeStatus');if(el)el.textContent=message;console.info('PARKIQ voice:',message)}
+function report(message){const el=document.getElementById('routeStatus');if(el)el.textContent=message;console.info('RotaPark voice:',message)}
 function unlock(){try{getPlayer()}catch(e){console.warn(e)}}
 function stop(){seq++;if(player){player.pause();player.removeAttribute('src');player.load()}try{speechSynthesis.cancel()}catch(e){}}
 function fallback(text){try{if(!('speechSynthesis'in window))throw Error('Tarayıcı Türkçe sesi desteklemiyor');const u=new SpeechSynthesisUtterance(text);u.lang='tr-TR';u.rate=.92;const v=speechSynthesis.getVoices().find(v=>/^tr(?:[-_]|$)/i.test(v.lang));if(v)u.voice=v;u.onerror=e=>report('Telefon sesi hatası: '+e.error);speechSynthesis.cancel();speechSynthesis.speak(u);report('Telefonun Türkçe sesi deneniyor…')}catch(e){report('Ses oynatılamadı: '+e.message)}}
