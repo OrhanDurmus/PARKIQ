@@ -11,7 +11,7 @@ export async function onRequestPost({request,env}) {
     if(!/^[a-z0-9-]{2,30}$/.test(region))return Response.json({error:'Azure bölge kodu geçersiz. Örnek: northeurope'},{status:503});
     const voice=body.voice==='Ahmet'?'tr-TR-AhmetNeural':'tr-TR-EmelNeural';
     const rate=body.style==='calm'?'-3%':body.style==='clear'?'0%':'0%';
-    const escaped=phrase.replace(/&/g,'&amp;');
+    const escaped=phrase.replace(/&/g,'&amp;').replace(/([,;])\\s*/g,'$1<break time="420ms"/>').replace(/([.!?])\\s*/g,'$1<break time="650ms"/>');
     const xml='<speak version="1.0" xml:lang="tr-TR" xmlns="http://www.w3.org/2001/10/synthesis"><voice name="'+voice+'"><prosody rate="'+rate+'">'+escaped+'</prosody></voice></speak>';
     const response=await fetch('https://'+region+'.tts.speech.microsoft.com/cognitiveservices/v1',{method:'POST',headers:{'Ocp-Apim-Subscription-Key':String(env.AZURE_SPEECH_KEY).trim(),'Content-Type':'application/ssml+xml','X-Microsoft-OutputFormat':'audio-16khz-32kbitrate-mono-mp3','User-Agent':'PARKIQ/1.0'},body:xml});
     if(!response.ok){
