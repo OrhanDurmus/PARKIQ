@@ -10,11 +10,11 @@ Güncelleme: 2026-11-06 · Kod sürümü: 6.45
 - **iPhone tanılama ekranında daha önce görüldü:** 5/5 servis yanıt verdi; /api/parking, /api/business-parking, /api/walking-route, genel OSRM araç rotası ve /version.json. Bu, servislerin o anda yanıt verdiğini kanıtlar; sürekli erişilebilirliği kanıtlamaz.
 - **GitHub kodu:** 6.45 için index.html, version.json ve sw.js güncellendi. Cloudflare dağıtımı ayrıca doğrulanmadı.
 
-## Henüz doğrulanmamış kritik senaryolar
+## Kritik senaryolar ve doğrulama durumu
 
 | Öncelik | Test | Beklenen sonuç | Durum |
 | --- | --- | --- | --- |
-| P0 | Otopark A için rota hesaplanırken otopark B'yi seç | Eski işlem sonlanır; B hedefiyle rota başlar | Test bekliyor (6.45 değişikliği) |
+| P0 | Otopark A için rota hesaplanırken otopark B'yi seç | İkinci otoparka navigasyon başlar | **iPhone'da kullanıcı doğruladı (2026-11-06)** |
 | P0 | Otoparktan araç navigasyonu başlat | Gerçek GPS, doğru hedef, yönlendirme ve mesafe | Uçtan uca tekrar test bekliyor |
 | P0 | Otoparktan yaya navigasyonu başlat | Yaya rotası çizilir, GPS takibi başlar | Test bekliyor |
 | P0 | GPS iznini reddet | Uygulama donmaz, anlaşılır hata verir | Test bekliyor |
