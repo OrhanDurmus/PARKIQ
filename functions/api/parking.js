@@ -7,11 +7,11 @@ export async function onRequestGet({request,env}) {
   try {
     const data=await asset.json();
     if(!Array.isArray(data.points))throw Error('Invalid data');
-    const radius=3000,rad=Math.PI/180;
+    const radius=10000,rad=Math.PI/180;
     const points=data.points.filter(p=>{
       const dlat=(p.lat-lat)*111195,dlng=(p.lng-lng)*111195*Math.cos(lat*rad);
       return dlat*dlat+dlng*dlng<=radius*radius;
-    }).slice(0,250);
+    }).sort((a,b)=>{const da=(a.lat-lat)**2+((a.lng-lng)*Math.cos(lat*rad))**2,db=(b.lat-lat)**2+((b.lng-lng)*Math.cos(lat*rad))**2;return da-db}).slice(0,250);
     return Response.json({points,source:data.source,updatedAt:data.updatedAt},{headers:{'Cache-Control':'public,max-age=120'}});
   }catch{
     return Response.json({error:'Otopark veri dosyası okunamadı'},{status:503});
