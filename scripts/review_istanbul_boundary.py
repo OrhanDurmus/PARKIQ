@@ -57,6 +57,12 @@ def main(parking_file,boundary_file,csv_file):
     rows.sort(key=lambda r:(order[r[6]],-r[5] if r[6]=='outside_candidate' else r[5],str(r[0])))
     with open(csv_file,'w',encoding='utf-8-sig',newline='') as f:
         w=csv.writer(f);w.writerow(['Parking name','Latitude','Longitude','Boundary result','Review required','Approx boundary distance (m)','Review category']);w.writerows(rows)
+    # Separate review queue: no need to scroll past thousands of inside records.
+    flagged_path=Path(csv_file).with_name('istanbul-boundary-flagged.csv')
+    with flagged_path.open('w',encoding='utf-8-sig',newline='') as f:
+        w=csv.writer(f)
+        w.writerow(['Parking name','Latitude','Longitude','Boundary result','Review required','Approx boundary distance (m)','Review category'])
+        w.writerows(r for r in rows if r[4]=='YES')
     print('Geographic review:',sum(r[4]=='YES' for r in rows),'flagged /',len(rows))
     print('Near boundary:',sum(r[6]=='near_boundary' for r in rows),'Outside candidates:',sum(r[6]=='outside_candidate' for r in rows))
 if __name__=='__main__':main(*sys.argv[1:])

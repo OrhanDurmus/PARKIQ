@@ -136,6 +136,11 @@ jobs:
               with open(path,encoding='utf-8-sig',newline='') as f:
                   rows=list(csv.DictReader(f))
               flagged=sum(r['Review required']=='YES' for r in rows)
+              categories={}
+              for row in rows:
+                  cat=row['Review category']
+                  categories[cat]=categories.get(cat,0)+1
+              print('Boundary categories:',categories)
               message=f"- Boundary review: **completed**, {flagged} flagged of {len(rows)} parking records.\n"
           else:
               message="- Boundary review: **unavailable** (source download or validation failed). No geographic exclusion was applied.\n"
@@ -154,6 +159,7 @@ jobs:
             /tmp/ambiguous-entrances.csv
             /tmp/geographic-review.csv
             /tmp/istanbul-boundary-review.csv
+            /tmp/istanbul-boundary-flagged.csv
             /tmp/istanbul-boundary-review-status.txt
           retention-days: 30
       - name: Guard against incomplete parking dataset
