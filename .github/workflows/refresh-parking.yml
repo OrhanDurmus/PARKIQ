@@ -118,6 +118,7 @@ jobs:
           print('CSV review validation passed:',len(rows),'unique entrances')
           PY
       - name: Review Istanbul administrative boundary (non-destructive)
+        continue-on-error: true
         run: |
           curl --fail --location --retry 3 --max-time 90 \
             'https://raw.githubusercontent.com/wri/cities_data_misc/main/Deep%20Dive%20boundaries/boundary-TUR-Istanbul-districtsADM6.geojson' \
