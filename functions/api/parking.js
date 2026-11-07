@@ -9,6 +9,9 @@ export async function onRequestGet({request,env}) {
     if(!Array.isArray(data.points))throw Error('Invalid data');
     const radius=10000,rad=Math.PI/180;
     const points=data.points.filter(p=>{
+      // Review-only geographic flags must never remove a parking lot.
+      // Exclusion requires BOTH an explicit confirmed status and verification.
+      if(p.geographicStatus==='confirmed_outside_istanbul' && p.geographicReviewVerified===true) return false;
       const dlat=(p.lat-lat)*111195,dlng=(p.lng-lng)*111195*Math.cos(lat*rad);
       return dlat*dlat+dlng*dlng<=radius*radius;
     }).sort((a,b)=>{const da=(a.lat-lat)**2+((a.lng-lng)*Math.cos(lat*rad))**2,db=(b.lat-lat)**2+((b.lng-lng)*Math.cos(lat*rad))**2;return da-db}).slice(0,250);
