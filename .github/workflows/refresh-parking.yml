@@ -75,15 +75,14 @@ jobs:
                   writer.writerow([e['osmId'],e['lat'],e['lng'],e['matchedParkingCount'],
                                    '; '.join(e['namedParkingMatches']),e['reviewPriority'],
                                    e['needsDisambiguation'],e['osmUrl'],e['mapUrl'],'NO'])
+          with open('/tmp/ambiguous-entrances.csv','w',encoding='utf-8-sig',newline='') as f:
+              writer=csv.writer(f)
+              writer.writerow(['Parking name','Parking latitude','Parking longitude','Candidate count','OSM entrance ID','Entrance latitude','Entrance longitude','OSM source','Verified'])
+              for parking in report.get('ambiguousParking',[]):
+                  for e in parking['entranceOptions']:
+                      writer.writerow([parking['parkingName'],parking['parkingLat'],parking['parkingLng'],
+                                       parking['candidateCount'],e['osmId'],e['lat'],e['lng'],e['osmUrl'],'NO'])
           PY
-      - name: Upload entrance candidate review report
-        uses: actions/upload-artifact@v4
-        with:
-          name: istanbul-entrance-candidates-review
-          path: |
-            /tmp/entrance-review.json
-            /tmp/entrance-review.csv
-          retention-days: 30
       - name: Validate exported review CSV
         run: |
           python - <<'PY'
@@ -97,8 +96,22 @@ jobs:
           assert all(r['Verified']=='NO' for r in rows), 'Unreviewed entrance marked verified'
           assert all(r['OSM source'].startswith('https://www.openstreetmap.org/node/') for r in rows)
           assert all(r['Map location'].startswith('https://www.openstreetmap.org/?mlat=') for r in rows)
+          with open('/tmp/ambiguous-entrances.csv',encoding='utf-8-sig',newline='') as f:
+              ambiguous_rows=list(csv.DictReader(f))
+          assert len(ambiguous_rows)==sum(p['candidateCount'] for p in review.get('ambiguousParking',[]))
+          assert all(r['Verified']=='NO' for r in ambiguous_rows)
+          assert all(r['OSM source'].startswith('https://www.openstreetmap.org/node/') for r in ambiguous_rows)
           print('CSV review validation passed:',len(rows),'unique entrances')
           PY
+      - name: Upload entrance candidate review report
+        uses: actions/upload-artifact@v4
+        with:
+          name: istanbul-entrance-candidates-review
+          path: |
+            /tmp/entrance-review.json
+            /tmp/entrance-review.csv
+            /tmp/ambiguous-entrances.csv
+          retention-days: 30
       - name: Guard against incomplete parking dataset
         run: |
           python - <<'PY'
