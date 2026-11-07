@@ -25,13 +25,13 @@ class Parking(osmium.SimpleHandler):
             return
         if n.tags.get('amenity')!='parking': return
         lat,lon=n.location.lat,n.location.lon
-        if inside(lat,lon): records['n'+str(n.id)]=detail(n.tags,lat,lon)
+        if inside(lat,lon): records['n'+str(n.id)]={**detail(n.tags,lat,lon),'osmType':'node','osmId':str(n.id)}
     def way(self,w):
         if w.tags.get('amenity')!='parking': return
         pts=[(n.location.lat,n.location.lon) for n in w.nodes if n.location.valid()]
         if not pts:return
         lat=sum(p[0] for p in pts)/len(pts);lon=sum(p[1] for p in pts)/len(pts)
-        if inside(lat,lon):records['w'+str(w.id)]=detail(w.tags,lat,lon)
+        if inside(lat,lon):records['w'+str(w.id)]={**detail(w.tags,lat,lon),'osmType':'way','osmId':str(w.id)}
 if len(sys.argv) not in (3,4):sys.exit('Usage: python scripts/import_parking.py turkey.osm.pbf data/parking.json [review.json]')
 Parking().apply_file(sys.argv[1],locations=True)
 points=list(records.values())

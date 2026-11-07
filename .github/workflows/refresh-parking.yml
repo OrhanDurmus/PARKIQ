@@ -35,6 +35,10 @@ jobs:
           with open('/tmp/entrance-review.json', encoding='utf-8') as f:
               review=json.load(f)
           total=len(data.get('points', []))
+          parking=data['points']
+          assert all(p.get('osmType') in ('node','way') and str(p.get('osmId','')).isdigit() for p in parking), 'Missing OSM identity'
+          assert len({(p['osmType'],p['osmId']) for p in parking})==len(parking), 'Duplicate OSM identity'
+
           candidates=review.get('candidates', [])
           assert review.get('status')=='REVIEW_REQUIRED'
           assert review.get('candidateCount')==len(candidates)
