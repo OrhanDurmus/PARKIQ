@@ -21,6 +21,29 @@ jobs:
         run: |
           mkdir -p data
           python scripts/import_parking.py /tmp/turkey.osm.pbf data/parking.json /tmp/entrance-review.json
+      - name: Summarize parking and entrance candidates
+        run: |
+          python - <<'PY'
+          import json, os
+          with open('data/parking.json', encoding='utf-8') as f:
+              data=json.load(f)
+          with open('/tmp/entrance-review.json', encoding='utf-8') as f:
+              review=json.load(f)
+          total=len(data.get('points', []))
+          candidates=review.get('candidates', [])
+          assert review.get('status')=='REVIEW_REQUIRED'
+          assert review.get('candidateCount')==len(candidates)
+          assert all(c.get('entranceVerified') is False for c in candidates)
+          summary=(
+              "## Istanbul parking dataset refresh\\n\\n"
+              f"- Parking records: **{total}**\\n"
+              f"- Unverified entrance candidates: **{len(candidates)}**\\n"
+              "- Candidate coordinates require independent review before navigation.\\n"
+              "- Download the `istanbul-entrance-candidates-review` artifact from this workflow run.\\n"
+          )
+          with open(os.environ['GITHUB_STEP_SUMMARY'],'a',encoding='utf-8') as f:
+              f.write(summary)
+          PY
       - name: Upload entrance candidate review report
         uses: actions/upload-artifact@v4
         with:
