@@ -94,6 +94,16 @@ def main(parking_file,boundary_file,csv_file):
         for (lon,lat,category),items in sorted(groups.items(),key=lambda x:(-len(x[1]),x[0])):
             distances=[r[5] for r in items]
             w.writerow([lon,lat,category,len(items),min(distances),max(distances),items[0][0]])
+    # Auditable distance bands; all counts are candidates for review, not confirmed exclusions.
+    bands=[('0-250 m',0,250),('251 m-1 km',251,1000),
+           ('1-5 km',1001,5000),('5-10 km',5001,10000),
+           ('10-20 km',10001,20000),('over 20 km',20001,float('inf'))]
+    band_path=Path(csv_file).with_name('istanbul-boundary-distance-bands.csv')
+    with band_path.open('w',encoding='utf-8-sig',newline='') as f:
+        w=csv.writer(f)
+        w.writerow(['Distance band','Review candidates'])
+        for name,minimum,maximum in bands:
+            w.writerow([name,sum(1 for r in rows if r[4]=='YES' and minimum<=r[5]<=maximum)])
     print('Geographic review:',sum(r[4]=='YES' for r in rows),'flagged /',len(rows))
     print('Near boundary:',sum(r[6]=='near_boundary' for r in rows),'Outside candidates:',sum(r[6]=='outside_candidate' for r in rows))
 if __name__=='__main__':main(*sys.argv[1:])
