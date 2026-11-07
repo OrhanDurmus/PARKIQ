@@ -10,6 +10,15 @@ class BoundaryGeometryTests(unittest.TestCase):
         polygon={'type':'Polygon','coordinates':[self.square]}
         self.assertTrue(contains(2,2,polygon))
         self.assertFalse(contains(12,2,polygon))
+    def test_outer_boundary_is_not_flagged(self):
+        geometry={'type':'Polygon','coordinates':[self.square]}
+        self.assertTrue(contains(0,5,geometry))
+        self.assertTrue(contains(10,5,geometry))
+        self.assertTrue(contains(0,0,geometry))
+    def test_hole_boundary_is_included(self):
+        geometry={'type':'Polygon','coordinates':[self.square,self.hole]}
+        self.assertTrue(contains(3,5,geometry))
+        self.assertFalse(contains(5,5,geometry))
     def test_hole_excluded(self):
         polygon={'type':'Polygon','coordinates':[self.square,self.hole]}
         self.assertTrue(contains(2,2,polygon))
