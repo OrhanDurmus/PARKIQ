@@ -17,6 +17,8 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
+      - name: Test parking API geographic safeguards
+        run: node --test tests/parking-api.test.mjs
       - run: pip install osmium
       - name: Download official regional extract
         run: curl -fL --retry 3 --connect-timeout 30 -o /tmp/turkey.osm.pbf https://download.geofabrik.de/europe/turkey-latest.osm.pbf
