@@ -37,10 +37,20 @@ jobs:
           assert review.get('status')=='REVIEW_REQUIRED'
           assert review.get('candidateCount')==len(candidates)
           assert all(c.get('entranceVerified') is False for c in candidates)
+          unique=review.get('uniqueEntrances', [])
+          assert review.get('uniqueEntranceCount')==len(unique), 'Unique count mismatch'
+          assert review.get('duplicateMatchCount')==len(candidates)-len(unique), 'Duplicate count mismatch'
+          assert len({str(e['osmId']) for e in unique})==len(unique), 'Duplicate OSM IDs'
+          assert all(e.get('entranceVerified') is False for e in unique), 'Unexpected verified entrance'
+          assert all(-90<=e['lat']<=90 and -180<=e['lng']<=180 for e in unique), 'Invalid coordinates'
+          assert all(c.get('distanceMeters',1000)<=80.1 for c in candidates), 'Candidate too far'
           summary=(
               "## Istanbul parking dataset refresh\\n\\n"
               f"- Parking records: **{total}**\\n"
               f"- Unverified entrance candidates: **{len(candidates)}**\\n"
+              f"- Unique OSM entrance nodes: **{len(unique)}**\\n"
+              f"- Duplicate entrance matches: **{review['duplicateMatchCount']}**\\n"
+              f"- Unnamed parking matches: **{review['unnamedParkingMatchCount']}**\\n"
               "- Candidate coordinates require independent review before navigation.\\n"
               "- Download the `istanbul-entrance-candidates-review` artifact from this workflow run.\\n"
           )
