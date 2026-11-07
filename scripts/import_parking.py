@@ -41,6 +41,7 @@ def cell(lat,lon):
     return (math.floor(lat/cell_size),math.floor(lon/cell_size))
 for e in entrance_candidates:
     grid.setdefault(cell(e['lat'],e['lng']),[]).append(e)
+ambiguous_parking=[]
 for p in points:
     cy,cx=cell(p['lat'],p['lng'])
     nearby=[]
@@ -53,6 +54,14 @@ for p in points:
                 dlng=(e['lng']-p['lng'])*111320*math.cos(p['lat']*math.pi/180)
                 if dlat*dlat+dlng*dlng<=80*80:
                     nearby.append(e)
+    if len(nearby)>1:
+        ambiguous_parking.append({
+            'parkingName':p['name'],'parkingLat':p['lat'],'parkingLng':p['lng'],
+            'candidateCount':len(nearby),
+            'entranceOptions':[{'osmId':e['osmId'],'lat':e['lat'],'lng':e['lng'],
+                'osmUrl':'https://www.openstreetmap.org/node/'+str(e['osmId'])}
+                for e in sorted(nearby,key=lambda x:x['osmId'])],
+            'entranceVerified':False})
     if len(nearby)==1:
         p['entranceCandidate']={'lat':nearby[0]['lat'],'lng':nearby[0]['lng'],'source':'OpenStreetMap parking_entrance','osmId':nearby[0]['osmId']}
         p['entranceVerified']=False
@@ -91,6 +100,8 @@ if len(sys.argv)==4:
             'duplicateMatchCount':len(review)-len(unique),
             'unnamedParkingMatchCount':sum(r['nameMissing'] for r in review),
             'boundaryNote':'Approximate bounding box only, not Istanbul administrative limits.',
+            'ambiguousParkingCount':len(ambiguous_parking),
+            'ambiguousParking':ambiguous_parking,
             'candidates':review,'uniqueEntrances':unique}
     with open(sys.argv[3],'w',encoding='utf8') as out:
         json.dump(report,out,ensure_ascii=False,indent=2)
