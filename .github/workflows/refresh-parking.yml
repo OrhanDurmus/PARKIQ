@@ -47,11 +47,27 @@ jobs:
           with open(os.environ['GITHUB_STEP_SUMMARY'],'a',encoding='utf-8') as f:
               f.write(summary)
           PY
+      - name: Export mobile-friendly entrance review CSV
+        run: |
+          python - <<'PY'
+          import csv, json
+          with open('/tmp/entrance-review.json',encoding='utf-8') as f:
+              report=json.load(f)
+          with open('/tmp/entrance-review.csv','w',encoding='utf-8-sig',newline='') as f:
+              writer=csv.writer(f)
+              writer.writerow(['OSM entrance ID','Entrance latitude','Entrance longitude','Matched parking count','Parking names','Review priority','Needs disambiguation','Verified'])
+              for e in report['uniqueEntrances']:
+                  writer.writerow([e['osmId'],e['lat'],e['lng'],e['matchedParkingCount'],
+                                   '; '.join(e['namedParkingMatches']),e['reviewPriority'],
+                                   e['needsDisambiguation'],'NO'])
+          PY
       - name: Upload entrance candidate review report
         uses: actions/upload-artifact@v4
         with:
           name: istanbul-entrance-candidates-review
-          path: /tmp/entrance-review.json
+          path: |
+            /tmp/entrance-review.json
+            /tmp/entrance-review.csv
           retention-days: 30
       - name: Commit refreshed OSM records
         run: |
