@@ -117,6 +117,8 @@ jobs:
           assert all(r['Needs review']=='YES' for r in geographic_rows)
           print('CSV review validation passed:',len(rows),'unique entrances')
           PY
+      - name: Test geographic boundary classifier
+        run: python -m unittest discover -s scripts -p 'test_istanbul_boundary.py' -v
       - name: Review Istanbul administrative boundary (non-destructive)
         continue-on-error: true
         run: |
