@@ -52,15 +52,15 @@ jobs:
           assert review.get('geographicReviewCount')==len(geographic)
           assert all(x['reviewRequired'] is True and x['reasons'] for x in geographic)
           summary=(
-              "## Istanbul parking dataset refresh\\n\\n"
-              f"- Parking records: **{total}**\\n"
-              f"- Unverified entrance candidates: **{len(candidates)}**\\n"
-              f"- Unique OSM entrance nodes: **{len(unique)}**\\n"
-              f"- Duplicate entrance matches: **{review['duplicateMatchCount']}**\\n"
-              f"- Unnamed parking matches: **{review['unnamedParkingMatchCount']}**\\n"
-              f"- Parking lots with multiple possible entrances: **{len(ambiguous)}**\\n"
-              "- Candidate coordinates require independent review before navigation.\\n"
-              "- Download the `istanbul-entrance-candidates-review` artifact from this workflow run.\\n"
+              "## Istanbul parking dataset refresh\n\n"
+              f"- Parking records: **{total}**\n"
+              f"- Unverified entrance candidates: **{len(candidates)}**\n"
+              f"- Unique OSM entrance nodes: **{len(unique)}**\n"
+              f"- Duplicate entrance matches: **{review['duplicateMatchCount']}**\n"
+              f"- Unnamed parking matches: **{review['unnamedParkingMatchCount']}**\n"
+              f"- Parking lots with multiple possible entrances: **{len(ambiguous)}**\n"
+              "- Candidate coordinates require independent review before navigation.\n"
+              "- Download the `istanbul-entrance-candidates-review` artifact from this workflow run.\n"
           )
           with open(os.environ['GITHUB_STEP_SUMMARY'],'a',encoding='utf-8') as f:
               f.write(summary)
@@ -136,11 +136,11 @@ jobs:
               with open(path,encoding='utf-8-sig',newline='') as f:
                   rows=list(csv.DictReader(f))
               flagged=sum(r['Review required']=='YES' for r in rows)
-              message=f"- Boundary review: **completed**, {flagged} flagged of {len(rows)} parking records.\\n"
+              message=f"- Boundary review: **completed**, {flagged} flagged of {len(rows)} parking records.\n"
           else:
-              message="- Boundary review: **unavailable** (source download or validation failed). No geographic exclusion was applied.\\n"
+              message="- Boundary review: **unavailable** (source download or validation failed). No geographic exclusion was applied.\n"
               with open('/tmp/istanbul-boundary-review-status.txt','w',encoding='utf-8') as f:
-                  f.write('UNAVAILABLE: boundary source download or validation failed; no parking records were excluded.\\n')
+                  f.write('UNAVAILABLE: boundary source download or validation failed; no parking records were excluded.\n')
           with open(os.environ['GITHUB_STEP_SUMMARY'],'a',encoding='utf-8') as f:
               f.write(message)
           PY
