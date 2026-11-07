@@ -63,6 +63,20 @@ def main(parking_file,boundary_file,csv_file):
         w=csv.writer(f)
         w.writerow(['Parking name','Latitude','Longitude','Boundary result','Review required','Approx boundary distance (m)','Review category'])
         w.writerows(r for r in rows if r[4]=='YES')
+    # Region-level counts for reviewing suspicious clusters without changing live data.
+    from collections import Counter
+    regions=Counter()
+    for r in rows:
+        if r[4]=='YES':
+            # 0.1-degree grid: approximate region only, not a legal district boundary.
+            cell=(round(float(r[1]),1),round(float(r[2]),1),r[6])
+            regions[cell]+=1
+    region_path=Path(csv_file).with_name('istanbul-boundary-region-summary.csv')
+    with region_path.open('w',encoding='utf-8-sig',newline='') as f:
+        w=csv.writer(f)
+        w.writerow(['Approx latitude grid','Approx longitude grid','Review category','Parking count'])
+        for (lat,lon,category),count in sorted(regions.items(),key=lambda item:-item[1]):
+            w.writerow([lat,lon,category,count])
     print('Geographic review:',sum(r[4]=='YES' for r in rows),'flagged /',len(rows))
     print('Near boundary:',sum(r[6]=='near_boundary' for r in rows),'Outside candidates:',sum(r[6]=='outside_candidate' for r in rows))
 if __name__=='__main__':main(*sys.argv[1:])
