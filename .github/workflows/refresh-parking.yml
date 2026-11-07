@@ -21,7 +21,7 @@ jobs:
         run: |
           mkdir -p data
           python scripts/import_parking.py /tmp/turkey.osm.pbf data/parking.json
-      - name: Commit verified records
+      - name: Commit refreshed OSM records
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
