@@ -2,17 +2,37 @@
 """Review-only boundary classifier; does not alter live parking data."""
 import csv,json,sys
 from pathlib import Path
+def on_segment(x,y,a,b,epsilon=1e-10):
+    """Boundary points count as inside, avoiding false exclusions at polygon edges."""
+    ax,ay=a[:2]; bx,by=b[:2]
+    cross=(x-ax)*(by-ay)-(y-ay)*(bx-ax)
+    if abs(cross)>epsilon*max(1,abs(bx-ax),abs(by-ay)):
+        return False
+    return min(ax,bx)-epsilon<=x<=max(ax,bx)+epsilon and min(ay,by)-epsilon<=y<=max(ay,by)+epsilon
+
 def ring_contains(x,y,ring):
     inside=False
     j=len(ring)-1
     for i in range(len(ring)):
         xi,yi=ring[i][:2];xj,yj=ring[j][:2]
-        if (yi>y)!=(yj>y) and x<(xj-xi)*(y-yi)/(yj-yi)+xi:inside=not inside
+        if on_segment(x,y,ring[j],ring[i]):
+            return True
+        if (yi>y)!=(yj>y) and x<(xj-xi)*(y-yi)/(yj-yi)+xi:
+            inside=not inside
         j=i
     return inside
+
 def contains(x,y,geometry):
     polygons=[geometry['coordinates']] if geometry['type']=='Polygon' else geometry['coordinates'] if geometry['type']=='MultiPolygon' else []
-    return any(ring_contains(x,y,p[0]) and not any(ring_contains(x,y,h) for h in p[1:]) for p in polygons if p)
+    for polygon in polygons:
+        if not polygon or not ring_contains(x,y,polygon[0]):
+            continue
+        # A point on a hole's edge is still a polygon boundary point.
+        if any(any(on_segment(x,y,a,b) for a,b in zip(hole,hole[1:])) for hole in polygon[1:]):
+            return True
+        if not any(ring_contains(x,y,hole) for hole in polygon[1:]):
+            return True
+    return False
 def boundary_distance_m(x,y,features):
     """Approximate minimum distance to any district polygon edge (local equirectangular meters)."""
     import math
