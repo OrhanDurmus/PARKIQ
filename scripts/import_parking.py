@@ -1,9 +1,10 @@
-import json, sys, datetime
+import json, sys, datetime, math
 import osmium
 
 # Approximate Istanbul metropolitan bounding box; not a legal administrative boundary.
 WEST,SOUTH,EAST,NORTH=27.8,40.7,30.0,41.7
 records={}
+entrance_candidates=[]
 def detail(tags,lat,lon):
     fee=tags.get('fee','').lower()
     access=tags.get('access','')
@@ -15,7 +16,12 @@ def inside(lat,lon):
     return SOUTH<=lat<=NORTH and WEST<=lon<=EAST
 class Parking(osmium.SimpleHandler):
     def node(self,n):
-        if n.tags.get('amenity')!='parking' or not n.location.valid(): return
+        if not n.location.valid(): return
+        if n.tags.get('amenity')=='parking_entrance':
+            lat,lon=n.location.lat,n.location.lon
+            if inside(lat,lon): entrance_candidates.append({'lat':round(lat,6),'lng':round(lon,6),'osmId':n.id})
+            return
+        if n.tags.get('amenity')!='parking': return
         lat,lon=n.location.lat,n.location.lon
         if inside(lat,lon): records['n'+str(n.id)]=detail(n.tags,lat,lon)
     def way(self,w):
@@ -27,7 +33,19 @@ class Parking(osmium.SimpleHandler):
 if len(sys.argv)!=3:sys.exit('Usage: python scripts/import_parking.py turkey.osm.pbf data/parking.json')
 Parking().apply_file(sys.argv[1],locations=True)
 points=list(records.values())
+# OSM parking_entrance nodes are candidate entrances, not verified vehicle access points.
+# Attach only a unique nearby candidate to each parking record for later manual review.
+for p in points:
+    nearby=[]
+    for e in entrance_candidates:
+        dlat=(e['lat']-p['lat'])*111320
+        dlng=(e['lng']-p['lng'])*111320*math.cos(p['lat']*math.pi/180)
+        if dlat*dlat+dlng*dlng<=80*80:
+            nearby.append(e)
+    if len(nearby)==1:
+        p['entranceCandidate']={'lat':nearby[0]['lat'],'lng':nearby[0]['lng'],'source':'OpenStreetMap parking_entrance','osmId':nearby[0]['osmId']}
+        p['entranceVerified']=False
 if not points:sys.exit('No parking records found; refusing to overwrite existing data')
 with open(sys.argv[2],'w',encoding='utf8') as out:
     json.dump({'updatedAt':datetime.datetime.now(datetime.timezone.utc).isoformat(),'source':'OpenStreetMap/Geofabrik','points':points},out,ensure_ascii=False,separators=(',',':'))
-print('Extracted',len(points),'parking records')
+print('Extracted',len(points),'parking records; found',len(entrance_candidates),'OSM entrance nodes; attached',sum('entranceCandidate' in p for p in points),'unverified candidates')
