@@ -65,11 +65,11 @@ jobs:
               report=json.load(f)
           with open('/tmp/entrance-review.csv','w',encoding='utf-8-sig',newline='') as f:
               writer=csv.writer(f)
-              writer.writerow(['OSM entrance ID','Entrance latitude','Entrance longitude','Matched parking count','Parking names','Review priority','Needs disambiguation','Verified'])
+              writer.writerow(['OSM entrance ID','Entrance latitude','Entrance longitude','Matched parking count','Parking names','Review priority','Needs disambiguation','OSM source','Map location','Verified'])
               for e in report['uniqueEntrances']:
                   writer.writerow([e['osmId'],e['lat'],e['lng'],e['matchedParkingCount'],
                                    '; '.join(e['namedParkingMatches']),e['reviewPriority'],
-                                   e['needsDisambiguation'],'NO'])
+                                   e['needsDisambiguation'],e['osmUrl'],e['mapUrl'],'NO'])
           PY
       - name: Upload entrance candidate review report
         uses: actions/upload-artifact@v4
