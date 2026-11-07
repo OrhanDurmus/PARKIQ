@@ -30,7 +30,7 @@ class Parking(osmium.SimpleHandler):
         if not pts:return
         lat=sum(p[0] for p in pts)/len(pts);lon=sum(p[1] for p in pts)/len(pts)
         if inside(lat,lon):records['w'+str(w.id)]=detail(w.tags,lat,lon)
-if len(sys.argv)!=3:sys.exit('Usage: python scripts/import_parking.py turkey.osm.pbf data/parking.json')
+if len(sys.argv) not in (3,4):sys.exit('Usage: python scripts/import_parking.py turkey.osm.pbf data/parking.json [review.json]')
 Parking().apply_file(sys.argv[1],locations=True)
 points=list(records.values())
 # OSM parking_entrance nodes are candidates, not independently verified vehicle entrances.
@@ -57,4 +57,12 @@ for p in points:
 if not points:sys.exit('No parking records found; refusing to overwrite existing data')
 with open(sys.argv[2],'w',encoding='utf8') as out:
     json.dump({'updatedAt':datetime.datetime.now(datetime.timezone.utc).isoformat(),'source':'OpenStreetMap/Geofabrik','points':points},out,ensure_ascii=False,separators=(',',':'))
+if len(sys.argv)==4:
+    review=[{'parkingName':p['name'],'parkingLat':p['lat'],'parkingLng':p['lng'],
+             'entranceCandidate':p['entranceCandidate'],'entranceVerified':False}
+            for p in points if 'entranceCandidate' in p]
+    with open(sys.argv[3],'w',encoding='utf8') as out:
+        json.dump({'generatedAt':datetime.datetime.now(datetime.timezone.utc).isoformat(),
+                   'status':'REVIEW_REQUIRED','candidateCount':len(review),
+                   'candidates':review},out,ensure_ascii=False,indent=2)
 print('Extracted',len(points),'parking records; found',len(entrance_candidates),'OSM entrance nodes; attached',sum('entranceCandidate' in p for p in points),'unverified candidates')

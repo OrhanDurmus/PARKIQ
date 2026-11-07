@@ -20,7 +20,13 @@ jobs:
       - name: Extract parking records
         run: |
           mkdir -p data
-          python scripts/import_parking.py /tmp/turkey.osm.pbf data/parking.json
+          python scripts/import_parking.py /tmp/turkey.osm.pbf data/parking.json /tmp/entrance-review.json
+      - name: Upload entrance candidate review report
+        uses: actions/upload-artifact@v4
+        with:
+          name: istanbul-entrance-candidates-review
+          path: /tmp/entrance-review.json
+          retention-days: 30
       - name: Commit refreshed OSM records
         run: |
           git config user.name 'github-actions[bot]'
