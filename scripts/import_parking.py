@@ -44,8 +44,10 @@ for e in entrance_candidates:
 for p in points:
     cy,cx=cell(p['lat'],p['lng'])
     nearby=[]
-    for dy in (-1,0,1):
-        for dx in (-1,0,1):
+    # At Istanbul latitude, 0.001 longitude degrees is ~84 m. An 80 m
+    # radius can cross two grid cells near cell boundaries; scan 5x5.
+    for dy in range(-2,3):
+        for dx in range(-2,3):
             for e in grid.get((cy+dy,cx+dx),()):
                 dlat=(e['lat']-p['lat'])*111320
                 dlng=(e['lng']-p['lng'])*111320*math.cos(p['lat']*math.pi/180)
