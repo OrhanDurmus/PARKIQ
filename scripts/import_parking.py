@@ -113,11 +113,24 @@ if len(sys.argv)==4:
             reasons.append('province_tag_not_istanbul')
         if 'çorlu' in name or 'corlu' in name:
             reasons.append('name_mentions_corlu')
+        if 'gebze' in name:
+            reasons.append('name_mentions_gebze')
+        if 'yarımca' in name or 'yarimca' in name:
+            reasons.append('name_mentions_yarimca')
+        if city and any(t in city for t in ('gebze','yarımca','yarimca','çorlu','corlu')):
+            reasons.append('city_tag_suggests_outside_istanbul')
         if reasons:
             geographic_review.append({
                 'parkingName':p['name'],'lat':p['lat'],'lng':p['lng'],
                 'city':p.get('city',''),'province':p.get('province',''),
                 'reasons':reasons,'reviewRequired':True})
+    # A name-only geographic flag is not proof of jurisdiction; it must block
+    # the high-priority review label, not silently remove a parking record.
+    flagged_names={x['parkingName'] for x in geographic_review}
+    for e in unique:
+        if any(n in flagged_names for n in e['namedParkingMatches']):
+            e['reviewPriority']='geographic_review'
+            e['geographicReviewRequired']=True
     report={'generatedAt':datetime.datetime.now(datetime.timezone.utc).isoformat(),
             'status':'REVIEW_REQUIRED','candidateCount':len(review),
             'uniqueEntranceCount':len(unique),
