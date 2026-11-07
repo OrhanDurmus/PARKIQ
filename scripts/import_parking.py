@@ -12,7 +12,7 @@ def detail(tags,lat,lon):
     access=tags.get('access','')
     kind=tags.get('parking','')
     address=', '.join(x for x in [tags.get('addr:street',''),tags.get('addr:housenumber',''),tags.get('addr:suburb','')] if x)
-    return {'lat':round(lat,6),'lng':round(lon,6),'name':tags.get('name','Otopark kaydı'),'fee':fee if fee in ('yes','no') else 'unknown','kind':kind if kind in ('surface','underground','multi-storey','street_side','lane','rooftop') else 'unknown','address':address,'access':access,'operator':tags.get('operator','')}
+    return {'lat':round(lat,6),'lng':round(lon,6),'name':tags.get('name','Otopark kaydı'),'fee':fee if fee in ('yes','no') else 'unknown','kind':kind if kind in ('surface','underground','multi-storey','street_side','lane','rooftop') else 'unknown','address':address,'access':access,'operator':tags.get('operator',''),'city':tags.get('addr:city',''),'province':tags.get('addr:province',tags.get('addr:state',''))}
 
 def inside(lat,lon):
     return SOUTH<=lat<=NORTH and WEST<=lon<=EAST
@@ -96,6 +96,23 @@ if len(sys.argv)==4:
                        'needsDisambiguation':len(matches)>1,
                        'reviewPriority':'high' if len(matches)==1 and len(names)==1 else 'manual',
                        'entranceVerified':False})
+    # Flag potentially out-of-province records for human review, never delete on guesswork.
+    # The import rectangle crosses the Istanbul provincial border.
+    geographic_review=[]
+    for p in points:
+        province=(p.get('province') or '').strip().casefold()
+        city=(p.get('city') or '').strip().casefold()
+        name=p['name'].casefold()
+        reasons=[]
+        if province and province not in ('istanbul','İstanbul'.casefold()):
+            reasons.append('province_tag_not_istanbul')
+        if 'çorlu' in name or 'corlu' in name:
+            reasons.append('name_mentions_corlu')
+        if reasons:
+            geographic_review.append({
+                'parkingName':p['name'],'lat':p['lat'],'lng':p['lng'],
+                'city':p.get('city',''),'province':p.get('province',''),
+                'reasons':reasons,'reviewRequired':True})
     report={'generatedAt':datetime.datetime.now(datetime.timezone.utc).isoformat(),
             'status':'REVIEW_REQUIRED','candidateCount':len(review),
             'uniqueEntranceCount':len(unique),
@@ -104,6 +121,8 @@ if len(sys.argv)==4:
             'boundaryNote':'Conservative bounding box (west=27.95 E) excludes known Corlu false positives; not Istanbul administrative limits.',
             'ambiguousParkingCount':len(ambiguous_parking),
             'ambiguousParking':ambiguous_parking,
+            'geographicReviewCount':len(geographic_review),
+            'geographicReview':geographic_review,
             'candidates':review,'uniqueEntrances':unique}
     with open(sys.argv[3],'w',encoding='utf8') as out:
         json.dump(report,out,ensure_ascii=False,indent=2)
