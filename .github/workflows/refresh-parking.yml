@@ -126,6 +126,29 @@ jobs:
             'https://raw.githubusercontent.com/wri/cities_data_misc/main/Deep%20Dive%20boundaries/boundary-TUR-Istanbul-districtsADM6.geojson' \
             -o /tmp/istanbul-districts.geojson
           python scripts/review_istanbul_boundary.py data/parking.json /tmp/istanbul-districts.geojson /tmp/istanbul-boundary-review.csv
+      - name: Validate boundary review exports
+        run: |
+          python - <<'PY'
+          import csv, pathlib
+          base=pathlib.Path('/tmp')
+          full=base/'istanbul-boundary-review.csv'
+          if not full.exists():
+              print('Boundary review unavailable; no exclusions performed.')
+              raise SystemExit(0)
+          def read(name):
+              with (base/name).open(encoding='utf-8-sig',newline='') as f:
+                  return list(csv.DictReader(f))
+          all_rows=read('istanbul-boundary-review.csv')
+          flagged=read('istanbul-boundary-flagged.csv')
+          bands=read('istanbul-boundary-distance-bands.csv')
+          assert len(all_rows)>0
+          assert len(flagged)==sum(r['Review required']=='YES' for r in all_rows)
+          assert all(r['Review required']=='YES' and r['Review category']!='inside' for r in flagged)
+          assert sum(int(r['Review candidates']) for r in bands)==len(flagged)
+          assert len(all_rows)==len(flagged)+sum(r['Review category']=='inside' for r in all_rows)
+          assert all(float(r['Approx boundary distance (m)'])>=0 for r in all_rows)
+          print('Boundary CSV checks passed:',len(all_rows),'total,',len(flagged),'flagged')
+          PY
       - name: Record boundary review availability
         if: always()
         run: |
