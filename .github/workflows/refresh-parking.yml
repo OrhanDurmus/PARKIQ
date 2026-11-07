@@ -162,6 +162,7 @@ jobs:
             /tmp/istanbul-boundary-flagged.csv
             /tmp/istanbul-boundary-regions.csv
             /tmp/istanbul-boundary-distance-bands.csv
+            /tmp/istanbul-boundary-audit.json
             /tmp/istanbul-boundary-region-summary.csv
             /tmp/istanbul-boundary-review-status.txt
           retention-days: 30
