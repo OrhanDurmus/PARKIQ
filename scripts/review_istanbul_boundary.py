@@ -77,6 +77,25 @@ def main(parking_file,boundary_file,csv_file):
     rows.sort(key=lambda r:(order[r[6]],-r[5] if r[6]=='outside_candidate' else r[5],str(r[0])))
     with open(csv_file,'w',encoding='utf-8-sig',newline='') as f:
         w=csv.writer(f);w.writerow(['Parking name','Latitude','Longitude','Boundary result','Review required','Approx boundary distance (m)','Review category']);w.writerows(rows)
+    # Machine-readable audit for downstream review, never an automatic exclusion list.
+    from collections import Counter
+    counts=Counter(r[6] for r in rows)
+    flagged_count=sum(r[4]=='YES' for r in rows)
+    assert flagged_count==counts['near_boundary']+counts['outside_candidate']
+    audit={
+        'status':'REVIEW_REQUIRED',
+        'sourceParkingCount':len(points),
+        'flaggedCount':flagged_count,
+        'nearBoundaryCount':counts['near_boundary'],
+        'outsideCandidateCount':counts['outside_candidate'],
+        'insideCount':counts['inside'],
+        'boundarySource':Path(boundary_file).name,
+        'boundaryFeatureCount':len(features),
+        'automaticExclusionsApplied':False,
+        'note':'Candidate classification only; manual verification required before excluding parking records.'
+    }
+    Path(csv_file).with_name('istanbul-boundary-audit.json').write_text(
+        json.dumps(audit,ensure_ascii=False,indent=2)+'\\n',encoding='utf-8')
     # Separate review queue: no need to scroll past thousands of inside records.
     flagged_path=Path(csv_file).with_name('istanbul-boundary-flagged.csv')
     with flagged_path.open('w',encoding='utf-8-sig',newline='') as f:
