@@ -126,9 +126,12 @@ if len(sys.argv)==4:
                 'reasons':reasons,'reviewRequired':True})
     # A name-only geographic flag is not proof of jurisdiction; it must block
     # the high-priority review label, not silently remove a parking record.
-    flagged_names={x['parkingName'] for x in geographic_review}
+    # Match flagged parking records by coordinates, not by name: names like
+    # "İspark" and "Otopark kaydı" can occur across unrelated locations.
+    flagged_parking={(x['lat'],x['lng']) for x in geographic_review}
     for e in unique:
-        if any(n in flagged_names for n in e['namedParkingMatches']):
+        matches=grouped[str(e['osmId'])]
+        if any((m['parkingLat'],m['parkingLng']) in flagged_parking for m in matches):
             e['reviewPriority']='geographic_review'
             e['geographicReviewRequired']=True
     report={'generatedAt':datetime.datetime.now(datetime.timezone.utc).isoformat(),
