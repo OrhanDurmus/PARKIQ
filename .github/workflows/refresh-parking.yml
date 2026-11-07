@@ -79,6 +79,38 @@ jobs:
             /tmp/entrance-review.json
             /tmp/entrance-review.csv
           retention-days: 30
+      - name: Validate exported review CSV
+        run: |
+          python - <<'PY'
+          import csv, json
+          with open('/tmp/entrance-review.json',encoding='utf-8') as f:
+              review=json.load(f)
+          with open('/tmp/entrance-review.csv',encoding='utf-8-sig',newline='') as f:
+              rows=list(csv.DictReader(f))
+          assert len(rows)==review['uniqueEntranceCount'], 'CSV unique count mismatch'
+          assert len({r['OSM entrance ID'] for r in rows})==len(rows), 'Duplicate CSV entrance ID'
+          assert all(r['Verified']=='NO' for r in rows), 'Unreviewed entrance marked verified'
+          assert all(r['OSM source'].startswith('https://www.openstreetmap.org/node/') for r in rows)
+          assert all(r['Map location'].startswith('https://www.openstreetmap.org/?mlat=') for r in rows)
+          print('CSV review validation passed:',len(rows),'unique entrances')
+          PY
+      - name: Guard against incomplete parking dataset
+        run: |
+          python - <<'PY'
+          import json, pathlib
+          new=json.loads(pathlib.Path('data/parking.json').read_text(encoding='utf-8'))
+          old_text=__import__('subprocess').run(
+              ['git','show','HEAD:data/parking.json'],capture_output=True,text=True)
+          if old_text.returncode==0:
+              old=json.loads(old_text.stdout)
+              previous=len(old.get('points',[]))
+              current=len(new.get('points',[]))
+              if previous>=100 and current<previous*0.5:
+                  raise SystemExit(f'Refusing drastic parking dataset drop: {previous} -> {current}')
+              print(f'Dataset size guard passed: {previous} -> {current}')
+          else:
+              print('No previous dataset to compare; first import allowed')
+          PY
       - name: Commit refreshed OSM records
         run: |
           git config user.name 'github-actions[bot]'
