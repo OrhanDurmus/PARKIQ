@@ -1,6 +1,6 @@
 """Deterministic geometry tests: no network or third-party boundary required."""
 import unittest
-from review_istanbul_boundary import ring_contains,contains
+from review_istanbul_boundary import ring_contains,contains,boundary_distance_m
 
 class BoundaryGeometryTests(unittest.TestCase):
     def setUp(self):
@@ -20,6 +20,17 @@ class BoundaryGeometryTests(unittest.TestCase):
         self.assertTrue(contains(25,25,geometry))
         self.assertTrue(contains(5,5,geometry))
         self.assertFalse(contains(15,15,geometry))
+    def test_boundary_distance_near_and_far(self):
+        # One degree at the equator is approximately 111 km.
+        geometry={'type':'Polygon','coordinates':[self.square]}
+        features=[{'geometry':geometry}]
+        self.assertLess(boundary_distance_m(10.001,5,features),250)
+        self.assertGreater(boundary_distance_m(11,5,features),10000)
+        self.assertEqual(boundary_distance_m(10,5,features),0)
+    def test_boundary_distance_multipolygon(self):
+        second=[[20,20],[30,20],[30,30],[20,30],[20,20]]
+        features=[{'geometry':{'type':'MultiPolygon','coordinates':[[self.square],[second]]}}]
+        self.assertLess(boundary_distance_m(30.001,25,features),250)
     def test_reversed_ring_order(self):
         self.assertTrue(ring_contains(5,5,list(reversed(self.square))))
         self.assertFalse(ring_contains(15,5,list(reversed(self.square))))
