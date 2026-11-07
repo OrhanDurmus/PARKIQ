@@ -19,6 +19,13 @@ def main(parking_file,boundary_file,csv_file):
     features=geo['features'] if geo['type']=='FeatureCollection' else [geo]
     features=[f for f in features if f.get('geometry') and f['geometry']['type'] in ('Polygon','MultiPolygon')]
     if len(features)<10:raise SystemExit('Insufficient district polygons')
+    # Fail closed if the remote source has the wrong city or swapped coordinates.
+    known_inside=[(28.9784,41.0082),(29.2618,40.8763)]  # Fatih, Pendik
+    known_outside=[(29.4307,40.8028),(27.805,41.159)] # Gebze, Corlu
+    if not all(any(contains(x,y,f['geometry']) for f in features) for x,y in known_inside):
+        raise SystemExit('Boundary source fails Istanbul landmark checks')
+    if any(any(contains(x,y,f['geometry']) for f in features) for x,y in known_outside):
+        raise SystemExit('Boundary source incorrectly includes non-Istanbul landmarks')
     rows=[]
     for p in points:
         within=any(contains(p['lng'],p['lat'],f['geometry']) for f in features)
