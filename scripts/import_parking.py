@@ -1,8 +1,10 @@
 import json, sys, datetime, math
 import osmium
 
-# Approximate Istanbul metropolitan bounding box; not a legal administrative boundary.
-WEST,SOUTH,EAST,NORTH=27.8,40.7,30.0,41.7
+# Conservative Istanbul-area bounding box, not a legal administrative boundary.
+# Previous west limit 27.8 included known Corlu/Tekirdag parking at ~27.805 E.
+# The 27.95 cutoff removes those clear false positives but is NOT a province polygon.
+WEST,SOUTH,EAST,NORTH=27.95,40.7,30.0,41.7
 records={}
 entrance_candidates=[]
 def detail(tags,lat,lon):
@@ -99,7 +101,7 @@ if len(sys.argv)==4:
             'uniqueEntranceCount':len(unique),
             'duplicateMatchCount':len(review)-len(unique),
             'unnamedParkingMatchCount':sum(r['nameMissing'] for r in review),
-            'boundaryNote':'Approximate bounding box only, not Istanbul administrative limits.',
+            'boundaryNote':'Conservative bounding box (west=27.95 E) excludes known Corlu false positives; not Istanbul administrative limits.',
             'ambiguousParkingCount':len(ambiguous_parking),
             'ambiguousParking':ambiguous_parking,
             'candidates':review,'uniqueEntrances':unique}
