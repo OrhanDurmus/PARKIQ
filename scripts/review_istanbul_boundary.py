@@ -51,6 +51,10 @@ def main(parking_file,boundary_file,csv_file):
         priority='inside' if within else ('near_boundary' if distance<=250 else 'outside_candidate')
         rows.append([p['name'],p['lat'],p['lng'],'inside' if within else 'outside_or_boundary','NO' if within else 'YES',distance,priority])
     if not any(r[3]=='inside' for r in rows):raise SystemExit('Boundary check failed: no inside points')
+    # Put actionable outside candidates first, then boundary-adjacent cases.
+    # Keep inside records last as reference, never auto-exclude any record.
+    order={'outside_candidate':0,'near_boundary':1,'inside':2}
+    rows.sort(key=lambda r:(order[r[6]],-r[5] if r[6]=='outside_candidate' else r[5],str(r[0])))
     with open(csv_file,'w',encoding='utf-8-sig',newline='') as f:
         w=csv.writer(f);w.writerow(['Parking name','Latitude','Longitude','Boundary result','Review required','Approx boundary distance (m)','Review category']);w.writerows(rows)
     print('Geographic review:',sum(r[4]=='YES' for r in rows),'flagged /',len(rows))
