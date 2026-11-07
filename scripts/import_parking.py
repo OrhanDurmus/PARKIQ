@@ -57,12 +57,17 @@ for p in points:
                 if dlat*dlat+dlng*dlng<=80*80:
                     nearby.append(e)
     if len(nearby)>1:
+        options=[]
+        for e in nearby:
+            dlat=(e['lat']-p['lat'])*111320
+            dlng=(e['lng']-p['lng'])*111320*math.cos(p['lat']*math.pi/180)
+            options.append({'osmId':e['osmId'],'lat':e['lat'],'lng':e['lng'],
+                            'distanceMeters':round(math.hypot(dlat,dlng),1),
+                            'osmUrl':'https://www.openstreetmap.org/node/'+str(e['osmId'])})
+        options.sort(key=lambda e:(e['distanceMeters'],e['osmId']))
         ambiguous_parking.append({
             'parkingName':p['name'],'parkingLat':p['lat'],'parkingLng':p['lng'],
-            'candidateCount':len(nearby),
-            'entranceOptions':[{'osmId':e['osmId'],'lat':e['lat'],'lng':e['lng'],
-                'osmUrl':'https://www.openstreetmap.org/node/'+str(e['osmId'])}
-                for e in sorted(nearby,key=lambda x:x['osmId'])],
+            'candidateCount':len(options),'entranceOptions':options,
             'entranceVerified':False})
     if len(nearby)==1:
         p['entranceCandidate']={'lat':nearby[0]['lat'],'lng':nearby[0]['lng'],'source':'OpenStreetMap parking_entrance','osmId':nearby[0]['osmId']}
