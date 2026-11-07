@@ -33,15 +33,24 @@ class Parking(osmium.SimpleHandler):
 if len(sys.argv)!=3:sys.exit('Usage: python scripts/import_parking.py turkey.osm.pbf data/parking.json')
 Parking().apply_file(sys.argv[1],locations=True)
 points=list(records.values())
-# OSM parking_entrance nodes are candidate entrances, not verified vehicle access points.
-# Attach only a unique nearby candidate to each parking record for later manual review.
+# OSM parking_entrance nodes are candidates, not independently verified vehicle entrances.
+# Spatial grid avoids comparing every Istanbul parking record with every entrance node.
+cell_size=0.001
+grid={}
+def cell(lat,lon):
+    return (math.floor(lat/cell_size),math.floor(lon/cell_size))
+for e in entrance_candidates:
+    grid.setdefault(cell(e['lat'],e['lng']),[]).append(e)
 for p in points:
+    cy,cx=cell(p['lat'],p['lng'])
     nearby=[]
-    for e in entrance_candidates:
-        dlat=(e['lat']-p['lat'])*111320
-        dlng=(e['lng']-p['lng'])*111320*math.cos(p['lat']*math.pi/180)
-        if dlat*dlat+dlng*dlng<=80*80:
-            nearby.append(e)
+    for dy in (-1,0,1):
+        for dx in (-1,0,1):
+            for e in grid.get((cy+dy,cx+dx),()):
+                dlat=(e['lat']-p['lat'])*111320
+                dlng=(e['lng']-p['lng'])*111320*math.cos(p['lat']*math.pi/180)
+                if dlat*dlat+dlng*dlng<=80*80:
+                    nearby.append(e)
     if len(nearby)==1:
         p['entranceCandidate']={'lat':nearby[0]['lat'],'lng':nearby[0]['lng'],'source':'OpenStreetMap parking_entrance','osmId':nearby[0]['osmId']}
         p['entranceVerified']=False
