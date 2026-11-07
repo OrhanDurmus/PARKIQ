@@ -8,6 +8,9 @@ permissions:
 jobs:
   refresh:
     runs-on: ubuntu-latest
+    concurrency:
+      group: parking-dataset-refresh
+      cancel-in-progress: false
     timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
@@ -57,5 +60,18 @@ jobs:
           git add data/parking.json
           if ! git diff --cached --quiet; then
             git commit -m "Refresh Istanbul OSM parking dataset"
-            git push
+            # Other workflow runs or PR merges may advance main during the download.
+            # Replay only the generated dataset commit on the latest main; never force-push.
+            for attempt in 1 2 3 4 5; do
+              git fetch origin main
+              git rebase origin/main
+              if git push origin HEAD:main; then
+                echo "Parking dataset published successfully."
+                exit 0
+              fi
+              echo "Concurrent update detected; retrying ($attempt/5)..."
+              sleep 5
+            done
+            echo "::error::Could not publish dataset after five retries."
+            exit 1
           fi
