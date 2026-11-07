@@ -78,6 +78,8 @@ if len(sys.argv)==4:
         names=sorted({m['parkingName'] for m in matches if not m['nameMissing']})
         unique.append({'osmId':e['osmId'],'lat':e['lat'],'lng':e['lng'],
                        'matchedParkingCount':len(matches),'namedParkingMatches':names,
+                       'osmUrl':'https://www.openstreetmap.org/node/'+str(e['osmId']),
+                       'mapUrl':'https://www.openstreetmap.org/?mlat='+str(e['lat'])+'&mlon='+str(e['lng'])+'#map=19/'+str(e['lat'])+'/'+str(e['lng']),
                        'needsDisambiguation':len(matches)>1,
                        'reviewPriority':'high' if len(matches)==1 and len(names)==1 else 'manual',
                        'entranceVerified':False})
