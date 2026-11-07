@@ -117,6 +117,12 @@ jobs:
           assert all(r['Needs review']=='YES' for r in geographic_rows)
           print('CSV review validation passed:',len(rows),'unique entrances')
           PY
+      - name: Review Istanbul administrative boundary (non-destructive)
+        run: |
+          curl --fail --location --retry 3 --max-time 90 \
+            'https://raw.githubusercontent.com/wri/cities_data_misc/main/Deep%20Dive%20boundaries/boundary-TUR-Istanbul-districtsADM6.geojson' \
+            -o /tmp/istanbul-districts.geojson
+          python scripts/review_istanbul_boundary.py data/parking.json /tmp/istanbul-districts.geojson /tmp/istanbul-boundary-review.csv
       - name: Upload entrance candidate review report
         uses: actions/upload-artifact@v4
         with:
@@ -126,6 +132,7 @@ jobs:
             /tmp/entrance-review.csv
             /tmp/ambiguous-entrances.csv
             /tmp/geographic-review.csv
+            /tmp/istanbul-boundary-review.csv
           retention-days: 30
       - name: Guard against incomplete parking dataset
         run: |
