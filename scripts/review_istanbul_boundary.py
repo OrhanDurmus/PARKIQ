@@ -77,6 +77,23 @@ def main(parking_file,boundary_file,csv_file):
         w.writerow(['Approx latitude grid','Approx longitude grid','Review category','Parking count'])
         for (lat,lon,category),count in sorted(regions.items(),key=lambda item:-item[1]):
             w.writerow([lat,lon,category,count])
+    # Coarse geographic groups make review manageable without assigning
+    # unverified municipality or district names to coordinates.
+    from collections import defaultdict
+    groups=defaultdict(list)
+    for r in rows:
+        if r[4]=='YES':
+            cell=(int(float(r[2])*10)/10,int(float(r[1])*10)/10,r[6])
+            groups[cell].append(r)
+    regional_path=Path(csv_file).with_name('istanbul-boundary-regions.csv')
+    with regional_path.open('w',encoding='utf-8-sig',newline='') as f:
+        w=csv.writer(f)
+        w.writerow(['Longitude cell (deg)','Latitude cell (deg)','Review category',
+                    'Parking count','Minimum boundary distance (m)',
+                    'Maximum boundary distance (m)','Sample parking name'])
+        for (lon,lat,category),items in sorted(groups.items(),key=lambda x:(-len(x[1]),x[0])):
+            distances=[r[5] for r in items]
+            w.writerow([lon,lat,category,len(items),min(distances),max(distances),items[0][0]])
     print('Geographic review:',sum(r[4]=='YES' for r in rows),'flagged /',len(rows))
     print('Near boundary:',sum(r[6]=='near_boundary' for r in rows),'Outside candidates:',sum(r[6]=='outside_candidate' for r in rows))
 if __name__=='__main__':main(*sys.argv[1:])
