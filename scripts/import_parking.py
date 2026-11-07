@@ -58,11 +58,37 @@ if not points:sys.exit('No parking records found; refusing to overwrite existing
 with open(sys.argv[2],'w',encoding='utf8') as out:
     json.dump({'updatedAt':datetime.datetime.now(datetime.timezone.utc).isoformat(),'source':'OpenStreetMap/Geofabrik','points':points},out,ensure_ascii=False,separators=(',',':'))
 if len(sys.argv)==4:
-    review=[{'parkingName':p['name'],'parkingLat':p['lat'],'parkingLng':p['lng'],
-             'entranceCandidate':p['entranceCandidate'],'entranceVerified':False}
-            for p in points if 'entranceCandidate' in p]
+    review=[]
+    grouped={}
+    for p in points:
+        if 'entranceCandidate' not in p:
+            continue
+        e=p['entranceCandidate']
+        dlat=(e['lat']-p['lat'])*111320
+        dlng=(e['lng']-p['lng'])*111320*math.cos(p['lat']*math.pi/180)
+        item={'parkingName':p['name'],'parkingLat':p['lat'],'parkingLng':p['lng'],
+              'entranceCandidate':e,'entranceVerified':False,
+              'distanceMeters':round(math.hypot(dlat,dlng),1),
+              'nameMissing':p['name']=='Otopark kaydı'}
+        review.append(item)
+        grouped.setdefault(str(e['osmId']),[]).append(item)
+    unique=[]
+    for osm_id,matches in sorted(grouped.items()):
+        e=matches[0]['entranceCandidate']
+        names=sorted({m['parkingName'] for m in matches if not m['nameMissing']})
+        unique.append({'osmId':e['osmId'],'lat':e['lat'],'lng':e['lng'],
+                       'matchedParkingCount':len(matches),'namedParkingMatches':names,
+                       'needsDisambiguation':len(matches)>1,
+                       'reviewPriority':'high' if len(matches)==1 and len(names)==1 else 'manual',
+                       'entranceVerified':False})
+    report={'generatedAt':datetime.datetime.now(datetime.timezone.utc).isoformat(),
+            'status':'REVIEW_REQUIRED','candidateCount':len(review),
+            'uniqueEntranceCount':len(unique),
+            'duplicateMatchCount':len(review)-len(unique),
+            'unnamedParkingMatchCount':sum(r['nameMissing'] for r in review),
+            'boundaryNote':'Approximate bounding box only, not Istanbul administrative limits.',
+            'candidates':review,'uniqueEntrances':unique}
     with open(sys.argv[3],'w',encoding='utf8') as out:
-        json.dump({'generatedAt':datetime.datetime.now(datetime.timezone.utc).isoformat(),
-                   'status':'REVIEW_REQUIRED','candidateCount':len(review),
-                   'candidates':review},out,ensure_ascii=False,indent=2)
+        json.dump(report,out,ensure_ascii=False,indent=2)
+
 print('Extracted',len(points),'parking records; found',len(entrance_candidates),'OSM entrance nodes; attached',sum('entranceCandidate' in p for p in points),'unverified candidates')
