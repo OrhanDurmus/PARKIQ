@@ -44,6 +44,10 @@ jobs:
           assert all(e.get('entranceVerified') is False for e in unique), 'Unexpected verified entrance'
           assert all(-90<=e['lat']<=90 and -180<=e['lng']<=180 for e in unique), 'Invalid coordinates'
           assert all(c.get('distanceMeters',1000)<=80.1 for c in candidates), 'Candidate too far'
+          ambiguous=review.get('ambiguousParking', [])
+          assert review.get('ambiguousParkingCount')==len(ambiguous)
+          assert all(x['candidateCount']==len(x['entranceOptions']) and x['candidateCount']>1 for x in ambiguous)
+          assert all(x['entranceVerified'] is False for x in ambiguous)
           summary=(
               "## Istanbul parking dataset refresh\\n\\n"
               f"- Parking records: **{total}**\\n"
@@ -51,6 +55,7 @@ jobs:
               f"- Unique OSM entrance nodes: **{len(unique)}**\\n"
               f"- Duplicate entrance matches: **{review['duplicateMatchCount']}**\\n"
               f"- Unnamed parking matches: **{review['unnamedParkingMatchCount']}**\\n"
+              f"- Parking lots with multiple possible entrances: **{len(ambiguous)}**\\n"
               "- Candidate coordinates require independent review before navigation.\\n"
               "- Download the `istanbul-entrance-candidates-review` artifact from this workflow run.\\n"
           )
