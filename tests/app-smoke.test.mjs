@@ -107,3 +107,8 @@ test('stale reroute cleanup cannot reset a new navigation reroute',()=>{
   assert.match(html,/finally\{if\(gpsTrackingSession===rerouteSession&&navigationRequestId===rerouteRequestId\)rerouting=false/);
   assert.match(html,/function stopTracking\(\)\{gpsTrackingSession\+\+;rerouting=false/);
 });
+
+test('reroute result requires a fresh trusted GPS fix before replacing route',()=>{
+  assert.match(html,/if\(gpsSignalLost\|\|gpsQualityRecoveryPending\|\|!gpsLastAcceptedAt\|\|Date\.now\(\)-gpsLastAcceptedAt>15000\)/);
+  assert.match(html,/Rota hesaplandı ancak GPS konumu güncel değil/);
+});
