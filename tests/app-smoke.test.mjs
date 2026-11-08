@@ -97,3 +97,8 @@ test('foreground GPS probe callbacks respect the active tracking session',()=>{
   assert.match(html,/currentProbeSession!==gpsTrackingSession/);
   assert.match(html,/currentProbeSession===gpsTrackingSession/);
 });
+
+test('async reroute results cannot overwrite a restarted GPS session',()=>{
+  assert.match(html,/const rerouteSession=gpsTrackingSession/);
+  assert.match(html,/if\(gpsTrackingSession!==rerouteSession\|\|navigationRequestId!==rerouteRequestId/);
+});
