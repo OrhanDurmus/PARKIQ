@@ -5,8 +5,13 @@ source,destination,summary=sys.argv[1:4]
 with open(source,encoding='utf-8-sig',newline='') as f:
     rows=list(csv.DictReader(f))
 def priority(row):
-    op=row['Operator'].strip()
-    if op and any(x in op.casefold() for x in ('izelman','izel̇man','izmir büyükşehir','ankara büyükşehir','anpark','ispark','iṡpark','beltaş')):
+    op=row['Operator'].strip().casefold()
+    lat,lng=float(row['Latitude']),float(row['Longitude'])
+    # Operator names alone are insufficient: Denizli BELTAŞ is not Ankara BELTAŞ.
+    istanbul=40.7<=lat<=41.7 and 27.5<=lng<=30.0
+    ankara=39.4<=lat<=40.5 and 31.5<=lng<=33.8
+    izmir=37.8<=lat<=39.3 and 26.0<=lng<=28.6
+    if (istanbul and 'ispark' in op) or (ankara and any(x in op for x in ('anpark','beltaş','ankara büyükşehir'))) or (izmir and 'izelman' in op):
         return 1
     if op:return 2
     return 3
