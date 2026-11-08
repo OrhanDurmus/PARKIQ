@@ -78,4 +78,4 @@ test('diagnostics button actually opens, copies and closes the report',async()=>
   assert.equal(element('navDiagnosticPanel').hidden,true);
 });
 
-test('stale GPS fixes are rejected before route progress is updated',()=>{\n  assert.match(html,/Date\\.now\\(\\)-pos\\.timestamp>15000/);\n  assert.match(html,/GPS ölçümü eski/);\n  assert.match(html,/Eski GPS konumu yok sayıldı/);\n});\n
+test('stale GPS fixes are rejected before route progress is updated',()=>{\n  assert.match(html,/Date\\.now\\(\\)-pos\\.timestamp>15000/);\n  assert.match(html,/GPS ölçümü güncel değil/);\n  assert.match(html,/GPS zaman bilgisi geçersiz/);\n});\n
