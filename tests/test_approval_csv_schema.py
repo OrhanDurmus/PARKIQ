@@ -5,7 +5,7 @@ exporter=Path(__file__).resolve().parents[1]/'scripts/export_approved_entrances.
 with tempfile.TemporaryDirectory() as d:
     base=Path(d)
     malformed=base/'malformed.csv'
-    malformed.write_text('Parking OSM identity\\n',encoding='utf-8')
+    malformed.write_text('Parking OSM identity\n',encoding='utf-8')
     output=base/'out.json'
     bad=subprocess.run([sys.executable,str(exporter),str(malformed),str(output)],capture_output=True,text=True)
     assert bad.returncode!=0 and 'Missing review fields' in bad.stderr+bad.stdout
