@@ -66,4 +66,14 @@ test('diagnostics button actually opens, copies and closes the report',async()=>
   listener(event('navDiagnosticClose'));
   assert.equal(element('navDiagnosticPanel').hidden,true);
   assert.equal(element('navDiagnostics').attributes['aria-expanded'],'false');
+  // Offline state must remain reportable even when the route has no network.
+  const offlineDocument={...document,addEventListener(type,fn,capture){if(type==='click'&&capture)offlineListener=fn}};
+  let offlineListener;
+  runInNewContext(diagnostic,{document:offlineDocument,navigator:{onLine:false},Date});
+  offlineListener(event('navDiagnostics'));
+  assert.match(element('navDiagnosticText').value,/Bağlantı: çevrimdışı/);
+  offlineListener(event('navDiagnosticCopy'));
+  assert.equal(element('navDiagnosticCopy').textContent,'Metni seçip kopyalayın');
+  offlineListener(event('navDiagnosticClose'));
+  assert.equal(element('navDiagnosticPanel').hidden,true);
 });
