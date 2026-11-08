@@ -35,6 +35,7 @@ async function attachApprovedEntrances(points,env,origin){
 }
 export async function onRequestGet({request,env}){
  const url=new URL(request.url),lat=Number(url.searchParams.get('lat')),lng=Number(url.searchParams.get('lng'));
+ const radiusRaw=Number(url.searchParams.get('radius')||10),radiusKm=[3,10,20,30].includes(radiusRaw)?radiusRaw:10,radiusSq=(radiusKm*1000)**2;
  if(!inTurkey(lat,lng))return Response.json({error:'Koordinatlar Türkiye sınırları dışında'},{status:400});
  if(inIstanbul(lat,lng)){
   const asset=await env.ASSETS.fetch(new URL('/data/parking.json',url.origin).toString());
@@ -42,7 +43,7 @@ export async function onRequestGet({request,env}){
   try{
    const data=await asset.json();
    if(!Array.isArray(data.points))throw Error('Invalid data');
-   const points=data.points.filter(p=>validPoint(p)&&!(p.geographicStatus==='confirmed_outside_istanbul'&&p.geographicReviewVerified===true)&&distanceSq(p,lat,lng)<=10000**2).sort((a,b)=>distanceSq(a,lat,lng)-distanceSq(b,lat,lng)).slice(0,250);
+   const points=data.points.filter(p=>validPoint(p)&&!(p.geographicStatus==='confirmed_outside_istanbul'&&p.geographicReviewVerified===true)&&distanceSq(p,lat,lng)<=radiusSq).sort((a,b)=>distanceSq(a,lat,lng)-distanceSq(b,lat,lng)).slice(0,250);
    return response(await attachApprovedEntrances(points,env,url.origin),data.source,data.updatedAt);
   }catch{return Response.json({error:'İstanbul otopark dosyası okunamadı'},{status:503})}
  }
@@ -52,7 +53,7 @@ export async function onRequestGet({request,env}){
  try{
   const data=await asset.json();
   if(!Array.isArray(data.points))throw Error('Invalid data');
-  const points=data.points.filter(p=>validPoint(p)&&distanceSq(p,lat,lng)<=10000**2).sort((a,b)=>distanceSq(a,lat,lng)-distanceSq(b,lat,lng)).slice(0,250);
+  const points=data.points.filter(p=>validPoint(p)&&distanceSq(p,lat,lng)<=radiusSq).sort((a,b)=>distanceSq(a,lat,lng)-distanceSq(b,lat,lng)).slice(0,250);
   return response(await attachApprovedEntrances(points,env,url.origin),data.source,data.updatedAt);
  }catch{return Response.json({error:'Türkiye otopark veri dosyası okunamadı'},{status:503})}
 }
