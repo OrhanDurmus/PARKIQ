@@ -14,7 +14,7 @@ test('main HTML has parseable inline JavaScript',()=>{
   });
 });
 test('critical navigation and parking controls are present',()=>{
-  for(const id of ['map','parkingNameSearch','nearestFive','parkingList','navOverlay','navStop','navRecenter','navGpsQuality','navDiagnosticPanel','navDiagnosticText','navDiagnosticCopy','navDiagnosticClose','navDiagnostics','navRemaining','navEta','mapSearchHere','mapLocateMe','mapFitParking']){
+  for(const id of ['map','parkingNameSearch','nearestFive','parkingList','navOverlay','navStop','navRecenter','navGpsQuality','navDiagnosticPanel','navDiagnosticText','navDiagnosticCopy','navDiagnosticClose','navDiagnostics','navCompact','navRemaining','navEta','mapSearchHere','mapLocateMe','mapFitParking']){
     assert.match(html,new RegExp('id=["\\x27]'+id+'["\\x27]'),'Missing #'+id);
   }
 });
@@ -25,7 +25,7 @@ test('version in HTML matches deployed version manifest',()=>{
   assert.equal(version[1],manifest.version);
 });
 test('navigation controls have handlers',()=>{
-  for(const id of ['navStop','navDiagnostics','navRecenter','mapHome','mapSearchHere','mapLocateMe','mapFitParking']){
+  for(const id of ['navStop','navCompact','navDiagnostics','navRecenter','mapHome','mapSearchHere','mapLocateMe','mapFitParking']){
     const direct=html.includes("$('"+id+"').onclick");
     const recenterAlias=id==='navRecenter'&&/\brecenter\s*=\s*\$\(['"]navRecenter['"]\)/.test(html)&&/\brecenter\.onclick\s*=/.test(html);
     const delegatedDiagnostics=id==='navDiagnostics'&&/document\.addEventListener\(['"]click['"]/.test(html)&&html.includes("closest('#navDiagnostics,#navDiagnosticClose,#navDiagnosticCopy')")&&html.includes("button.id==='navDiagnostics'")&&html.includes('openReport()');
