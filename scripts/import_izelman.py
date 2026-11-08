@@ -12,7 +12,7 @@ rows=iter(sheet.values)
 headers=[str(x or '').strip() for x in next(rows)]
 name_index=next((i for i,h in enumerate(headers) if 'otopark' in h.casefold() and ('fiyat' in h.casefold() or 'adı' in h.casefold())),None)
 assert name_index is not None,headers
-periods=[(i,h) for i,h in enumerate(headers) if re.search(r'\d+\s*[-–]\s*\d+\s*saat|abone',h,re.I)]
+periods=[(i,h) for i,h in enumerate(headers) if re.search(r'\d+\s*[-–]\s*\d+\s*saat|abone',h,re.I) and not re.search(r'motosiklet|engelli',h,re.I)]
 assert periods,'No recognizable price columns'
 records=[]
 for row in rows:
