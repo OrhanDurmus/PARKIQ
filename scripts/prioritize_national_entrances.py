@@ -5,7 +5,7 @@ source,destination,summary=sys.argv[1:4]
 with open(source,encoding='utf-8-sig',newline='') as f:
     rows=list(csv.DictReader(f))
 def priority(row):
-    op=row['Operator'].strip().casefold()
+    op=row['Operator'].strip().casefold().replace('\u0307','')
     lat,lng=float(row['Latitude']),float(row['Longitude'])
     # Operator names alone are insufficient: Denizli BELTAŞ is not Ankara BELTAŞ.
     istanbul=40.7<=lat<=41.7 and 27.5<=lng<=30.0
@@ -16,8 +16,9 @@ def priority(row):
     if op:return 2
     return 3
 for row in rows:
-    row['Review priority']=str(priority(row))
-    row['Priority reason']='Municipal/operator name candidate; confirm legal entity and city' if priority(row)==1 else 'Operator named; confirm identity and entrance' if priority(row)==2 else 'Operator unknown; confirm identity and entrance'
+    p=priority(row)
+    row['Review priority']=str(p)
+    row['Priority reason']='Municipal/operator name candidate; confirm legal entity and city' if p==1 else 'Operator named; confirm identity and entrance' if p==2 else 'Operator unknown; confirm identity and entrance'
 rows.sort(key=lambda x:(priority(x),x['Parking name'].casefold(),x['OSM ID']))
 with open(destination,'w',encoding='utf-8-sig',newline='') as f:
     w=csv.DictWriter(f,fieldnames=list(rows[0]))
