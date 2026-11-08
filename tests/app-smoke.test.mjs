@@ -91,3 +91,9 @@ test('stale geolocation callbacks cannot update a new tracking session',()=>{
   assert.match(html,/err=>\{if\(currentGpsSession!==gpsTrackingSession\)return/);
   assert.match(html,/function stopTracking\(\)\{gpsTrackingSession\+\+/);
 });
+
+test('foreground GPS probe callbacks respect the active tracking session',()=>{
+  assert.match(html,/currentProbeSession=gpsTrackingSession/);
+  assert.match(html,/currentProbeSession!==gpsTrackingSession/);
+  assert.match(html,/currentProbeSession===gpsTrackingSession/);
+});
