@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Import official IZELMAN XLSX with exact parking names and explicit source date."""
-import json,sys,urllib.request
+import json,sys,urllib.request,re
 from datetime import datetime,timezone
 from io import BytesIO
 from openpyxl import load_workbook
@@ -10,12 +10,15 @@ with urllib.request.urlopen(urllib.request.Request(URL,headers={'User-Agent':'RO
 sheet=load_workbook(BytesIO(payload),read_only=True,data_only=True).active
 rows=iter(sheet.values)
 headers=[str(x or '').strip() for x in next(rows)]
-assert any('Otopark' in x for x in headers),headers
+name_index=next((i for i,h in enumerate(headers) if 'otopark' in h.casefold() and ('fiyat' in h.casefold() or 'adı' in h.casefold())),None)
+assert name_index is not None,headers
+periods=[(i,h) for i,h in enumerate(headers) if re.search(r'\\d+\\s*[-–]\\s*\\d+\\s*saat|abone',h,re.I)]
+assert periods,'No recognizable price columns'
 records=[]
 for row in rows:
-    name=str(row[0] or '').strip()
+    name=str(row[name_index] or '').strip()
     if not name or name.lower().startswith('toplam'):continue
-    prices={key:value for key,value in zip(headers[1:],row[1:]) if isinstance(value,(int,float)) and not isinstance(value,bool) and 0<value<1000000}
+    prices={key:row[i] for i,key in periods if i<len(row) and isinstance(row[i],(int,float)) and not isinstance(row[i],bool) and 0<row[i]<1000000}
     if prices:records.append({'name':name,'prices':prices})
 assert len(records)>=5,'Unexpectedly small tariff sheet'
 assert len({x['name'].casefold() for x in records})==len(records),'Duplicate names need review'
