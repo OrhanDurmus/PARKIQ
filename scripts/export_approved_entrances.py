@@ -8,9 +8,11 @@ from pathlib import Path
 from urllib.parse import urlparse
 source,target=sys.argv[1:3]
 with open(source,encoding='utf-8-sig',newline='') as f:
-    rows=list(csv.DictReader(f))
+    reader=csv.DictReader(f)
+    headers=reader.fieldnames
+    rows=list(reader)
 required={'Parking OSM identity','Parking centroid latitude','Parking centroid longitude','Entrance latitude (manual)','Entrance longitude (manual)','Entrance OSM URL (manual)','Connected vehicle road OSM URL (manual)','Road access checked (YES/NO)','Entrance versus exit checked (YES/NO)','Evidence source URL (manual)','Review decision (PENDING/APPROVED/REJECTED)','Entrance verified'}
-if rows and not required.issubset(rows[0]):sys.exit('Missing review fields')
+if not headers or not required.issubset(headers):sys.exit('Missing review fields')
 approved={}
 for number,row in enumerate(rows,2):
     decision=row['Review decision (PENDING/APPROVED/REJECTED)'].strip().upper()
