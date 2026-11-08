@@ -26,6 +26,18 @@ jobs:
         run: |
           mkdir -p data
           python scripts/import_parking.py /tmp/turkey.osm.pbf data/parking.json /tmp/entrance-review.json
+      - name: Extract nationwide parking records
+        run: python scripts/import_national_parking.py /tmp/turkey.osm.pbf data/parking-turkiye.json
+      - name: Validate nationwide dataset
+        run: |
+          python - <<'PY'
+          import json
+          d=json.load(open('data/parking-turkiye.json',encoding='utf-8'))
+          assert len(d['points'])>=100
+          assert len({(p['osmType'],p['osmId']) for p in d['points']})==len(d['points'])
+          assert all(35.5<=p['lat']<=42.5 and 25.5<=p['lng']<=45 for p in d['points'])
+          print('Nationwide parking records:',len(d['points']))
+          PY
       - name: Summarize parking and entrance candidates
         run: |
           python - <<'PY'
@@ -216,9 +228,9 @@ jobs:
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add data/parking.json
+          git add data/parking.json data/parking-turkiye.json
           if ! git diff --cached --quiet; then
-            git commit -m "Refresh Istanbul OSM parking dataset"
+            git commit -m "Refresh Türkiye OSM parking datasets"
             # Other workflow runs or PR merges may advance main during the download.
             # Replay only the generated dataset commit on the latest main; never force-push.
             for attempt in 1 2 3 4 5; do
