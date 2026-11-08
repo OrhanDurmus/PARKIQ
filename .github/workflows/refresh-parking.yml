@@ -39,6 +39,7 @@ jobs:
           path: |
             /tmp/national-entrance-review.csv
             /tmp/national-entrance-prioritized.csv
+            /tmp/national-entrance-prioritized-priority-1.csv
             /tmp/national-entrance-summary.md
           retention-days: 30
       - name: Validate nationwide dataset
