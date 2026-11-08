@@ -34,14 +34,14 @@ test('navigation controls have handlers',()=>{
 });
 
 test('diagnostics button actually opens, copies and closes the report',async()=>{
-  const scripts=[...html.matchAll(/<script\\b([^>]*)>([\\s\\S]*?)<\\/script\\s*>/gi)];
+  const scripts=[...html.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script\s*>/gi)];
   const diagnostic=scripts.map(m=>m[2]).find(body=>body.includes("function openReport()")&&body.includes("navDiagnosticCopy"));
   assert.ok(diagnostic,'Missing standalone diagnostics script');
   const elements=new Map();
   function element(id){
     if(!elements.has(id))elements.set(id,{
       id,hidden:id==='navDiagnosticPanel',style:{},textContent:id==='navGpsQuality'?'● GPS iyi ±9 m':'',value:'',
-      parentElement:null,attributes:{},setAttribute(k,v){this.attributes[k]=v},
+      parentElement:null,attributes:{},setAttribute(k,v){this.attributes[k]=v},getAttribute(k){return this.attributes[k]??null},
       focus(){},select(){}
     });
     return elements.get(id);
