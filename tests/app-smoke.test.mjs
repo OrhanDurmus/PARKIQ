@@ -102,3 +102,8 @@ test('async reroute results cannot overwrite a restarted GPS session',()=>{
   assert.match(html,/const rerouteSession=gpsTrackingSession/);
   assert.match(html,/if\(gpsTrackingSession!==rerouteSession\|\|navigationRequestId!==rerouteRequestId/);
 });
+
+test('stale reroute cleanup cannot reset a new navigation reroute',()=>{
+  assert.match(html,/finally\{if\(gpsTrackingSession===rerouteSession&&navigationRequestId===rerouteRequestId\)rerouting=false/);
+  assert.match(html,/function stopTracking\(\)\{gpsTrackingSession\+\+;rerouting=false/);
+});
