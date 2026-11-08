@@ -14,7 +14,7 @@ test('main HTML has parseable inline JavaScript',()=>{
   });
 });
 test('critical navigation and parking controls are present',()=>{
-  for(const id of ['map','parkingNameSearch','nearestFive','parkingList','navOverlay','navStop','navRecenter','navGpsQuality','navDiagnostics','navRemaining','navEta','mapSearchHere','mapLocateMe','mapFitParking']){
+  for(const id of ['map','parkingNameSearch','nearestFive','parkingList','navOverlay','navStop','navRecenter','navGpsQuality','navDiagnosticPanel','navDiagnosticText','navDiagnosticCopy','navDiagnosticClose','navDiagnostics','navRemaining','navEta','mapSearchHere','mapLocateMe','mapFitParking']){
     assert.match(html,new RegExp('id=["\\x27]'+id+'["\\x27]'),'Missing #'+id);
   }
 });
