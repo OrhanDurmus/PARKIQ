@@ -26,6 +26,14 @@ https://www.izmir.bel.tr/tr/BirimDetay/105
 
 The first two ways share a road geometry node. **A shared node does not establish that it is the vehicle entrance or the correct inbound direction.** The nearby `highway=pedestrian` ways with `motor_vehicle=yes` are not proof of general public car access.
 
+## Additional primary-source and 2026 cross-check (2026-11-08)
+
+The municipality's **opening announcement (26 September 2009)** explicitly says the public underground parking would admit and release vehicles **only through the 26 Ağustos gate**: https://www.izmir.bel.tr/tr/Haberler/kulturpark-otoparki--hizmetinizde/5541/156
+
+A guide published **13 August 2026** also describes parking vehicle entry and exit at the 26 Ağustos gate: https://www.dijitalgaste.com/izmir-fuarina-nasil-gidilir-izban-metro-ve-otopark-rehberi
+
+The gate's **name/direction is corroborated**, but these sources still do not specify a precise ramp node, inbound lane, current one-way restrictions, or routable vehicle approach. In particular, the two close OSM ways must **not** be arbitrarily selected as the incoming ramp. Continue routing to the parking centroid until an independently confirmed precise entrance point is approved.
+
 ## Required before navigation activation
 
 1. Confirm that 26 Ağustos Kapısı still provides **public inbound access** to the underground parking.
