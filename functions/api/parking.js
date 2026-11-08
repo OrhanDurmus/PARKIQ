@@ -25,26 +25,13 @@ export async function onRequestGet({request,env}){
    return response(points,data.source,data.updatedAt);
   }catch{return Response.json({error:'İstanbul otopark dosyası okunamadı'},{status:503})}
  }
- // Overpass is a shared public service. Cache nearby requests and bound work to 8 km.
- const key=new Request(url.origin+'/api/parking-national?lat='+(Math.round(lat*100)/100).toFixed(2)+'&lng='+(Math.round(lng*100)/100).toFixed(2));
- const cache=caches.default,hit=await cache.match(key);
- if(hit)return hit;
- const south=lat-0.075,north=lat+0.075,west=lng-0.095,east=lng+0.095;
- const q='[out:json][timeout:12];nwr["amenity"="parking"]('+south+','+west+','+north+','+east+');out center 350;';
- const endpoints=['https://overpass.kumi.systems/api/interpreter','https://overpass.nchc.org.tw/api/interpreter','https://overpass-api.de/api/interpreter'];
- for(const endpoint of endpoints){
-  const controller=new AbortController(),timeout=setTimeout(()=>controller.abort(),9500);
-  try{
-   const upstream=await fetch(endpoint,{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:'data='+encodeURIComponent(q),signal:controller.signal});
-   if(!upstream.ok)continue;
-   const data=await upstream.json();
-   if(!Array.isArray(data.elements))continue;
-   const points=data.elements.map(fromOsm).filter(p=>p&&validPoint(p)&&distanceSq(p,lat,lng)<=10000**2).sort((a,b)=>distanceSq(a,lat,lng)-distanceSq(b,lat,lng)).slice(0,250);
-   const result=response(points,'OpenStreetMap / Overpass',new Date().toISOString());
-   await cache.put(key,result.clone());
-   return result;
-  }catch(error){/* Try next public mirror when the current endpoint is unavailable. */}
-  finally{clearTimeout(timeout)}
- }
- return Response.json({error:'OpenStreetMap otopark servislerine erişilemedi. Lütfen tekrar deneyin.'},{status:503,headers:{'Cache-Control':'no-store'}});
+ // Static nationwide dataset avoids public Overpass outages during user searches.
+ const asset=await env.ASSETS.fetch(new URL('/data/parking-turkiye.json',url.origin).toString());
+ if(!asset.ok)return Response.json({error:'Türkiye otopark veri dosyası henüz yayınlanmadı. GitHub Actions veri yenilemesi çalıştırılmalı.'},{status:503});
+ try{
+  const data=await asset.json();
+  if(!Array.isArray(data.points))throw Error('Invalid data');
+  const points=data.points.filter(p=>validPoint(p)&&distanceSq(p,lat,lng)<=10000**2).sort((a,b)=>distanceSq(a,lat,lng)-distanceSq(b,lat,lng)).slice(0,250);
+  return response(points,data.source,data.updatedAt);
+ }catch{return Response.json({error:'Türkiye otopark veri dosyası okunamadı'},{status:503})}
 }
