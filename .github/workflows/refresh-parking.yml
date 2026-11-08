@@ -34,6 +34,8 @@ jobs:
         run: python scripts/prioritize_national_entrances.py /tmp/national-entrance-review.csv /tmp/national-entrance-prioritized.csv /tmp/national-entrance-summary.md
       - name: Find OSM entrance candidates near priority-one parking
         run: python scripts/extract_national_entrance_candidates.py /tmp/turkey.osm.pbf /tmp/national-entrance-prioritized-priority-1.csv /tmp/national-entrance-osm-candidates.csv
+      - name: Find nearby drivable road review candidates
+        run: python scripts/extract_national_road_candidates.py /tmp/turkey.osm.pbf /tmp/national-entrance-prioritized-priority-1.csv /tmp/national-road-candidates.csv
       - name: Create vehicle entrance evidence checklist
         run: python scripts/build_entrance_evidence_checklist.py /tmp/national-entrance-prioritized.csv /tmp/national-entrance-evidence-checklist.csv
       - name: Validate generated entrance review checklist
@@ -48,6 +50,7 @@ jobs:
             /tmp/national-entrance-prioritized-priority-1.csv
             /tmp/national-entrance-evidence-checklist.csv
             /tmp/national-entrance-osm-candidates.csv
+            /tmp/national-road-candidates.csv
             /tmp/national-entrance-summary.md
           retention-days: 30
       - name: Validate nationwide dataset
