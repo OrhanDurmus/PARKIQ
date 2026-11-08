@@ -1,0 +1,28 @@
+name: Refresh IZELMAN official tariff dataset
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '35 5 * * 1'
+permissions:
+  contents: write
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install openpyxl
+      - name: Import official IZELMAN XLSX
+        run: python scripts/import_izelman.py data/izelman-tariffs.json
+      - name: Commit imported dataset
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add data/izelman-tariffs.json
+          if ! git diff --cached --quiet; then
+            git commit -m 'data: refresh official IZELMAN parking tariff extract'
+            git push
+          fi
