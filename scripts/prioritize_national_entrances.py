@@ -23,6 +23,10 @@ rows.sort(key=lambda x:(priority(x),x['Parking name'].casefold(),x['OSM ID']))
 with open(destination,'w',encoding='utf-8-sig',newline='') as f:
     w=csv.DictWriter(f,fieldnames=list(rows[0]))
     w.writeheader();w.writerows(rows)
+shortlist=destination.rsplit('.',1)[0]+'-priority-1.csv'
+with open(shortlist,'w',encoding='utf-8-sig',newline='') as f:
+    w=csv.DictWriter(f,fieldnames=list(rows[0]))
+    w.writeheader();w.writerows(r for r in rows if r['Review priority']=='1')
 counts=Counter(priority(r) for r in rows)
 with open(summary,'w',encoding='utf-8') as f:
     f.write('# Nationwide parking entrance review priorities\n\n')
