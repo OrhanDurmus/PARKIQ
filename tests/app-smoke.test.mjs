@@ -83,3 +83,11 @@ test('stale GPS fixes are rejected before route progress is updated',()=>{
   assert.match(html,/GPS ölçümü güncel değil/);
   assert.match(html,/GPS zaman bilgisi geçersiz/);
 });
+
+test('stale geolocation callbacks cannot update a new tracking session',()=>{
+  assert.match(html,/gpsTrackingSession=0/);
+  assert.match(html,/currentGpsSession=\+\+gpsTrackingSession/);
+  assert.match(html,/watchPosition\(pos=>\{if\(currentGpsSession!==gpsTrackingSession\)return/);
+  assert.match(html,/err=>\{if\(currentGpsSession!==gpsTrackingSession\)return/);
+  assert.match(html,/function stopTracking\(\)\{gpsTrackingSession\+\+/);
+});
