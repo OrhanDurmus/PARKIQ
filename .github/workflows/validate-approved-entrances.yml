@@ -3,11 +3,15 @@ on:
   push:
     paths:
       - 'data/parking-entrances-approved.json'
+      - 'data/entrance-approvals-reviewed.csv'
+      - 'scripts/export_approved_entrances.py'
       - 'scripts/validate_approved_entrances_json.py'
       - '.github/workflows/validate-approved-entrances.yml'
   pull_request:
     paths:
       - 'data/parking-entrances-approved.json'
+      - 'data/entrance-approvals-reviewed.csv'
+      - 'scripts/export_approved_entrances.py'
       - 'scripts/validate_approved_entrances_json.py'
       - '.github/workflows/validate-approved-entrances.yml'
   workflow_dispatch:
@@ -18,5 +22,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Export approved entrances from reviewed CSV
+        run: python scripts/export_approved_entrances.py data/entrance-approvals-reviewed.csv /tmp/approved-entrances-generated.json
+      - name: Ensure published JSON matches reviewed approvals
+        run: python -c "import json; a=json.load(open('/tmp/approved-entrances-generated.json')); b=json.load(open('data/parking-entrances-approved.json')); assert a == b, 'Published JSON is out of sync with reviewed CSV'"
       - name: Validate approved entrance records
         run: python scripts/validate_approved_entrances_json.py data/parking-entrances-approved.json
