@@ -15,7 +15,7 @@ for row in rows:
     row['Priority reason']='Municipal/operator name candidate; confirm legal entity and city' if priority(row)==1 else 'Operator named; confirm identity and entrance' if priority(row)==2 else 'Operator unknown; confirm identity and entrance'
 rows.sort(key=lambda x:(priority(x),x['Parking name'].casefold(),x['OSM ID']))
 with open(destination,'w',encoding='utf-8-sig',newline='') as f:
-    w=csv.DictWriter(f,fieldnames=list(rows[0])+['Review priority','Priority reason'])
+    w=csv.DictWriter(f,fieldnames=list(rows[0]))
     w.writeheader();w.writerows(rows)
 counts=Counter(priority(r) for r in rows)
 with open(summary,'w',encoding='utf-8') as f:
