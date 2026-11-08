@@ -59,7 +59,7 @@ test('diagnostics button actually opens, copies and closes the report',async()=>
   listener(event('navDiagnostics'));
   assert.equal(element('navDiagnosticPanel').hidden,false);
   assert.match(element('navDiagnosticText').value,/GPS:/);
-  assert.match(element('navDiagnosticText').value,/Sürüm: 7\\.31/);
+  assert.ok(element('navDiagnosticText').value.includes('Sürüm: '+JSON.parse(readFileSync(new URL('../version.json',import.meta.url),'utf8')).version));
   listener(event('navDiagnosticCopy'));
   await new Promise(resolve=>setImmediate(resolve));
   assert.equal(clipboard,element('navDiagnosticText').value);
