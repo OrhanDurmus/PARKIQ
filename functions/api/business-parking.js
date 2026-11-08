@@ -2,7 +2,7 @@ export async function onRequestGet({request,env}){
  const headers={'Cache-Control':'public,max-age=60','X-Content-Type-Options':'nosniff'};
  if(!env.DB)return Response.json({points:[]},{headers});
  const url=new URL(request.url),lat=Number(url.searchParams.get('lat')),lng=Number(url.searchParams.get('lng'));
- if(!Number.isFinite(lat)||!Number.isFinite(lng)||lat<40||lat>42.5||lng<26||lng>31)return Response.json({error:'Geçersiz koordinat'},{status:400});
+ if(!Number.isFinite(lat)||!Number.isFinite(lng)||lat<35.5||lat>42.5||lng<25.5||lng>45)return Response.json({error:'Geçersiz koordinat'},{status:400});
  try{
  const radius=3000,rad=Math.PI/180;
  await env.DB.prepare('CREATE TABLE IF NOT EXISTS business_hours (application_id INTEGER PRIMARY KEY, opens_at TEXT, closes_at TEXT, is_24h INTEGER NOT NULL DEFAULT 0)').run();
