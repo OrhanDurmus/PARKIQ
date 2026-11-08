@@ -1,0 +1,22 @@
+name: Validate approved vehicle entrances
+on:
+  push:
+    paths:
+      - 'data/parking-entrances-approved.json'
+      - 'scripts/validate_approved_entrances_json.py'
+      - '.github/workflows/validate-approved-entrances.yml'
+  pull_request:
+    paths:
+      - 'data/parking-entrances-approved.json'
+      - 'scripts/validate_approved_entrances_json.py'
+      - '.github/workflows/validate-approved-entrances.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate approved entrance records
+        run: python scripts/validate_approved_entrances_json.py data/parking-entrances-approved.json
