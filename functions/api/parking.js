@@ -12,6 +12,27 @@ function fromOsm(el){
  const name=String(t.name||t['name:tr']||'Otopark kaydı').slice(0,160);
  return {lat,lng,name,fee,kind,address:String(t['addr:street']||'').slice(0,160),operator:String(t.operator||'').slice(0,120),capacity:/^\d+$/.test(t.capacity||'')?Number(t.capacity):null,osmId:el.type+'/'+el.id,source:'OpenStreetMap',verifiedBusiness:false,freeSpaces:null,occupancyUpdatedAt:null};
 }
+async function attachApprovedEntrances(points,env,origin){
+ // Optional reviewed-only asset: missing or malformed data must never block parking search.
+ try{
+  const asset=await env.ASSETS.fetch(new URL('/data/parking-entrances-approved.json',origin).toString());
+  if(!asset.ok)return points;
+  const data=await asset.json();
+  if(data?.schemaVersion!==1||!data.entrances||Array.isArray(data.entrances)||typeof data.entrances!=='object')return points;
+  return points.map(p=>{
+   const key=p.osmType&&p.osmId?String(p.osmType)+'/'+String(p.osmId):String(p.osmId||'');
+   const entry=Object.prototype.hasOwnProperty.call(data.entrances,key)?data.entrances[key]:null;
+   if(!entry||entry.entranceVerified!==true)return p;
+   const lat=entry.entranceLat,lng=entry.entranceLng;
+   if(typeof lat!=='number'||typeof lng!=='number'||!Number.isFinite(lat)||!Number.isFinite(lng)||Math.abs(lat)>90||Math.abs(lng)>180||(lat===0&&lng===0))return p;
+   if(distanceSq({lat,lng},Number(p.lat),Number(p.lng))>500**2)return p;
+   if(!String(entry.entranceOsmUrl||'').startsWith('https://www.openstreetmap.org/node/')||
+      !String(entry.roadOsmUrl||'').startsWith('https://www.openstreetmap.org/way/')||
+      !String(entry.evidenceUrl||'').startsWith('https://'))return p;
+   return {...p,entranceLat:lat,entranceLng:lng,entranceVerified:true};
+  });
+ }catch{return points}
+}
 export async function onRequestGet({request,env}){
  const url=new URL(request.url),lat=Number(url.searchParams.get('lat')),lng=Number(url.searchParams.get('lng'));
  if(!inTurkey(lat,lng))return Response.json({error:'Koordinatlar Türkiye sınırları dışında'},{status:400});
@@ -22,7 +43,7 @@ export async function onRequestGet({request,env}){
    const data=await asset.json();
    if(!Array.isArray(data.points))throw Error('Invalid data');
    const points=data.points.filter(p=>validPoint(p)&&!(p.geographicStatus==='confirmed_outside_istanbul'&&p.geographicReviewVerified===true)&&distanceSq(p,lat,lng)<=10000**2).sort((a,b)=>distanceSq(a,lat,lng)-distanceSq(b,lat,lng)).slice(0,250);
-   return response(points,data.source,data.updatedAt);
+   return response(await attachApprovedEntrances(points,env,url.origin),data.source,data.updatedAt);
   }catch{return Response.json({error:'İstanbul otopark dosyası okunamadı'},{status:503})}
  }
  // Static nationwide dataset avoids public Overpass outages during user searches.
@@ -32,6 +53,6 @@ export async function onRequestGet({request,env}){
   const data=await asset.json();
   if(!Array.isArray(data.points))throw Error('Invalid data');
   const points=data.points.filter(p=>validPoint(p)&&distanceSq(p,lat,lng)<=10000**2).sort((a,b)=>distanceSq(a,lat,lng)-distanceSq(b,lat,lng)).slice(0,250);
-  return response(points,data.source,data.updatedAt);
+  return response(await attachApprovedEntrances(points,env,url.origin),data.source,data.updatedAt);
  }catch{return Response.json({error:'Türkiye otopark veri dosyası okunamadı'},{status:503})}
 }
