@@ -30,11 +30,16 @@ jobs:
         run: python scripts/import_national_parking.py /tmp/turkey.osm.pbf data/parking-turkiye.json
       - name: Export nationwide vehicle entrance review queue
         run: python scripts/export_national_entrance_review.py data/parking-turkiye.json /tmp/national-entrance-review.csv
+      - name: Prioritize nationwide entrance review queue
+        run: python scripts/prioritize_national_entrances.py /tmp/national-entrance-review.csv /tmp/national-entrance-prioritized.csv /tmp/national-entrance-summary.md
       - name: Upload nationwide vehicle entrance review queue
         uses: actions/upload-artifact@v4
         with:
           name: turkiye-entrance-review
-          path: /tmp/national-entrance-review.csv
+          path: |
+            /tmp/national-entrance-review.csv
+            /tmp/national-entrance-prioritized.csv
+            /tmp/national-entrance-summary.md
           retention-days: 30
       - name: Validate nationwide dataset
         run: |
