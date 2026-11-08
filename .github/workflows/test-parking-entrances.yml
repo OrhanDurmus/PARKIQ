@@ -1,0 +1,24 @@
+name: Test approved parking entrance API
+on:
+  push:
+    paths:
+      - 'functions/api/parking.js'
+      - 'tests/approved-entrance-api.test.mjs'
+      - '.github/workflows/test-parking-entrances.yml'
+  pull_request:
+    paths:
+      - 'functions/api/parking.js'
+      - 'tests/approved-entrance-api.test.mjs'
+      - '.github/workflows/test-parking-entrances.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node --test tests/approved-entrance-api.test.mjs
