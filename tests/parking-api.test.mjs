@@ -33,3 +33,14 @@ test('verified status must be a strict boolean, not a truthy string',async()=>{
 test('geographic filter does not change the distance limit',async()=>{
   assert.deepEqual(await query([point('far',{lat:41.2}),point('near')]),['near']);
 });
+
+test('invalid parking coordinates cannot appear in search results',async()=>{
+  const names=await query([
+    point('null latitude',{lat:null}),
+    point('string longitude',{lng:'29.2'}),
+    point('out of range',{lat:100}),
+    point('missing longitude',{lng:undefined}),
+    point('valid'),
+  ]);
+  assert.deepEqual(names,['valid']);
+});
