@@ -28,6 +28,14 @@ jobs:
           python scripts/import_parking.py /tmp/turkey.osm.pbf data/parking.json /tmp/entrance-review.json
       - name: Extract nationwide parking records
         run: python scripts/import_national_parking.py /tmp/turkey.osm.pbf data/parking-turkiye.json
+      - name: Export nationwide vehicle entrance review queue
+        run: python scripts/export_national_entrance_review.py data/parking-turkiye.json /tmp/national-entrance-review.csv
+      - name: Upload nationwide vehicle entrance review queue
+        uses: actions/upload-artifact@v4
+        with:
+          name: turkiye-entrance-review
+          path: /tmp/national-entrance-review.csv
+          retention-days: 30
       - name: Validate nationwide dataset
         run: |
           python - <<'PY'
