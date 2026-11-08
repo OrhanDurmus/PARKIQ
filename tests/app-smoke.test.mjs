@@ -28,6 +28,7 @@ test('navigation controls have handlers',()=>{
   for(const id of ['navStop','navDiagnostics','navRecenter','mapHome','mapSearchHere','mapLocateMe','mapFitParking']){
     const direct=html.includes("$('"+id+"').onclick");
     const recenterAlias=id==='navRecenter'&&/\brecenter\s*=\s*\$\(['"]navRecenter['"]\)/.test(html)&&/\brecenter\.onclick\s*=/.test(html);
-    assert.ok(direct||recenterAlias,'Missing click handler for '+id);
+    const delegatedDiagnostics=id==='navDiagnostics'&&/document\.addEventListener\(['"]click['"]/.test(html)&&html.includes("closest('#navDiagnostics,#navDiagnosticClose,#navDiagnosticCopy')")&&html.includes("button.id==='navDiagnostics'")&&html.includes('openReport()');
+    assert.ok(direct||recenterAlias||delegatedDiagnostics,'Missing click handler for '+id);
   }
 });
