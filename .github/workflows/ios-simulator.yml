@@ -6,8 +6,8 @@ permissions:
   contents: read
 jobs:
   ios-simulator:
-    runs-on: macos-15
-    timeout-minutes: 35
+    runs-on: macos-14
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
