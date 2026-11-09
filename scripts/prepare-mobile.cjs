@@ -27,8 +27,8 @@ for (const file of ['index.html']) {
   const target=path.join(out,file);
   let html=fs.readFileSync(target,'utf8');
   html=html.replace(/(href|src)=(["'])\/(?!\/)([^"']+)\2/g, '$1=$2./$3$2');
-  fs.writeFileSync(target,html);
+  // Native WebViews use a local origin; route server-backed API requests to the public backend.\n  html=html.replace(/fetch\((['"])\/api\//g, 'fetch($1https://rotapark.com.tr/api/');\n  html=html.replace(/const proxy=(['"])\/api\/walking-route/g, 'const proxy=$1https://rotapark.com.tr/api/walking-route');\n  fs.writeFileSync(target,html);
 }
 const mobileHtml=fs.readFileSync(path.join(out,'index.html'),'utf8');
 if (!mobileHtml.includes('src="./navigation-voice.js"')) throw new Error('Mobile navigation voice asset path not rewritten');
-console.log('ROTAPARK local HTML asset paths prepared for Capacitor');
+if (mobileHtml.includes("fetch('/api/")) throw new Error('Unresolved mobile API fetch URL');\nconsole.log('ROTAPARK local assets and backend API URLs prepared for Capacitor');
