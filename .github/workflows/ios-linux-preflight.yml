@@ -1,0 +1,28 @@
+name: ROTAPARK iOS project preflight (Linux)
+on:
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  ios-project-preflight:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install Capacitor dependencies
+        run: npm install --no-audit --no-fund
+      - name: Prepare bundled web assets
+        run: npm run mobile:prepare
+      - name: Generate iOS project without macOS
+        run: npx cap add ios
+      - name: Validate generated iOS project and web bundle
+        run: |
+          test -f ios/App/App.xcodeproj/project.pbxproj
+          test -f ios/App/App/Info.plist
+          test -f ios/App/App/public/index.html
+          test -f ios/App/App/public/navigation-voice.js
+          echo 'iOS project structure and bundled assets generated successfully'
