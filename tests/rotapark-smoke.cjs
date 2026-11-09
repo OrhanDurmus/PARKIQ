@@ -9,11 +9,11 @@ const checks = [
   ['Navigation status', /id=["']routeStatus["']/],
   ['Nearby parking list', /id=["']nearestFive["']/],
   ['Support section', /id=["']contactSupport["']/],
-  ['Official support email', /mailto:info@rotapark\\.com\\.tr/],
+  ['Official support email', /mailto:info@rotapark\.com\.tr/],
 ];
 for (const [label, pattern] of checks) {
   assert.match(html, pattern, label + ' is missing');
   console.log('PASS ' + label);
 }
-assert.doesNotMatch(html, /mailto:parkiq\\.business@gmail\\.com/i, 'Old business email must not be used');
+assert.doesNotMatch(html, /mailto:parkiq\.business@gmail\.com/i, 'Old business email must not be used');
 console.log('PASS Old business email removed');
