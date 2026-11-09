@@ -26,7 +26,7 @@ console.log('ROTAPARK mobile web assets staged in www/');
 for (const file of ['index.html']) {
   const target=path.join(out,file);
   let html=fs.readFileSync(target,'utf8');
-  html=html.replace(/(\\b(?:href|src)=["'])\\/(?!\\/)([^"']+)(["'])/g,'$1./$2$3');
+  html=html.replace(/(href|src)=(["'])\/(?!\/)([^"']+)\2/g, '$1=$2./$3$2');
   fs.writeFileSync(target,html);
 }
 const mobileHtml=fs.readFileSync(path.join(out,'index.html'),'utf8');
