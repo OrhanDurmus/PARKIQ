@@ -19,6 +19,8 @@ jobs:
         run: npm run mobile:prepare
       - name: Generate iOS project without macOS
         run: npx cap add ios
+      - name: Configure native location permissions
+        run: node scripts/configure-native-permissions.cjs
       - name: Validate generated iOS project and web bundle
         run: |
           test -f ios/App/App.xcodeproj/project.pbxproj
