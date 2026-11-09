@@ -4,7 +4,8 @@
 const json=(body,status=200)=>Response.json(body,{status,headers:{'Cache-Control':'no-store','X-Content-Type-Options':'nosniff'}});
 const KEY='latest';
 const isNum=v=>Number.isFinite(Number(v))&&v!==null&&v!==''&&v!==undefined;
-export async function onRequestPost({request,env}){
+export async function onRequestPost({request,env: bindings}){
+  const env=bindings;
   // Report only binding presence, never secret values or request credentials.
   const hasKv=typeof env?.ISPARK_SNAPSHOTS?.put==='function';
   const hasToken=typeof env?.ISPARK_UPLOAD_TOKEN==='string'&&env.ISPARK_UPLOAD_TOKEN.length>0;
