@@ -20,13 +20,33 @@ const normalize=(item)=>{
   if(!name||lat===null||lng===null||lat<40||lat>42.5||lng<26||lng>31)return null;
   return {id:id==null?null:String(id),name:String(name).slice(0,160),lat,lng,capacity:Number.isInteger(capacity)&&capacity>0?capacity:null,freeSpaces:Number.isInteger(free)&&free>=0&&(capacity===null||free<=capacity)?free:null,occupancyUpdatedAt:fresh?new Date(stamp).toISOString():null,verifiedLive:fresh&&Number.isInteger(free)&&free>=0&&(capacity===null||free<=capacity),sourceSnapshot:true};
 };
-export async function onRequestGet(){
+// Cache only successful snapshots; never cache an unavailable response.
+export async function onRequestGet({request,context}){
+  const cache=typeof caches!=='undefined'?caches.default:null;
+  const cacheKey=new Request(new URL('/api/ispark-occupancy',request.url).toString(),{method:'GET'});
+  if(cache){
+    try{const hit=await cache.match(cacheKey);if(hit)return hit;}catch(error){console.warn('ispark cache read failed',error?.name);}
+  }
   let upstreamStatus=null;
   let stage='fetch';
+  let attempts=0;
   try{
-    const response=await fetch(SOURCE,{headers:{Accept:'application/json'},signal:AbortSignal.timeout(8000)});
-    upstreamStatus=response.status;
-    if(!response.ok)throw Error('Source HTTP '+response.status);
+    let response;
+    for(let attempt=1;attempt<=2;attempt++){
+      attempts=attempt;
+      try{
+        response=await fetch(SOURCE,{headers:{Accept:'application/json'},signal:AbortSignal.timeout(12000)});
+        upstreamStatus=response.status;
+        if(response.ok)break;
+        if(attempt===2||![429,500,502,503,504].includes(response.status))throw Error('Source HTTP '+response.status);
+      }catch(error){
+        if(attempt===2)throw error;
+        // Retry transient network failures and timeouts only.
+        if(error?.name==='AbortError'&&request.signal?.aborted)throw error;
+      }
+      await new Promise(resolve=>setTimeout(resolve,300));
+    }
+    if(!response?.ok)throw Error('Source HTTP '+upstreamStatus);
     stage='parse';
     const payload=await response.json();
     stage='shape';
@@ -34,11 +54,16 @@ export async function onRequestGet(){
     if(!rows)throw Error('Unknown source response');
     stage='normalize';
     const points=rows.slice(0,2000).map(normalize).filter(Boolean);
-    return Response.json({source:'IBB İSPARK',points,liveCount:points.filter(p=>p.verifiedLive).length},{headers:{'Cache-Control':'public, max-age=60'}});
+    const result=Response.json({source:'IBB İSPARK',points,liveCount:points.filter(p=>p.verifiedLive).length},{headers:{'Cache-Control':'public, max-age=60'}});
+    if(cache){
+      const write=cache.put(cacheKey,result.clone()).catch(error=>console.warn('ispark cache write failed',error?.name));
+      if(context?.waitUntil)context.waitUntil(write);else await write;
+    }
+    return result;
   }catch(error){
     const errorName=error instanceof Error?error.name:'UnknownError';
     const reason=upstreamStatus!==null&&upstreamStatus>=400?'upstream_http_'+upstreamStatus:stage==='fetch'?(errorName==='TimeoutError'?'timeout':'network_error'):stage==='parse'?'invalid_json':stage==='shape'?'unexpected_payload':'processing_error';
-    console.error('ispark-occupancy upstream failure',{stage,reason,upstreamStatus,errorName});
-    return Response.json({source:'IBB İSPARK',points:[],liveCount:0,unavailable:true,diagnostic:{stage,reason,upstreamStatus}},{headers:{'Cache-Control':'no-store'}});
+    console.error('ispark-occupancy upstream failure',{stage,reason,upstreamStatus,errorName,attempts});
+    return Response.json({source:'IBB İSPARK',points:[],liveCount:0,unavailable:true,diagnostic:{stage,reason,upstreamStatus,attempts}},{headers:{'Cache-Control':'no-store'}});
   }
 }
