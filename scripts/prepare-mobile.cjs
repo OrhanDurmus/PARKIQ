@@ -31,4 +31,5 @@ for (const file of ['index.html']) {
 }
 const mobileHtml=fs.readFileSync(path.join(out,'index.html'),'utf8');
 if (!mobileHtml.includes('src="./navigation-voice.js"')) throw new Error('Mobile navigation voice asset path not rewritten');
-if (mobileHtml.includes("fetch('/api/")) throw new Error('Unresolved mobile API fetch URL');\nconsole.log('ROTAPARK local assets and backend API URLs prepared for Capacitor');
+if (mobileHtml.includes("fetch('/api/")) throw new Error('Unresolved mobile API fetch URL');
+console.log('ROTAPARK local assets and backend API URLs prepared for Capacitor');
