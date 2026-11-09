@@ -33,3 +33,9 @@ assert.match(html, /const availabilityText=availability\(e\),capacityText=capaci
 assert.match(html, /detailButton\.onclick=\(\)=>showDetails\(e\)/, 'Parking popup details action must remain available');
 assert.match(html, /link\.onclick=\(\)=>navigateToParking\(e\.lat,e\.lng,e\.name\|\|'Otopark'\)/, 'Parking popup route action must remain available');
 console.log('PASS Navigation guard and parking popup regression checks');
+
+// Prevent reintroducing the duplicate map refresh path or layer recreation.
+assert.doesNotMatch(html, /zoomRefreshTimer/, 'Separate zoom refresh timer must not return');
+assert.doesNotMatch(html, /map\.removeLayer\(parkingLayer\)/, 'Parking layer must not be detached on redraw');
+assert.doesNotMatch(html, /points\.push\(\.\.\.filtered\)/, 'Parking filtering must not copy a second result array');
+console.log('PASS No duplicate redraw and filtering paths');
