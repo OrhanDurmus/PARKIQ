@@ -19,6 +19,8 @@ jobs:
         run: npm run mobile:prepare
       - name: Generate iOS project
         run: npx cap add ios
+      - name: Configure native location permissions
+        run: node scripts/configure-native-permissions.cjs
       - name: Show Xcode version
         run: xcodebuild -version
       - name: Build unsigned iOS simulator app
