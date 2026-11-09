@@ -1,0 +1,23 @@
+name: ROTAPARK mobile bundle checks
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  bundle:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Prepare Capacitor web assets
+        run: npm run mobile:prepare
+      - name: Verify required mobile files
+        run: |
+          node -e "const fs=require('fs'); for(const p of ['www/index.html','www/manifest.webmanifest','www/navigation-voice.js']){if(!fs.existsSync(p))throw new Error('Missing '+p)}; console.log('Mobile web assets ready')"
+      - name: Ensure source HTML was not changed
+        run: git diff --exit-code -- index.html
