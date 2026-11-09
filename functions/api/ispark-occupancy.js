@@ -37,7 +37,7 @@ export async function onRequestGet(){
     return Response.json({source:'IBB İSPARK',points,liveCount:points.filter(p=>p.verifiedLive).length},{headers:{'Cache-Control':'public, max-age=60'}});
   }catch(error){
     const errorName=error instanceof Error?error.name:'UnknownError';
-    const reason=upstreamStatus!==null?'upstream_http_'+upstreamStatus:stage==='fetch'?(errorName==='TimeoutError'?'timeout':'network_error'):stage==='parse'?'invalid_json':stage==='shape'?'unexpected_payload':'processing_error';
+    const reason=upstreamStatus!==null&&upstreamStatus>=400?'upstream_http_'+upstreamStatus:stage==='fetch'?(errorName==='TimeoutError'?'timeout':'network_error'):stage==='parse'?'invalid_json':stage==='shape'?'unexpected_payload':'processing_error';
     console.error('ispark-occupancy upstream failure',{stage,reason,upstreamStatus,errorName});
     return Response.json({source:'IBB İSPARK',points:[],liveCount:0,unavailable:true,diagnostic:{stage,reason,upstreamStatus}},{headers:{'Cache-Control':'no-store'}});
   }
