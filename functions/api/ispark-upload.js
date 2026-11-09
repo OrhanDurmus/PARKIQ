@@ -5,7 +5,10 @@ const json=(body,status=200)=>Response.json(body,{status,headers:{'Cache-Control
 const KEY='latest';
 const isNum=v=>Number.isFinite(Number(v))&&v!==null&&v!==''&&v!==undefined;
 export async function onRequestPost({request,env}){
-  if(!env?.ISPARK_SNAPSHOTS||!env?.ISPARK_UPLOAD_TOKEN)return json({ok:false,error:'not_configured'},503);
+  // Report only binding presence, never secret values or request credentials.
+  const hasKv=typeof env?.ISPARK_SNAPSHOTS?.put==='function';
+  const hasToken=typeof env?.ISPARK_UPLOAD_TOKEN==='string'&&env.ISPARK_UPLOAD_TOKEN.length>0;
+  if(!hasKv||!hasToken)return json({ok:false,error:'not_configured',diagnostic:{kvBinding:hasKv?'present':'missing',uploadToken:hasToken?'present':'missing'}},503);
   const auth=request.headers.get('Authorization')||'';
   // Compare full values, never accept token via URL or query parameters.
   const expected='Bearer '+env.ISPARK_UPLOAD_TOKEN;
