@@ -1,0 +1,6 @@
+{
+  "appId": "tr.com.rotapark.app",
+  "appName": "ROTAPARK",
+  "webDir": "www",
+  "bundledWebRuntime": false
+}
