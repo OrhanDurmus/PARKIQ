@@ -20,3 +20,15 @@ function copy(src,dst,depth=0){
 copy(root,out);
 if(!fs.existsSync(path.join(out,'index.html')))throw new Error('Missing index.html');
 console.log('ROTAPARK mobile web assets staged in www/');
+
+// Capacitor uses a local app origin. Rewrite only local root-relative HTML assets
+// in the staged copy; never modify the live website source.
+for (const file of ['index.html']) {
+  const target=path.join(out,file);
+  let html=fs.readFileSync(target,'utf8');
+  html=html.replace(/(\\b(?:href|src)=["'])\\/(?!\\/)([^"']+)(["'])/g,'$1./$2$3');
+  fs.writeFileSync(target,html);
+}
+const mobileHtml=fs.readFileSync(path.join(out,'index.html'),'utf8');
+if (!mobileHtml.includes('src="./navigation-voice.js"')) throw new Error('Mobile navigation voice asset path not rewritten');
+console.log('ROTAPARK local HTML asset paths prepared for Capacitor');
