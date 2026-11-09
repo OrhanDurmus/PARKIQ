@@ -10,8 +10,10 @@ const normalize=(item)=>{
   const lng=number(first(item,['lng','lon','longitude','Longitude']));
   const capacity=number(first(item,['capacity','Capacity']));
   const free=number(first(item,['emptyCapacity','EmptyCapacity','freeSpaces','FreeSpaces']));
-  const updated=first(item,['lastUpdate','LastUpdate','updatedAt','UpdatedAt','occupancyUpdatedAt']);
-  const stamp=updated?Date.parse(String(updated)):NaN;
+  const updated=first(item,['lastUpdate','LastUpdate','updatedAt','UpdatedAt','occupancyUpdatedAt','updateDate','UpdateDate']);
+  const raw=updated?String(updated).trim():'';
+  const iso=raw&&/^\\d{4}-\\d\\d-\\d\\d[ T]\\d\\d:\\d\\d/.test(raw)&&!/(Z|[+-]\\d\\d:?\\d\\d)$/.test(raw)?raw.replace(' ','T')+'+03:00':raw;
+  const stamp=iso?Date.parse(iso):NaN;
   const fresh=Number.isFinite(stamp)&&Math.abs(Date.now()-stamp)<=15*60*1000;
   if(!name||lat===null||lng===null||lat<40||lat>42.5||lng<26||lng>31)return null;
   return {id:id==null?null:String(id),name:String(name).slice(0,160),lat,lng,capacity:Number.isInteger(capacity)&&capacity>0?capacity:null,freeSpaces:fresh&&Number.isInteger(free)&&free>=0&&(capacity===null||free<=capacity)?free:null,occupancyUpdatedAt:fresh?new Date(stamp).toISOString():null,verifiedLive:fresh&&Number.isInteger(free)&&free>=0&&(capacity===null||free<=capacity)};
