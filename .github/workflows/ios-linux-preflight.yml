@@ -25,6 +25,7 @@ jobs:
         run: |
           test -f ios/App/App.xcodeproj/project.pbxproj
           test -f ios/App/App/Info.plist
+          grep -q 'NSLocationWhenInUseUsageDescription' ios/App/App/Info.plist
           test -f ios/App/App/public/index.html
           test -f ios/App/App/public/navigation-voice.js
           echo 'iOS project structure and bundled assets generated successfully'
