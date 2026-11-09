@@ -21,15 +21,24 @@ const normalize=(item)=>{
   return {id:id==null?null:String(id),name:String(name).slice(0,160),lat,lng,capacity:Number.isInteger(capacity)&&capacity>0?capacity:null,freeSpaces:Number.isInteger(free)&&free>=0&&(capacity===null||free<=capacity)?free:null,occupancyUpdatedAt:fresh?new Date(stamp).toISOString():null,verifiedLive:fresh&&Number.isInteger(free)&&free>=0&&(capacity===null||free<=capacity),sourceSnapshot:true};
 };
 export async function onRequestGet(){
+  let upstreamStatus=null;
+  let stage='fetch';
   try{
     const response=await fetch(SOURCE,{headers:{Accept:'application/json'},signal:AbortSignal.timeout(8000)});
+    upstreamStatus=response.status;
     if(!response.ok)throw Error('Source HTTP '+response.status);
+    stage='parse';
     const payload=await response.json();
+    stage='shape';
     const rows=Array.isArray(payload)?payload:Array.isArray(payload?.data)?payload.data:Array.isArray(payload?.parks)?payload.parks:null;
     if(!rows)throw Error('Unknown source response');
+    stage='normalize';
     const points=rows.slice(0,2000).map(normalize).filter(Boolean);
     return Response.json({source:'IBB İSPARK',points,liveCount:points.filter(p=>p.verifiedLive).length},{headers:{'Cache-Control':'public, max-age=60'}});
-  }catch{
-    return Response.json({source:'IBB İSPARK',points:[],liveCount:0,unavailable:true},{headers:{'Cache-Control':'no-store'}});
+  }catch(error){
+    const errorName=error instanceof Error?error.name:'UnknownError';
+    const reason=upstreamStatus!==null?'upstream_http_'+upstreamStatus:stage==='fetch'?(errorName==='TimeoutError'?'timeout':'network_error'):stage==='parse'?'invalid_json':stage==='shape'?'unexpected_payload':'processing_error';
+    console.error('ispark-occupancy upstream failure',{stage,reason,upstreamStatus,errorName});
+    return Response.json({source:'IBB İSPARK',points:[],liveCount:0,unavailable:true,diagnostic:{stage,reason,upstreamStatus}},{headers:{'Cache-Control':'no-store'}});
   }
 }
