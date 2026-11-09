@@ -12,7 +12,7 @@ const normalize=(item)=>{
   const free=number(first(item,['emptyCapacity','EmptyCapacity','freeSpaces','FreeSpaces']));
   const updated=first(item,['lastUpdate','LastUpdate','updatedAt','UpdatedAt','occupancyUpdatedAt','updateDate','UpdateDate']);
   const raw=updated?String(updated).trim():'';
-  const iso=raw&&/^\\d{4}-\\d\\d-\\d\\d[ T]\\d\\d:\\d\\d/.test(raw)&&!/(Z|[+-]\\d\\d:?\\d\\d)$/.test(raw)?raw.replace(' ','T')+'+03:00':raw;
+  const iso=raw&&/^\d{4}-\d\d-\d\d[ T]\d\d:\d\d/.test(raw)&&!/(Z|[+-]\d\d:?\d\d)$/.test(raw)?raw.replace(' ','T')+'+03:00':raw;
   const stamp=iso?Date.parse(iso):NaN;
   // The public endpoint exposes capacity counts but no per-parking update timestamp.
   // Never call these figures verified live; expose as source-reported snapshots only.
