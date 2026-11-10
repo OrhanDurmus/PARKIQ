@@ -29,6 +29,27 @@ function fromOsm(el){
  const name=String(t.name||t['name:tr']||'Otopark kaydı').slice(0,160);
  return {lat,lng,name,fee,kind,address:String(t['addr:street']||'').slice(0,160),operator:String(t.operator||'').slice(0,120),capacity:/^\d+$/.test(t.capacity||'')?Number(t.capacity):null,osmId:el.type+'/'+el.id,source:'OpenStreetMap',verifiedBusiness:false,freeSpaces:null,occupancyUpdatedAt:null};
 }
+// Precise, unique coordinate matches only. Never infer a business from an address alone.
+async function attachOfficialIsparkNames(points,env){
+ if(!env?.ISPARK_SNAPSHOTS?.get)return points;
+ try{
+  const snapshot=await env.ISPARK_SNAPSHOTS.get('latest','json');
+  const official=(Array.isArray(snapshot?.points)?snapshot.points:[]).filter(p=>p&&typeof p.name==='string'&&p.name.trim().length>4&&Number.isFinite(Number(p.lat))&&Number.isFinite(Number(p.lng)));
+  if(!official.length)return points;
+  const generic=p=>/^(?:Otopark kaydı|Otopark|Parking)$/iu.test(String(p.name||'').trim());
+  const meters=(a,b)=>Math.hypot((Number(a.lat)-Number(b.lat))*111195,(Number(a.lng)-Number(b.lng))*111195*Math.cos(Number(a.lat)*Math.PI/180));
+  const match=new Map();
+  for(let i=0;i<points.length;i++){
+   const p=points[i];if(!generic(p))continue;
+   const nearby=official.filter(o=>meters(p,o)<=12);
+   if(nearby.length!==1)continue;
+   const officialPoint=nearby[0];
+   if(points.some((other,j)=>j!==i&&meters(other,officialPoint)<=12))continue;
+   match.set(i,{name:officialPoint.name.trim().slice(0,160),id:officialPoint.id??null});
+  }
+  return points.map((p,i)=>match.has(i)?{...p,name:match.get(i).name,nameSource:'ibb-ispark-coordinate-match',isparkParkID:match.get(i).id,sourceSnapshot:true}:p);
+ }catch{return points}
+}
 async function attachApprovedEntrances(points,env,origin){
  // Optional reviewed-only asset: missing or malformed data must never block parking search.
  try{
@@ -61,7 +82,7 @@ export async function onRequestGet({request,env}){
    const data=await asset.json();
    if(!Array.isArray(data.points))throw Error('Invalid data');
    const points=data.points.filter(p=>validPoint(p)&&!(p.geographicStatus==='confirmed_outside_istanbul'&&p.geographicReviewVerified===true)&&distanceSq(p,lat,lng)<=radiusSq).sort((a,b)=>distanceSq(a,lat,lng)-distanceSq(b,lat,lng)).slice(0,250);
-   return response((await attachApprovedEntrances(points,env,url.origin)).map(enrichName),data.source,data.updatedAt);
+   return response((await attachOfficialIsparkNames(await attachApprovedEntrances(points,env,url.origin),env)).map(enrichName),data.source,data.updatedAt);
   }catch{return Response.json({error:'İstanbul otopark dosyası okunamadı'},{status:503})}
  }
  // Static nationwide dataset avoids public Overpass outages during user searches.
