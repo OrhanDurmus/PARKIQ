@@ -2,6 +2,8 @@
 // Required Cloudflare Pages bindings: KV ISPARK_SNAPSHOTS; secret ISPARK_UPLOAD_TOKEN.
 // Never treat upstream counts as verified live: the source lacks per-record update timestamps.
 const json=(body,status=200)=>Response.json(body,{status,headers:{'Cache-Control':'no-store','X-Content-Type-Options':'nosniff'}});
+const cp1252={8364:128,8218:130,402:131,8222:132,8230:133,8224:134,8225:135,710:136,8240:137,352:138,8249:139,338:140,381:142,8216:145,8217:146,8220:147,8221:148,8226:149,8211:150,8212:151,732:152,8482:153,353:154,8250:155,339:156,382:158,376:159};
+const repairName=name=>{if(typeof name!=='string'||!/[ÃÄÅ]/.test(name))return name;const bytes=[];for(const ch of name){const code=ch.codePointAt(0),byte=code<=255?code:cp1252[code];if(byte===undefined)return name;bytes.push(byte);}try{return new TextDecoder('utf-8',{fatal:true}).decode(new Uint8Array(bytes));}catch{return name;}};
 const KEY='latest';
 const isNum=v=>Number.isFinite(Number(v))&&v!==null&&v!==''&&v!==undefined;
 export async function onRequestPost({request,env}){
@@ -64,7 +66,7 @@ export async function onRequestPost({request,env}){
     const capacity=isNum(item.capacity)?Number(item.capacity):null;
     const free=isNum(item.emptyCapacity)?Number(item.emptyCapacity):null;
     if(id==null||typeof name!=='string'||!name.trim()||name.length>160||!isNum(item.lat)||!isNum(item.lng)||lat<40||lat>42.5||lng<26||lng>31)continue;
-    points.push({id:String(id).slice(0,32),name:name.trim(),lat,lng,
+    points.push({id:String(id).slice(0,32),name:repairName(name.trim()),lat,lng,
       capacity:Number.isInteger(capacity)&&capacity>0?capacity:null,
       freeSpaces:Number.isInteger(free)&&free>=0&&(capacity===null||free<=capacity)?free:null,
       occupancyUpdatedAt:null,verifiedLive:false,sourceSnapshot:true});
