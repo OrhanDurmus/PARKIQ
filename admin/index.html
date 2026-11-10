@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="tr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="robots" content="noindex,nofollow"><title>ROTAPARK | Yönetim</title><style>
+:root{color-scheme:dark}*{box-sizing:border-box}body{margin:0;background:#081320;color:#eaf2ff;font:15px system-ui,-apple-system,sans-serif}main{max-width:850px;margin:auto;padding:24px 18px 70px}header{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:28px}h1{font-size:26px;margin:0}h2{font-size:19px;margin:0 0 12px}p{color:#aabbd0;line-height:1.55}a{color:#80caff}.brand{color:#f56e71;font-weight:900;letter-spacing:.04em}.tag{border:1px solid #36506c;border-radius:30px;padding:8px 12px;color:#c2d1e5;font-size:12px}.panel{border:1px solid #29405b;background:#102136;border-radius:17px;padding:20px;margin-bottom:16px}.metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px}.metric{background:#172d46;border-radius:12px;padding:16px}.metric strong{display:block;font-size:28px;margin-top:6px}.muted{font-size:13px;color:#aabbd0}.status{font-weight:700}.ok{color:#65e0b5}.warn{color:#ffcc7e}.error{color:#ff9090}button{border:0;border-radius:10px;background:#eb6269;color:#fff;padding:12px 17px;font-weight:700;cursor:pointer}button:disabled{opacity:.6}.note{border-left:3px solid #ffcc7e;padding-left:12px}footer{margin-top:25px;font-size:12px;color:#8296af}</style></head>
+<body><main><header><div><div class="brand">ROTAPARK</div><h1>Yönetim paneli</h1></div><span class="tag">Cloudflare Access korumalı</span></header>
+<section class="panel"><h2>Sistem durumu</h2><p>İSPARK kaynağının durumunu ve kayıt sayısını görüntüleyin. Bu sayfa doluluk verilerini canlı olarak doğrulamadan canlı kabul etmez.</p><div class="metrics"><div class="metric"><span class="muted">Otopark kaydı</span><strong id="count">—</strong></div><div class="metric"><span class="muted">Doğrulanmış canlı kayıt</span><strong id="live">—</strong></div><div class="metric"><span class="muted">Kaynak durumu</span><strong id="state" style="font-size:16px">Yükleniyor…</strong></div></div><p class="muted" id="last">Son veri zamanı: —</p><button id="refresh" type="button">Durumu yenile</button></section>
+<section class="panel"><h2>Yönetim modülleri</h2><p class="note">İlk sürüm yalnızca izleme amaçlıdır. Otopark silme, kullanıcı bildirimi onaylama ve veri düzenleme işlemleri henüz etkin değil. Bu işlemler için ayrıca sunucu tarafında yetki kontrolü kurulacak.</p><p><a href="/api/ispark-status" target="_blank" rel="noopener">İSPARK teknik durumunu aç</a></p></section>
+<footer>ROTAPARK · Yönetici ekranı · <a href="/">Ana sayfaya dön</a></footer></main>
+<script>
+const $=id=>document.getElementById(id);
+async function refresh(){
+$('refresh').disabled=true;$('state').textContent='Kontrol ediliyor…';
+try{const response=await fetch('/api/ispark-status',{cache:'no-store'});if(!response.ok)throw Error('HTTP '+response.status);const data=await response.json();
+$('count').textContent=Number.isFinite(data.parkingCount)?data.parkingCount:'—';
+$('live').textContent=Number.isFinite(data.verifiedLiveCount)?data.verifiedLiveCount:'—';
+const labels={stored_snapshot:'Kayıtlı eski veri',source_response:'Kaynak yanıtı',unavailable:'Kaynak erişilemiyor',empty:'Veri bulunamadı',api_http_error:'API hatası'};
+$('state').textContent=labels[data.status]||data.status||'Bilinmiyor';
+$('state').className=data.status==='source_response'?'ok':'warn';
+$('last').textContent='Son veri zamanı: '+(data.receivedAt?new Date(data.receivedAt).toLocaleString('tr-TR'):'Bilinmiyor');
+}catch(e){$('state').textContent='Bağlantı hatası';$('state').className='error';$('last').textContent=String(e.message||e)}
+finally{$('refresh').disabled=false}
+}
+$('refresh').addEventListener('click',refresh);refresh();
+</script></body></html>
