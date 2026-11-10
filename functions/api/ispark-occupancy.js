@@ -30,17 +30,6 @@ const normalize=(item)=>{
 };
 // Cache only successful snapshots; never cache an unavailable response.
 export async function onRequestGet({request,context,env}){
-  // Prefer the authenticated iPhone-uploaded snapshot in KV. Never label it verified live.
-  if(typeof env?.ISPARK_SNAPSHOTS?.get==='function'){
-    try{
-      const snapshot=await env.ISPARK_SNAPSHOTS.get('latest','json');
-      const received=Date.parse(snapshot?.receivedAt||'');
-      const age=Date.now()-received;
-      if(Array.isArray(snapshot?.points)&&snapshot.points.length>0&&Number.isFinite(received)&&age>=0&&age<86400000){
-        return Response.json({...snapshot,liveCount:0,verifiedLive:false,sourceSnapshot:true,points:snapshot.points.map(p=>({...p,name:repairName(p.name),verifiedLive:false,occupancyUpdatedAt:null,sourceSnapshot:true}))},{headers:{'Cache-Control':'no-store','X-Content-Type-Options':'nosniff'}});
-      }
-    }catch(error){console.warn('ispark KV snapshot read failed',error?.name);}
-  }
   const cache=typeof caches!=='undefined'?caches.default:null;
   const cacheKey=new Request(new URL('/api/ispark-occupancy',request.url).toString(),{method:'GET'});
   if(cache){
@@ -84,6 +73,17 @@ export async function onRequestGet({request,context,env}){
     const errorName=error instanceof Error?error.name:'UnknownError';
     const reason=upstreamStatus!==null&&upstreamStatus>=400?'upstream_http_'+upstreamStatus:stage==='fetch'?(errorName==='TimeoutError'?'timeout':'network_error'):stage==='parse'?'invalid_json':stage==='shape'?'unexpected_payload':stage==='normalize'?'no_valid_parking_records':'processing_error';
     console.error('ispark-occupancy upstream failure',{stage,reason,upstreamStatus,errorName,attempts});
+    // Upstream unavailable: serve an explicitly non-live KV snapshot, if present.
+    if(typeof env?.ISPARK_SNAPSHOTS?.get==='function'){
+      try{
+        const snapshot=await env.ISPARK_SNAPSHOTS.get('latest','json');
+        const received=Date.parse(snapshot?.receivedAt||'');
+        const age=Date.now()-received;
+        if(Array.isArray(snapshot?.points)&&snapshot.points.length>0&&Number.isFinite(received)&&age>=0&&age<86400000){
+          return Response.json({...snapshot,liveCount:0,verifiedLive:false,sourceSnapshot:true,upstreamUnavailable:true,diagnostic:{stage,reason,upstreamStatus,attempts},snapshotAgeMinutes:Math.floor(age/60000),points:snapshot.points.map(p=>({...p,name:repairName(p.name),verifiedLive:false,occupancyUpdatedAt:null,sourceSnapshot:true}))},{headers:{'Cache-Control':'no-store','X-Content-Type-Options':'nosniff'}});
+        }
+      }catch(kvError){console.warn('ispark KV fallback read failed',kvError?.name);}
+    }
     return Response.json({source:'IBB İSPARK',points:[],liveCount:0,unavailable:true,diagnostic:{stage,reason,upstreamStatus,attempts}},{headers:{'Cache-Control':'no-store'}});
   }
 }
