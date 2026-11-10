@@ -28,7 +28,21 @@ export async function onRequestPost({request,env}){
     raw=new Uint8Array(size);let pos=0;for(const c of chunks){raw.set(c,pos);pos+=c.byteLength;}
   }catch{return json({ok:false,error:'invalid_body'},400);}
   let rows;
-  try{const parsed=JSON.parse(new TextDecoder().decode(raw));rows=Array.isArray(parsed)?parsed:null;}catch{return json({ok:false,error:'invalid_json'},400);}
+  try{
+    // iOS Shortcuts may send the source JSON as text, a JSON list,
+    // or wrap it in a dictionary when using its request-body editor.
+    let parsed=JSON.parse(new TextDecoder().decode(raw));
+    for(let depth=0;depth<3;depth++){
+      if(Array.isArray(parsed))break;
+      if(typeof parsed==='string'){parsed=JSON.parse(parsed);continue;}
+      if(parsed&&typeof parsed==='object'){
+        const candidate=parsed.parks??parsed.rows??parsed.data??parsed.payload??parsed.ISPARK_VERI??parsed.text;
+        if(candidate!==undefined){parsed=candidate;continue;}
+      }
+      break;
+    }
+    rows=Array.isArray(parsed)?parsed:null;
+  }catch{return json({ok:false,error:'invalid_json'},400);}
   if(!rows||rows.length<1||rows.length>2000)return json({ok:false,error:'invalid_rows'},400);
   const points=[];
   for(const item of rows){
