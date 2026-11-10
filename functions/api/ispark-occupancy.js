@@ -1,5 +1,13 @@
 // ROTAPARK: guarded İSPARK occupancy adapter. Unverified or stale data is never shown as live.
 const SOURCE='https://api.ibb.gov.tr/ispark/Park';
+// Recover UTF-8 text accidentally decoded as Windows-1252 by iOS Shortcuts.
+const cp1252={8364:128,8218:130,402:131,8222:132,8230:133,8224:134,8225:135,710:136,8240:137,352:138,8249:139,338:140,381:142,8216:145,8217:146,8220:147,8221:148,8226:149,8211:150,8212:151,732:152,8482:153,353:154,8250:155,339:156,382:158,376:159};
+const repairName=name=>{
+  if(typeof name!=='string'||!/[ÃÄÅ]/.test(name))return name;
+  const bytes=[];
+  for(const ch of name){const code=ch.codePointAt(0);const byte=code<=255?code:cp1252[code];if(byte===undefined)return name;bytes.push(byte);}
+  try{const decoded=new TextDecoder('utf-8',{fatal:true}).decode(new Uint8Array(bytes));return /[\uFFFD]/.test(decoded)?name:decoded;}catch{return name;}
+};
 const number=v=>v!==null&&v!==undefined&&v!==''&&Number.isFinite(Number(v))?Number(v):null;
 const first=(o,keys)=>keys.map(k=>o[k]).find(v=>v!==undefined&&v!==null&&v!=='');
 const normalize=(item)=>{
@@ -18,7 +26,7 @@ const normalize=(item)=>{
   // Never call these figures verified live; expose as source-reported snapshots only.
   const fresh=Number.isFinite(stamp)&&Math.abs(Date.now()-stamp)<=15*60*1000;
   if(!name||lat===null||lng===null||lat<40||lat>42.5||lng<26||lng>31)return null;
-  return {id:id==null?null:String(id),name:String(name).slice(0,160),lat,lng,capacity:Number.isInteger(capacity)&&capacity>0?capacity:null,freeSpaces:Number.isInteger(free)&&free>=0&&(capacity===null||free<=capacity)?free:null,occupancyUpdatedAt:fresh?new Date(stamp).toISOString():null,verifiedLive:fresh&&Number.isInteger(free)&&free>=0&&(capacity===null||free<=capacity),sourceSnapshot:true};
+  return {id:id==null?null:String(id),name:repairName(String(name)).slice(0,160),lat,lng,capacity:Number.isInteger(capacity)&&capacity>0?capacity:null,freeSpaces:Number.isInteger(free)&&free>=0&&(capacity===null||free<=capacity)?free:null,occupancyUpdatedAt:fresh?new Date(stamp).toISOString():null,verifiedLive:fresh&&Number.isInteger(free)&&free>=0&&(capacity===null||free<=capacity),sourceSnapshot:true};
 };
 // Cache only successful snapshots; never cache an unavailable response.
 export async function onRequestGet({request,context,env}){
@@ -29,7 +37,7 @@ export async function onRequestGet({request,context,env}){
       const received=Date.parse(snapshot?.receivedAt||'');
       const age=Date.now()-received;
       if(Array.isArray(snapshot?.points)&&snapshot.points.length>0&&Number.isFinite(received)&&age>=0&&age<86400000){
-        return Response.json({...snapshot,liveCount:0,verifiedLive:false,sourceSnapshot:true,points:snapshot.points.map(p=>({...p,verifiedLive:false,occupancyUpdatedAt:null,sourceSnapshot:true}))},{headers:{'Cache-Control':'no-store','X-Content-Type-Options':'nosniff'}});
+        return Response.json({...snapshot,liveCount:0,verifiedLive:false,sourceSnapshot:true,points:snapshot.points.map(p=>({...p,name:repairName(p.name),verifiedLive:false,occupancyUpdatedAt:null,sourceSnapshot:true}))},{headers:{'Cache-Control':'no-store','X-Content-Type-Options':'nosniff'}});
       }
     }catch(error){console.warn('ispark KV snapshot read failed',error?.name);}
   }
