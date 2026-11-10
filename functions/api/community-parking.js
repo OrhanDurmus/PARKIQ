@@ -17,15 +17,15 @@ export async function onRequestPost({request,env}){
  const kv=store(env);if(!kv?.put||!kv?.get)return json({ok:false,error:'not_configured'},503);
  const length=Number(request.headers.get('content-length')||0);if(length>2500)return json({ok:false,error:'too_large'},413);
  let data;try{const raw=await request.text();if(raw.length>2500)return json({ok:false,error:'too_large'},413);data=JSON.parse(raw)}catch{return json({ok:false,error:'invalid_json'},400)}
- const lat=Number(data.lat),lng=Number(data.lng),note=String(data.note||'').trim(),address=String(data.address||'').trim(),ownerToken=data.ownerToken;
- if(!tokenValid(ownerToken)||!validCoord(lat,lng)||note.length>160||address.length>200||!['space','no_space'].includes(data.type))return json({ok:false,error:'invalid_report'},400);
+ const lat=Number(data.lat),lng=Number(data.lng),note=String(data.note||'').trim(),address=String(data.address||'').trim(),ownerToken=data.ownerToken,displayName=String(data.displayName||'').trim();
+ if(!tokenValid(ownerToken)||!validCoord(lat,lng)||note.length>160||address.length>200||displayName.length>32||/[<>\x00-\x1f\x7f]/.test(displayName)||!['space','no_space'].includes(data.type))return json({ok:false,error:'invalid_report'},400);
  const ip=request.headers.get('CF-Connecting-IP')||'unknown';
  // One report per IP per 10 minutes. KV is eventually consistent; this is a soft abuse limit.
  const ipKey='community:rate:'+ip;
  try{
   if(await kv.get(ipKey))return json({ok:false,error:'rate_limited'},429);
   const id=crypto.randomUUID(),now=Date.now();
-  const point={id,lat:Math.round(lat*1e5)/1e5,lng:Math.round(lng*1e5)/1e5,type:data.type,note,address,createdAt:now,expiresAt:now+2*60*60*1000};
+  const point={id,lat:Math.round(lat*1e5)/1e5,lng:Math.round(lng*1e5)/1e5,type:data.type,note,address,displayName:displayName||'Misafir kullanıcı',createdAt:now,expiresAt:now+2*60*60*1000};
   const stored={...point,ownerTokenHash:await tokenHash(ownerToken)};
   await kv.put(keyPrefix+id,JSON.stringify(stored),{expirationTtl:7200});
   await kv.put(ipKey,'1',{expirationTtl:600});
