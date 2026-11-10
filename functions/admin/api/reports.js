@@ -59,6 +59,7 @@ export async function onRequestDelete({request,env}){
   const reason=allowedReasons.includes(data.reason)?data.reason:'admin_removed';
   const event={id,deletedAt,createdAt:record.createdAt||null,type:record.type||null,address:String(record.address||'').slice(0,240),lat:Number.isFinite(record.lat)?record.lat:null,lng:Number.isFinite(record.lng)?record.lng:null,displayName:String(record.displayName||'Misafir').slice(0,80),identityVerified:false,reason};
   await kv.put('community:audit:deleted:'+String(deletedAt)+':'+id,JSON.stringify(event),{expirationTtl:60*60*24*90});
+  if(record.ownerId){const historyKey='community:user:history:'+record.ownerId+':'+id;const history=await kv.get(historyKey,'json');if(history)await kv.put(historyKey,JSON.stringify({...history,status:'admin_deleted',deletedAt,reason}),{expirationTtl:60*60*24*90});}
   await kv.delete(key);
   return json({ok:true,id});
  }catch{return json({ok:false,error:'storage_unavailable'},503)}
