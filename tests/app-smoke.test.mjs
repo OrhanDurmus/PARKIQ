@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {Script,runInNewContext} from 'node:vm';
 import {test} from 'node:test';
+import {spawnSync} from 'node:child_process';
 
 const html=readFileSync(new URL('../index.html',import.meta.url),'utf8');
 test('main HTML has parseable inline JavaScript',()=>{
@@ -9,8 +10,12 @@ test('main HTML has parseable inline JavaScript',()=>{
     .filter(([,attributes,body])=>!(/\bsrc\s*=/.test(attributes))&&body.trim());
   assert.ok(scripts.length>=2,'Expected inline startup and application scripts');
   scripts.forEach(([,attributes,body],index)=>{
-    assert.doesNotMatch(attributes,/\btype\s*=\s*["']module["']/i,'Module scripts need separate parser');
-    new Script(body,{filename:'index.html:inline-'+index});
+    if(/\btype\s*=\s*["']module["']/i.test(attributes)){
+      const check=spawnSync(process.execPath,['--input-type=module','--check'],{input:body,encoding:'utf8'});
+      assert.equal(check.status,0,'Module syntax error in inline script '+index+': '+check.stderr);
+    }else{
+      new Script(body,{filename:'index.html:inline-'+index});
+    }
   });
 });
 test('critical navigation and parking controls are present',()=>{
@@ -89,7 +94,7 @@ test('stale geolocation callbacks cannot update a new tracking session',()=>{
   assert.match(html,/currentGpsSession=\+\+gpsTrackingSession/);
   assert.match(html,/watchPosition\(pos=>\{if\(currentGpsSession!==gpsTrackingSession\)return/);
   assert.match(html,/err=>\{if\(currentGpsSession!==gpsTrackingSession\)return/);
-  assert.match(html,/function stopTracking\(\)\{gpsTrackingSession\+\+/);
+  assert.match(html,/function stopTracking\(\)\{(?:stopDrive3d\(\);)?gpsTrackingSession\+\+/);
 });
 
 test('foreground GPS probe callbacks respect the active tracking session',()=>{
@@ -105,7 +110,7 @@ test('async reroute results cannot overwrite a restarted GPS session',()=>{
 
 test('stale reroute cleanup cannot reset a new navigation reroute',()=>{
   assert.match(html,/finally\{if\(gpsTrackingSession===rerouteSession&&navigationRequestId===rerouteRequestId\)rerouting=false/);
-  assert.match(html,/function stopTracking\(\)\{gpsTrackingSession\+\+;rerouting=false/);
+  assert.match(html,/function stopTracking\(\)\{(?:stopDrive3d\(\);)?gpsTrackingSession\+\+;rerouting=false/);
 });
 
 test('reroute result requires a fresh trusted GPS fix before replacing route',()=>{
