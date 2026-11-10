@@ -2,9 +2,7 @@
 // Read-only endpoint; never return ownership hashes or moderation secrets.
 const json=(body,status=200)=>Response.json(body,{status,headers:{'Cache-Control':'no-store','X-Content-Type-Options':'nosniff'}});
 export async function onRequestGet({env,request}){
-  // Cloudflare Access injects this header after a successful access policy evaluation.
-  // This header alone is not a cryptographic proof; the /admin/* Access policy must be enforced at the edge.
-  if(!request.headers.get('Cf-Access-Jwt-Assertion'))return json({ok:false,error:'access_session_required'},401);
+  if(!await verifiedAdmin(request,env))return json({ok:false,error:'admin_authorization_required'},403);
   const kv=env?.ISPARK_SNAPSHOTS;
   if(!kv?.list||!kv?.get)return json({ok:false,error:'not_configured'},503);
   try{
@@ -14,6 +12,8 @@ export async function onRequestGet({env,request}){
       keys.push(...batch.keys.map(k=>k.name));cursor=batch.list_complete?undefined:batch.cursor;pages++;
     }while(cursor&&pages<5);
     const now=Date.now();
+    const history=new URL(request.url).searchParams.get('view')==='history';
+    if(history){const audit=await kv.list({prefix:'community:audit:deleted:',limit:100});const events=(await Promise.all(audit.keys.map(k=>kv.get(k.name,'json')))).filter(Boolean).sort((a,b)=>b.deletedAt-a.deletedAt);return json({ok:true,events,partial:!audit.list_complete,checkedAt:now});}
     const items=(await Promise.all(keys.map(k=>kv.get(k,'json'))))
       .filter(x=>x&&x.expiresAt>now&&Number.isFinite(x.lat)&&Number.isFinite(x.lng))
       .sort((a,b)=>b.createdAt-a.createdAt).slice(0,200)
@@ -54,6 +54,9 @@ export async function onRequestDelete({request,env}){
  try{
   const key='community:street:'+id;const record=await kv.get(key,'json');
   if(!record)return json({ok:false,error:'not_found'},404);
+  const deletedAt=Date.now();
+  const event={id,deletedAt,createdAt:record.createdAt||null,type:record.type||null,address:String(record.address||'').slice(0,240),displayName:String(record.displayName||'Misafir').slice(0,80),reason:String(data.reason||'admin_removed').slice(0,80)};
+  await kv.put('community:audit:deleted:'+String(deletedAt)+':'+id,JSON.stringify(event),{expirationTtl:60*60*24*90});
   await kv.delete(key);
   return json({ok:true,id});
  }catch{return json({ok:false,error:'storage_unavailable'},503)}
