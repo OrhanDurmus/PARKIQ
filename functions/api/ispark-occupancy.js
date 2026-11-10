@@ -73,7 +73,8 @@ export async function onRequestGet({request,context,env}){
     if(!rows)throw Error('Unknown source response');
     stage='normalize';
     const points=rows.slice(0,2000).map(normalize).filter(Boolean);
-    const result=Response.json({source:'IBB İSPARK',points,liveCount:points.filter(p=>p.verifiedLive).length},{headers:{'Cache-Control':'public, max-age=60'}});
+    if(rows.length===0||points.length===0){stage='normalize';throw Error('No valid parking records');}
+    const result=Response.json({source:'IBB İSPARK',points,sourceRecordCount:rows.length,receivedAt:new Date().toISOString(),liveCount:points.filter(p=>p.verifiedLive).length},{headers:{'Cache-Control':'public, max-age=60'}});
     if(cache){
       const write=cache.put(cacheKey,result.clone()).catch(error=>console.warn('ispark cache write failed',error?.name));
       if(context?.waitUntil)context.waitUntil(write);else await write;
@@ -81,7 +82,7 @@ export async function onRequestGet({request,context,env}){
     return result;
   }catch(error){
     const errorName=error instanceof Error?error.name:'UnknownError';
-    const reason=upstreamStatus!==null&&upstreamStatus>=400?'upstream_http_'+upstreamStatus:stage==='fetch'?(errorName==='TimeoutError'?'timeout':'network_error'):stage==='parse'?'invalid_json':stage==='shape'?'unexpected_payload':'processing_error';
+    const reason=upstreamStatus!==null&&upstreamStatus>=400?'upstream_http_'+upstreamStatus:stage==='fetch'?(errorName==='TimeoutError'?'timeout':'network_error'):stage==='parse'?'invalid_json':stage==='shape'?'unexpected_payload':stage==='normalize'?'no_valid_parking_records':'processing_error';
     console.error('ispark-occupancy upstream failure',{stage,reason,upstreamStatus,errorName,attempts});
     return Response.json({source:'IBB İSPARK',points:[],liveCount:0,unavailable:true,diagnostic:{stage,reason,upstreamStatus,attempts}},{headers:{'Cache-Control':'no-store'}});
   }
