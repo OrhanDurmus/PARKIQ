@@ -34,6 +34,7 @@ export async function onRequestPost({request,env}){
   const point={id,lat:Math.round(lat*1e5)/1e5,lng:Math.round(lng*1e5)/1e5,type:data.type,note,address,displayName:displayName||String(user.user_metadata?.full_name||user.user_metadata?.name||user.email?.split('@')[0]||'ROTAPARK kullanıcısı').slice(0,32),verifiedAccount:true,createdAt:now,expiresAt:now+2*60*60*1000};
   const stored={...point,ownerId:user.id,ownerTokenHash:await tokenHash(ownerToken)};
   await kv.put(keyPrefix+id,JSON.stringify(stored),{expirationTtl:7200});
+  await kv.put('community:user:history:'+user.id+':'+id,JSON.stringify({id,createdAt:now,address:point.address,type:point.type,lat:point.lat,lng:point.lng,status:'active'}),{expirationTtl:60*60*24*90});
   await kv.put('community:user:seen:'+user.id,JSON.stringify({id:user.id,email:String(user.email||''),displayName:point.displayName,lastReportAt:now}),{expirationTtl:60*60*24*90});
   await kv.put(ipKey,id,{expirationTtl:120});
   await kv.put(hourKey,String(hourly+1),{expirationTtl:3600});
@@ -51,6 +52,7 @@ export async function onRequestDelete({request,env}){
   const accountOwner=!!(point.ownerId&&user?.id===point.ownerId);
   const legacyOwner=!point.ownerId&&tokenValid(ownerToken)&&point.ownerTokenHash===await tokenHash(ownerToken);
   if(!accountOwner&&!legacyOwner)return json({ok:false,error:'forbidden'},403);
+  if(point.ownerId){const historyKey='community:user:history:'+point.ownerId+':'+id;const history=await kv.get(historyKey,'json');if(history)await kv.put(historyKey,JSON.stringify({...history,status:'owner_deleted',deletedAt:Date.now()}),{expirationTtl:60*60*24*90});}
   await kv.delete(keyPrefix+id);
   // Let the verified report owner correct a mistake without waiting for the short cooldown.
   // The hourly quota remains in place to prevent repeated delete-and-repost spam.
