@@ -43,7 +43,18 @@ export async function onRequestPost({request,env}){
     }
     rows=Array.isArray(parsed)?parsed:null;
   }catch{return json({ok:false,error:'invalid_json'},400);}
-  if(!rows||rows.length<1||rows.length>2000)return json({ok:false,error:'invalid_rows'},400);
+  if(!rows||rows.length<1||rows.length>2000){
+    // Safe structural diagnostics: no payload, credentials, or parking data.
+    const decoded=new TextDecoder().decode(raw);
+    let parsedType='unknown',topKeys=[],arrayLength=null;
+    try{
+      const root=JSON.parse(decoded);
+      parsedType=Array.isArray(root)?'array':root===null?'null':typeof root;
+      if(root&&typeof root==='object'&&!Array.isArray(root))topKeys=Object.keys(root).slice(0,12);
+      if(Array.isArray(root))arrayLength=root.length;
+    }catch{}
+    return json({ok:false,error:'invalid_rows',diagnostic:{parsedType,topKeys,arrayLength,bodyBytes:raw.length,firstChar:decoded.trim().slice(0,1)}},400);
+  }
   const points=[];
   for(const item of rows){
     if(!item||typeof item!=='object')continue;
