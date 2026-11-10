@@ -37,9 +37,13 @@ async function loadReports(){
    const remove=document.createElement('button');remove.type='button';remove.textContent='Bildirimi sil';remove.style.marginLeft='12px';
    remove.addEventListener('click',async()=>{
     if(!confirm('Bu sokak park yeri bildirimini kalıcı olarak silmek istiyor musunuz?'))return;
+    const reason=prompt('Silme nedeni seç: 1=Yanlış konum, 2=Tekrar, 3=Yanıltıcı, 4=Uygunsuz, 5=Diğer','5');
+    if(reason===null)return;
+    const reasons={'1':'wrong_location','2':'duplicate','3':'misleading','4':'inappropriate','5':'admin_removed'};
+    if(!reasons[reason.trim()]){alert('1 ile 5 arasında bir neden seçmelisin.');return}
     remove.disabled=true;
     try{
-     const response=await fetch('/admin/api/reports',{method:'DELETE',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:item.id,reason:'admin_removed'})});
+     const response=await fetch('/admin/api/reports',{method:'DELETE',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:item.id,reason:reasons[reason.trim()]})});
      const result=await response.json();
      if(!response.ok||!result.ok)throw Error(result.error||'HTTP '+response.status);
      await Promise.all([loadReports(),loadHistory()]);
@@ -68,8 +72,14 @@ async function loadHistory(){
   if(!res.ok||!data.ok)throw Error(data.error||'HTTP '+res.status);
   $('history-status').textContent=data.events.length+' silme kaydı'+(data.partial?' (ilk 100 kayıt)':'');
   for(const item of data.events){
-   const p=document.createElement('p');p.className='report-item';
-   p.textContent=new Date(item.deletedAt).toLocaleString('tr-TR')+' · '+(item.address||'Adres yok')+' · '+(item.displayName||'Misafir')+' · Yönetici tarafından silindi';
+   const p=document.createElement('div');p.className='report-item';
+   const reasons={wrong_location:'Yanlış konum',duplicate:'Tekrarlanan bildirim',misleading:'Yanıltıcı bildirim',inappropriate:'Uygunsuz içerik',admin_removed:'Diğer / yönetici silmesi'};
+   const title=document.createElement('strong');title.textContent=(item.address||'Adres belirtilmemiş')+' · '+(item.displayName||'Misafir');
+   const detail=document.createElement('p');detail.textContent='Silinme: '+new Date(item.deletedAt).toLocaleString('tr-TR')+' · Neden: '+(reasons[item.reason]||'Belirtilmemiş')+' · Kimlik: doğrulanmamış';
+   p.append(title,detail);
+   if(Number.isFinite(item.lat)&&Number.isFinite(item.lng)){
+    const map=document.createElement('a');map.href='https://www.openstreetmap.org/?mlat='+encodeURIComponent(item.lat)+'&mlon='+encodeURIComponent(item.lng)+'#map=17/'+encodeURIComponent(item.lat)+'/'+encodeURIComponent(item.lng);map.target='_blank';map.rel='noopener';map.textContent='Konumu haritada aç';p.append(map)
+   }
    box.append(p)
   }
  }catch(e){$('history-status').textContent='Geçmiş alınamadı: '+String(e.message||e)}
