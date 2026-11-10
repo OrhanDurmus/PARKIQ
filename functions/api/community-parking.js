@@ -20,15 +20,18 @@ export async function onRequestPost({request,env}){
  const lat=Number(data.lat),lng=Number(data.lng),note=String(data.note||'').trim(),address=String(data.address||'').trim(),ownerToken=data.ownerToken,displayName=String(data.displayName||'').trim();
  if(!tokenValid(ownerToken)||!validCoord(lat,lng)||note.length>160||address.length>200||displayName.length>32||/[<>\x00-\x1f\x7f]/.test(displayName)||!['space','no_space'].includes(data.type))return json({ok:false,error:'invalid_report'},400);
  const ip=request.headers.get('CF-Connecting-IP')||'unknown';
- // One report per IP per 10 minutes. KV is eventually consistent; this is a soft abuse limit.
- const ipKey='community:rate:'+ip;
+ // Short cooldown plus hourly quota. KV is eventually consistent; these are soft abuse limits.
+ const ipKey='community:rate:'+ip, hourKey='community:hour:'+ip;
  try{
-  if(await kv.get(ipKey))return json({ok:false,error:'rate_limited'},429);
+  if(await kv.get(ipKey))return json({ok:false,error:'rate_limited',retryAfterSeconds:120},429);
+  const hourly=Number(await kv.get(hourKey)||0);
+  if(hourly>=5)return json({ok:false,error:'hourly_limit'},429);
   const id=crypto.randomUUID(),now=Date.now();
   const point={id,lat:Math.round(lat*1e5)/1e5,lng:Math.round(lng*1e5)/1e5,type:data.type,note,address,displayName:displayName||'Misafir kullanıcı',createdAt:now,expiresAt:now+2*60*60*1000};
   const stored={...point,ownerTokenHash:await tokenHash(ownerToken)};
   await kv.put(keyPrefix+id,JSON.stringify(stored),{expirationTtl:7200});
-  await kv.put(ipKey,'1',{expirationTtl:600});
+  await kv.put(ipKey,id,{expirationTtl:120});
+  await kv.put(hourKey,String(hourly+1),{expirationTtl:3600});
   return json({ok:true,point},201);
  }catch{return json({ok:false,error:'storage_unavailable'},503)}
 }
@@ -40,6 +43,11 @@ export async function onRequestDelete({request,env}){
  if(!/^[0-9a-f-]{36}$/i.test(id)||!tokenValid(ownerToken))return json({ok:false,error:'invalid_request'},400);
  try{const point=await kv.get(keyPrefix+id,'json');if(!point)return json({ok:false,error:'not_found'},404);
   if(!point.ownerTokenHash||point.ownerTokenHash!==await tokenHash(ownerToken))return json({ok:false,error:'forbidden'},403);
-  await kv.delete(keyPrefix+id);return json({ok:true});
+  await kv.delete(keyPrefix+id);
+  // Let the verified report owner correct a mistake without waiting for the short cooldown.
+  // The hourly quota remains in place to prevent repeated delete-and-repost spam.
+  const ip=request.headers.get('CF-Connecting-IP')||'unknown',ipKey='community:rate:'+ip;
+  if(await kv.get(ipKey)===id)await kv.delete(ipKey);
+  return json({ok:true});
  }catch{return json({ok:false,error:'storage_unavailable'},503)}
 }
