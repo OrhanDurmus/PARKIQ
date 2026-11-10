@@ -1,0 +1,55 @@
+<!doctype html><html lang="tr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow"><title>ROTAPARK · Üye Yönetimi</title><style>
+*{box-sizing:border-box}body{margin:0;background:#081320;color:#edf5ff;font:15px system-ui,-apple-system,sans-serif}main{max-width:1050px;margin:auto;padding:24px 15px 70px}a{color:#80ddc8}h1{margin:16px 0 4px;font-size:28px}p{color:#afc2d6;line-height:1.5}.panel{background:linear-gradient(145deg,#172c45,#102136);border:1px solid #304c68;border-radius:17px;padding:19px;margin:18px 0}input,select,button{font:inherit;border-radius:10px;padding:11px}input,select{background:#081829;color:white;border:1px solid #496078;min-width:0}button{background:#48cfaf;border:0;color:#062820;font-weight:750;cursor:pointer}button:disabled{opacity:.5;cursor:wait}.search{display:flex;gap:9px;flex-wrap:wrap}.search input{flex:1;min-width:180px}.list{display:grid;gap:12px}.member{border:1px solid #35516c;background:#0c1d30;border-radius:13px;padding:14px}.top{display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap}.email{font-weight:750;overflow-wrap:anywhere}.pill{display:inline-block;border-radius:99px;padding:5px 10px;background:#284158;font-size:12px}.founder{background:linear-gradient(110deg,#64440d,#b08228);color:#fff0b4;border:1px solid #dfb354}.ok{color:#87f3bf}.no{color:#ffb7a5}.details{display:flex;flex-wrap:wrap;gap:10px 18px;margin:12px 0;color:#b5c9dd;font-size:13px}.actions{display:flex;gap:8px;flex-wrap:wrap}.actions select{flex:1;min-width:130px}.actions button{flex:0 0 auto}.pages{display:flex;gap:10px;align-items:center;justify-content:center;margin-top:20px}.muted{font-size:13px;color:#a8bdd1}#error{color:#ffaaa8}#notice{color:#8ff0c3}@media(max-width:520px){h1{font-size:24px}.panel{padding:13px}.actions button{width:100%}}
+</style></head><body><main><a href="/admin/">← Yönetim paneli</a> · <a href="/admin/roles/">Yetki Yönetimi</a><h1>👥 Üye Yönetimi</h1><p>Kayıtlı tüm ROTAPARK üyelerini görüntüle, ara ve yetkilendir. Yalnızca kurucu erişebilir.</p><p id="status">Kurucu yetkisi doğrulanıyor…</p><p id="error" role="alert"></p><div id="panel" hidden><section class="panel"><div class="search"><input id="query" type="search" placeholder="Üye e-postasında ara" aria-label="E-posta ara"><button id="search">Ara</button><button id="reset">Temizle</button></div><p id="count" class="muted"></p><p id="notice" role="status"></p><div id="members" class="list"></div><div class="pages"><button id="prev">← Önceki</button><span id="page"></span><button id="next">Sonraki →</button></div></section></div><script type="module">
+const $=id=>document.getElementById(id),labels={founder:'👑 Kurucu',admin:'Yönetici',moderator:'Moderatör',user:'Kullanıcı'};
+try{
+const c=await fetch('/api/auth-config',{cache:'no-store'}).then(r=>r.json());if(!c.configured)throw Error('Kimlik doğrulama yapılandırılmamış.');
+const {createClient}=await import('https://esm.sh/@supabase/supabase-js@2');const sb=createClient(c.url,c.anonKey,{auth:{flowType:'pkce',detectSessionInUrl:false}});
+const {data:{user},error:authError}=await sb.auth.getUser();if(authError||!user)throw Error('Önce Hesabım bölümünden giriş yapmalısın.');
+const {data:role,error:roleError}=await sb.rpc('rotapark_my_role');if(roleError)throw roleError;if(role!=='founder')throw Error('Bu sayfaya yalnızca kurucu erişebilir.');
+$('status').textContent='👑 Kurucu oturumu doğrulandı';$('panel').hidden=false;
+let page=1,total=0,query='',busy=false;const size=25;
+const fmt=x=>x?new Date(x).toLocaleString('tr-TR'):'—';
+const el=(tag,cls,content)=>{const e=document.createElement(tag);if(cls)e.className=cls;if(content!==undefined)e.textContent=content;return e};
+async function load(){
+ if(busy)return;busy=true;$('error').textContent='';$('members').textContent='Yükleniyor…';$('prev').disabled=$('next').disabled=true;
+ try{
+ const {data,error}=await sb.rpc('rotapark_list_members',{page_number:page,page_size:size,search_email:query});
+ if(error)throw error;
+ const rows=data||[];total=rows.length?Number(rows[0].total_count):0;
+ $('count').textContent=total+' kayıtlı üye';$('page').textContent='Sayfa '+page+' / '+Math.max(1,Math.ceil(total/size));$('members').replaceChildren();
+ if(!rows.length)$('members').textContent='Bu aramada üye bulunamadı.';
+ for(const u of rows){
+ const card=el('article','member'),top=el('div','top'),name=el('span','email',u.email||'E-posta yok'),badge=el('span','pill'+(u.staff_role==='founder'?' founder':''),labels[u.staff_role]||u.staff_role);
+ top.append(name,badge);card.append(top);
+ const details=el('div','details');
+ for(const t of ['E-posta: '+(u.email_verified?'✓ Onaylı':'Onaysız'),'Telefon: '+(u.phone_verified?'✓ Onaylı':'Onaysız'),'Kayıt: '+fmt(u.created_at),'Son giriş: '+fmt(u.last_sign_in_at)])details.append(el('span','',t));
+ card.append(details);
+ if(u.staff_role!=='founder'&&u.user_id!==user.id&&u.email){
+ const actions=el('div','actions'),select=el('select');
+ for(const [value,label] of [['user','Yetkiyi kaldır / Kullanıcı'],['moderator','Moderatör ata'],['admin','Yönetici ata']]){const option=el('option','',label);option.value=value;select.append(option)}
+ select.value=u.staff_role;const save=el('button','','Yetkiyi kaydet');
+ save.onclick=async()=>{
+  if(select.value===u.staff_role){$('notice').textContent='Rol zaten aynı.';return}
+  if(!confirm(u.email+' için '+(labels[select.value]||select.value)+' rolünü onaylıyor musun?'))return;
+  save.disabled=true;$('notice').textContent='';
+  try{const {error}=await sb.rpc('rotapark_set_staff_role',{target_email:u.email,new_role:select.value});if(error)throw error;$('notice').textContent='Yetki güncellendi ve işlem geçmişine kaydedildi.';await loadAfterSave()}
+  catch(e){$('error').textContent=e.message}finally{save.disabled=false}
+ };
+ actions.append(select,save);card.append(actions)
+ }else card.append(el('p','muted','Kurucu hesabı bu panelden değiştirilemez.'));
+ $('members').append(card);
+ }
+ $('prev').disabled=page<=1;$('next').disabled=page*size>=total;
+ }catch(e){$('members').replaceChildren();$('error').textContent=/schema cache|could not find the function/i.test(e.message)?'Üye listesi için Supabase SQL güncellemesi uygulanmalı.':e.message}
+ finally{busy=false}
+}
+async function loadAfterSave(){busy=false;await load()}
+$('search').onclick=()=>{query=$('query').value.trim();page=1;load()};
+$('query').onkeydown=e=>{if(e.key==='Enter')$('search').click()};
+$('reset').onclick=()=>{$('query').value='';query='';page=1;load()};
+$('prev').onclick=()=>{if(page>1){page--;load()}};
+$('next').onclick=()=>{if(page*size<total){page++;load()}};
+await load();
+}catch(e){$('status').textContent='Panel açılamadı.';$('error').textContent=e.message}
+</script></main></body></html>
