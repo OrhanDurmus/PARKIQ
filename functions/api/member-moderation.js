@@ -33,9 +33,9 @@ export async function onRequestPost({request,env}){
  const auth=/^Bearer (\S+)$/.exec(request.headers.get('Authorization')||'')?.[1];
  try{
  // Verify target exists and is not founder through founder-only directory RPC, without service role key.
- const res=await fetch(url+'/rest/v1/rpc/rotapark_find_user',{method:'POST',headers:{apikey:key,Authorization:'Bearer '+auth,'Content-Type':'application/json'},body:JSON.stringify({lookup_email:String(data.email||'')}),signal:AbortSignal.timeout(6000)});
+ const res=await fetch(url+'/rest/v1/rpc/rotapark_list_members',{method:'POST',headers:{apikey:key,Authorization:'Bearer '+auth,'Content-Type':'application/json'},body:JSON.stringify({page_number:1,page_size:50,search_email:String(data.email||'')}),signal:AbortSignal.timeout(6000)});
  if(!res.ok)return json({ok:false,error:'lookup_failed'},502);
- const users=await res.json();const target=users?.[0];
+ const users=await res.json();const target=users?.find(x=>x.email?.toLowerCase()===String(data.email||'').trim().toLowerCase());
  if(!target||target.user_id!==id)return json({ok:false,error:'unknown_user'},404);
  if(target.staff_role==='founder')return json({ok:false,error:'founder_protected'},403);
  if(action==='block')await kv.put('community:user:blocked:'+id,JSON.stringify({blockedAt:Date.now(),by:actor.id}));
