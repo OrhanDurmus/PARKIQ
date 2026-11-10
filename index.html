@@ -25,7 +25,7 @@ async function reports(){
    const label=point.type==='space'?'🟣 Park yeri bildirimi':'⚪ Yer yok bildirimi';
    const marker=L.circleMarker([point.lat,point.lng],{radius:9,color:point.type==='space'?'#bd8bfa':'#aaa',weight:3,fillOpacity:.7}).addTo(communityMarkers);
    const popup=document.createElement('div');const title=document.createElement('strong');title.textContent=label;popup.appendChild(title);
-   const note=document.createElement('p');note.textContent=point.note||'Kullanıcı bildirimi';popup.appendChild(note);
+   if(point.address){const address=document.createElement('p');address.textContent='📍 '+point.address;popup.appendChild(address)}const note=document.createElement('p');note.textContent=point.note||'Kullanıcı bildirimi';popup.appendChild(note);
    const age=document.createElement('small');age.textContent='Kullanıcı bildirimi · Doğrulanmadı · 2 saat sonra kalkar';popup.appendChild(age);marker.bindPopup(popup);
   }
   list.textContent=payload.points.length+' güncel sokak park bildirimi haritada gösteriliyor (doğrulanmamış).';
