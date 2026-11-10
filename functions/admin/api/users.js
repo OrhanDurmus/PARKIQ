@@ -34,6 +34,13 @@ export async function onRequestGet({request,env}){
   const users=(await Promise.all(keys.map(k=>kv.get(k,'json')))).filter(u=>u&&validId(u.id));
   const enriched=await Promise.all(users.map(async u=>({...u,blocked:!!(await kv.get('community:user:blocked:'+u.id))})));
   enriched.sort((a,b)=>b.lastReportAt-a.lastReportAt);
+  const userId=new URL(request.url).searchParams.get('id');
+  if(userId){if(!validId(userId))return json({ok:false,error:'invalid_id'},400);const user=enriched.find(u=>u.id===userId);if(!user)return json({ok:false,error:'unknown_user'},404);
+   const batch=await kv.list({prefix:'community:user:history:'+userId+':',limit:200});
+   const history=(await Promise.all(batch.keys.map(k=>kv.get(k.name,'json')))).filter(Boolean).sort((a,b)=>b.createdAt-a.createdAt);
+   const counts={total:history.length,active:history.filter(x=>x.status==='active').length,ownerDeleted:history.filter(x=>x.status==='owner_deleted').length,adminDeleted:history.filter(x=>x.status==='admin_deleted').length};
+   return json({ok:true,user,history,counts,partial:!batch.list_complete,trackingSince:'2026-11-10'});
+  }
   return json({ok:true,users:enriched,partial:!!cursor});
  }catch{return json({ok:false,error:'storage_unavailable'},503)}
 }
