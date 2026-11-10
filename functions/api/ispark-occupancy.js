@@ -21,7 +21,18 @@ const normalize=(item)=>{
   return {id:id==null?null:String(id),name:String(name).slice(0,160),lat,lng,capacity:Number.isInteger(capacity)&&capacity>0?capacity:null,freeSpaces:Number.isInteger(free)&&free>=0&&(capacity===null||free<=capacity)?free:null,occupancyUpdatedAt:fresh?new Date(stamp).toISOString():null,verifiedLive:fresh&&Number.isInteger(free)&&free>=0&&(capacity===null||free<=capacity),sourceSnapshot:true};
 };
 // Cache only successful snapshots; never cache an unavailable response.
-export async function onRequestGet({request,context}){
+export async function onRequestGet({request,context,env}){
+  // Prefer the authenticated iPhone-uploaded snapshot in KV. Never label it verified live.
+  if(typeof env?.ISPARK_SNAPSHOTS?.get==='function'){
+    try{
+      const snapshot=await env.ISPARK_SNAPSHOTS.get('latest','json');
+      const received=Date.parse(snapshot?.receivedAt||'');
+      const age=Date.now()-received;
+      if(Array.isArray(snapshot?.points)&&snapshot.points.length>0&&Number.isFinite(received)&&age>=0&&age<86400000){
+        return Response.json({...snapshot,liveCount:0,verifiedLive:false,sourceSnapshot:true,points:snapshot.points.map(p=>({...p,verifiedLive:false,occupancyUpdatedAt:null,sourceSnapshot:true}))},{headers:{'Cache-Control':'no-store','X-Content-Type-Options':'nosniff'}});
+      }
+    }catch(error){console.warn('ispark KV snapshot read failed',error?.name);}
+  }
   const cache=typeof caches!=='undefined'?caches.default:null;
   const cacheKey=new Request(new URL('/api/ispark-occupancy',request.url).toString(),{method:'GET'});
   if(cache){
