@@ -1,0 +1,16 @@
+<!doctype html><html lang="tr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>ROTAPARK · Yetkiler</title><style>body{margin:0;background:#081320;color:#eaf2ff;font:16px system-ui}main{max-width:600px;margin:auto;padding:24px 16px}section{background:#122238;border:1px solid #34516c;border-radius:16px;padding:20px;margin:15px 0}p{color:#b9c9d8;line-height:1.5}input,select,button{box-sizing:border-box;width:100%;padding:13px;margin:7px 0;border-radius:10px;font:inherit}input,select{background:#081829;border:1px solid #496078;color:white}button{border:0;background:#4ed3b4;color:#08202b;font-weight:700}a{color:#81dcc7}li{padding:9px 0;border-bottom:1px solid #34475a}#error{color:#ffaaa8}</style></head><body><main><a href="/admin/">← Yönetim</a><h1>🛡️ Rol Yönetimi</h1><p id="status">Yetkiler kontrol ediliyor…</p><p id="error" role="alert"></p><div id="panel" hidden><section><h2>Kullanıcı yetkilendir</h2><label>Kayıtlı e-posta<input id="email" type="email" placeholder="kullanici@ornek.com"></label><label>Rol<select id="role"><option value="moderator">Moderatör</option><option value="user">Yetkiyi kaldır</option><option value="admin">Yönetici (kurucu)</option></select></label><button id="assign">Kaydet</button><p id="feedback" aria-live="polite"></p></section><section><h2>Yetkili hesaplar</h2><ul id="staff"></ul></section></div></main><script type="module">
+const $=id=>document.getElementById(id);
+try{
+const c=await fetch('/api/auth-config',{cache:'no-store'}).then(r=>r.json());if(!c.configured)throw Error('Auth yapılandırması eksik.');
+const {createClient}=await import('https://esm.sh/@supabase/supabase-js@2');
+const sb=createClient(c.url,c.anonKey,{auth:{flowType:'pkce',detectSessionInUrl:false}});
+const {data:{user}}=await sb.auth.getUser();if(!user)throw Error('Önce Hesabım bölümünden giriş yap.');
+const r=await sb.rpc('rotapark_my_role');if(r.error)throw r.error;
+if(!['founder','admin'].includes(r.data))throw Error('Yönetici yetkisi gerekli.');
+$('status').textContent='Rolün: '+(r.data==='founder'?'Kurucu':'Yönetici');$('panel').hidden=false;
+if(r.data!=='founder')$('role').querySelector('[value="admin"]').remove();
+async function load(){const {data,error}=await sb.rpc('rotapark_list_staff');if(error)throw error;$('staff').replaceChildren();for(const x of data){const li=document.createElement('li');li.textContent=(x.email||x.user_id)+' — '+x.role;$('staff').append(li)}}
+await load();
+$('assign').onclick=async()=>{const email=$('email').value.trim();if(!email.includes('@')){$('feedback').textContent='Geçerli e-posta gir.';return}if(!confirm(email+' için rol değişikliğini onaylıyor musun?'))return;$('assign').disabled=true;try{const {error}=await sb.rpc('rotapark_set_staff_role',{target_email:email,new_role:$('role').value});if(error)throw error;$('feedback').textContent='Yetki kaydedildi.';await load()}catch(e){$('feedback').textContent=e.message}finally{$('assign').disabled=false}};
+}catch(e){$('status').textContent='Panel kullanılamıyor.';$('error').textContent=e.message}
+</script></body></html>
