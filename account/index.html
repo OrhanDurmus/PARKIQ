@@ -6,8 +6,9 @@ try{
  const {createClient}=await import('https://esm.sh/@supabase/supabase-js@2');
  client=createClient(config.url,config.anonKey,{auth:{flowType:'pkce',detectSessionInUrl:true}});
  const show=async()=>{const {data:{user}}=await client.auth.getUser();$('login').style.display=user?'none':'block';$('signed').style.display=user?'block':'none';$('profile').textContent=user?'Giriş yapıldı: '+(user.email||'Hesap'):'';say(user?'Hesabın doğrulandı.':'Giriş yapabilirsin.')};
+ const callback=new URL(location.href);if(callback.searchParams.has('code')){say('Giriş bağlantısı doğrulanıyor…');const {error}=await client.auth.exchangeCodeForSession(callback.searchParams.get('code'));if(error)say('Giriş bağlantısı doğrulanamadı: '+error.message);else history.replaceState({},'',location.pathname)}
  await show();client.auth.onAuthStateChange(()=>{setTimeout(show,0)});
- $('send').onclick=async()=>{const email=$('email').value.trim();if(!email)return say('E-posta adresini gir.');say('Kod gönderiliyor…');const {error}=await client.auth.signInWithOtp({email,options:{shouldCreateUser:true}});say(error?'Kod gönderilemedi: '+error.message:'E-postana gönderilen kodu gir.')};
+ $('send').onclick=async()=>{const email=$('email').value.trim();if(!email)return say('E-posta adresini gir.');say('Kod gönderiliyor…');const {error}=await client.auth.signInWithOtp({email,options:{shouldCreateUser:true,emailRedirectTo:location.origin+'/account/'}});say(error?'Kod gönderilemedi: '+error.message:'E-postanı kontrol et. Gelen 6 haneli kodu gir veya giriş bağlantısına dokun.')};
  $('verify').onclick=async()=>{const email=$('email').value.trim(),token=$('otp').value.trim();if(!email||!token)return say('E-posta ve doğrulama kodunu gir.');const {error}=await client.auth.verifyOtp({email,token,type:'email'});if(error)say('Doğrulama başarısız: '+error.message);else await show()};
  const oauth=async provider=>{say('Yönlendiriliyor…');const {error}=await client.auth.signInWithOAuth({provider,options:{redirectTo:location.origin+'/account/'}});if(error)say(provider+' girişi başarısız: '+error.message)};
  $('google').onclick=()=>oauth('google');$('apple').onclick=()=>oauth('apple');
