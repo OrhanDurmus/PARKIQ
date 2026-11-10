@@ -1,7 +1,7 @@
 // Community reports are short-lived observations, not verified legal parking permissions.
 const json=(data,status=200)=>Response.json(data,{status,headers:{'Cache-Control':'no-store','X-Content-Type-Options':'nosniff'}});
 const keyPrefix='community:street:';
-const authenticatedUser=async(request,env)=>{const auth=request.headers.get('Authorization')||'';const match=/^Bearer (\\S+)$/.exec(auth);if(!match)return null;const url=String(env.SUPABASE_URL||'').replace(/\\/$/,'');const key=String(env.SUPABASE_ANON_KEY||'');if(!/^https:\/\/[a-z0-9-]+\\.supabase\\.co$/i.test(url)||!key)return null;try{const res=await fetch(url+'/auth/v1/user',{headers:{apikey:key,Authorization:'Bearer '+match[1]},signal:AbortSignal.timeout(6000)});if(!res.ok)return null;const user=await res.json();return typeof user.id==='string'&&user.id.length>0?user:null}catch{return null}};
+const authenticatedUser=async(request,env)=>{const auth=request.headers.get('Authorization')||'';const match=/^Bearer (\S+)$/.exec(auth);if(!match)return null;const url=String(env.SUPABASE_URL||'').replace(/\/$/,'');const key=String(env.SUPABASE_ANON_KEY||'');if(!/^https:\/\/[a-z0-9-]+\.supabase\.co$/i.test(url)||!key)return null;try{const res=await fetch(url+'/auth/v1/user',{headers:{apikey:key,Authorization:'Bearer '+match[1]},signal:AbortSignal.timeout(6000)});if(!res.ok)return null;const user=await res.json();return typeof user.id==='string'&&user.id.length>0?user:null}catch{return null}};
 
 const validCoord=(lat,lng)=>Number.isFinite(lat)&&Number.isFinite(lng)&&lat>=40&&lat<=42.5&&lng>=26&&lng<=31;
 const store=env=>env?.ISPARK_SNAPSHOTS;
