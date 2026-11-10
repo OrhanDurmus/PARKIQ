@@ -55,7 +55,9 @@ export async function onRequestDelete({request,env}){
   const key='community:street:'+id;const record=await kv.get(key,'json');
   if(!record)return json({ok:false,error:'not_found'},404);
   const deletedAt=Date.now();
-  const event={id,deletedAt,createdAt:record.createdAt||null,type:record.type||null,address:String(record.address||'').slice(0,240),displayName:String(record.displayName||'Misafir').slice(0,80),reason:String(data.reason||'admin_removed').slice(0,80)};
+  const allowedReasons=['wrong_location','duplicate','misleading','inappropriate','admin_removed'];
+  const reason=allowedReasons.includes(data.reason)?data.reason:'admin_removed';
+  const event={id,deletedAt,createdAt:record.createdAt||null,type:record.type||null,address:String(record.address||'').slice(0,240),lat:Number.isFinite(record.lat)?record.lat:null,lng:Number.isFinite(record.lng)?record.lng:null,displayName:String(record.displayName||'Misafir').slice(0,80),identityVerified:false,reason};
   await kv.put('community:audit:deleted:'+String(deletedAt)+':'+id,JSON.stringify(event),{expirationTtl:60*60*24*90});
   await kv.delete(key);
   return json({ok:true,id});
