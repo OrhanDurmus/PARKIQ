@@ -3,6 +3,23 @@ const inTurkey=(lat,lng)=>Number.isFinite(lat)&&Number.isFinite(lng)&&lat>=35.5&
 const inIstanbul=(lat,lng)=>lat>=40&&lat<=42.5&&lng>=26&&lng<=31;
 const distanceSq=(p,lat,lng)=>{const dy=(p.lat-lat)*111195,dx=(p.lng-lng)*111195*Math.cos(lat*Math.PI/180);return dx*dx+dy*dy};
 const validPoint=p=>Number.isFinite(p.lat)&&Number.isFinite(p.lng)&&Math.abs(p.lat)<=90&&Math.abs(p.lng)<=180;
+// Verified co-located parking records (within 12 m, unique named OSM parking feature).
+// Do not infer business identities from a nearby street or unrelated POI.
+const reviewedNames={
+ 'node/7592484269':'İspark Merter Katlı Otopark',
+ 'way/1540107114':'Darüşşafaka Metro Otoparkı'
+};
+const enrichName=p=>{
+ const key=String(p.osmType||'')+'/'+String(p.osmId||'').replace(/^(node|way|relation)\//,'');
+ if(!/^(?:Otopark kaydı|Otopark|Parking)$/iu.test(String(p.name||'').trim()))return p;
+ const reviewed=reviewedNames[key];
+ if(reviewed)return {...p,name:reviewed,nameSource:'reviewed-co-located-osm'};
+ const operator=String(p.operator||'').trim();
+ if(operator&&!/^(?:otopark|otopark kaydı|personel otoparkı|bina otoparkı|özel otopark|park alanı|tır & kamyon park alanı)$/iu.test(operator)){
+  return {...p,name:operator+' · Otopark',nameSource:'osm-operator-label'};
+ }
+ return p;
+};
 const response=(points,source,updatedAt)=>Response.json({points,source,updatedAt},{headers:{'Cache-Control':'public,max-age=600','X-Content-Type-Options':'nosniff'}});
 function fromOsm(el){
  const t=el.tags||{},lat=Number(el.lat??el.center?.lat),lng=Number(el.lon??el.center?.lon);
@@ -44,7 +61,7 @@ export async function onRequestGet({request,env}){
    const data=await asset.json();
    if(!Array.isArray(data.points))throw Error('Invalid data');
    const points=data.points.filter(p=>validPoint(p)&&!(p.geographicStatus==='confirmed_outside_istanbul'&&p.geographicReviewVerified===true)&&distanceSq(p,lat,lng)<=radiusSq).sort((a,b)=>distanceSq(a,lat,lng)-distanceSq(b,lat,lng)).slice(0,250);
-   return response(await attachApprovedEntrances(points,env,url.origin),data.source,data.updatedAt);
+   return response((await attachApprovedEntrances(points,env,url.origin)).map(enrichName),data.source,data.updatedAt);
   }catch{return Response.json({error:'İstanbul otopark dosyası okunamadı'},{status:503})}
  }
  // Static nationwide dataset avoids public Overpass outages during user searches.
