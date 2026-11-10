@@ -39,21 +39,10 @@ export async function onRequestGet({request,context,env}){
   let stage='fetch';
   let attempts=0;
   try{
-    let response;
-    for(let attempt=1;attempt<=2;attempt++){
-      attempts=attempt;
-      try{
-        response=await fetch(SOURCE,{headers:{Accept:'application/json'},signal:AbortSignal.timeout(12000)});
-        upstreamStatus=response.status;
-        if(response.ok)break;
-        if(attempt===2||![429,500,502,503,504].includes(response.status))throw Error('Source HTTP '+response.status);
-      }catch(error){
-        if(attempt===2)throw error;
-        // Retry transient network failures and timeouts only.
-        if(error?.name==='AbortError'&&request.signal?.aborted)throw error;
-      }
-      await new Promise(resolve=>setTimeout(resolve,300));
-    }
+    // Bound upstream latency so iPhone clients receive the KV fallback promptly.
+    attempts=1;
+    const response=await fetch(SOURCE,{headers:{Accept:'application/json'},signal:AbortSignal.timeout(4500)});
+    upstreamStatus=response.status;
     if(!response?.ok)throw Error('Source HTTP '+upstreamStatus);
     stage='parse';
     const payload=await response.json();
