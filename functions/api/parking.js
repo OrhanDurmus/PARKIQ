@@ -87,7 +87,7 @@ async function approvedNonParkingIds(env){
  }catch{return new Set()}
 }
 // Confirmed by local administrator: this OSM way is not a parking facility.
-const confirmedNotParking=new Set(['way/882355136']);
+const confirmedNotParking=new Set(['way/882355136','way/1414411432']);
 const parkingOsmKey=p=>{const id=String(p.osmId||'');return /^(node|way|relation)\/\d+$/.test(id)?id:(p.osmType&&/^\d+$/.test(id)?String(p.osmType)+'/'+id:'')};
 export async function onRequestGet({request,env}){
  const url=new URL(request.url),lat=Number(url.searchParams.get('lat')),lng=Number(url.searchParams.get('lng'));
