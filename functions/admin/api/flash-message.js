@@ -34,6 +34,8 @@ export async function onRequestGet({request,env}){
  if(new URL(request.url).searchParams.get('view')==='history'){
   const listing=await kv.list({prefix:historyPrefix,limit:100});
   const records=(await Promise.all(listing.keys.map(k=>kv.get(k.name,'json')))).filter(Boolean).sort((a,b)=>b.createdAt-a.createdAt);
+  let counts={};if(env.DB){try{await env.DB.prepare("CREATE TABLE IF NOT EXISTS flash_message_events (announcement_id TEXT NOT NULL, device_id TEXT NOT NULL, event TEXT NOT NULL, created_at INTEGER NOT NULL, PRIMARY KEY(announcement_id,device_id,event))").run();const stats=await env.DB.prepare('SELECT announcement_id,event,COUNT(*) AS total FROM flash_message_events GROUP BY announcement_id,event').all();for(const row of stats.results||[]){if(!counts[row.announcement_id])counts[row.announcement_id]={views:0,acks:0};counts[row.announcement_id][row.event==='ack'?'acks':'views']=row.total}}catch{}}
+  for(const record of records)record.stats=counts[record.id]||{views:0,acks:0};
   return json({ok:true,history:records,partial:!listing.list_complete,activeId:item&&item.expiresAt>Date.now()?item.id:null});
  }
  return json({ok:true,message:item&&item.expiresAt>Date.now()?item:null});
