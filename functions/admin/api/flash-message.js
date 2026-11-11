@@ -23,11 +23,19 @@ async function verifiedAdmin(request,env){
 }
 
 const key='admin:flash:current';
+const historyPrefix='admin:flash:history:';
+const archive=async(kv,item)=>kv.put(historyPrefix+item.id,JSON.stringify(item),{expirationTtl:60*60*24*90});
 const json=(data,status=200)=>Response.json(data,{status,headers:{'Cache-Control':'no-store','X-Content-Type-Options':'nosniff'}});
 export async function onRequestGet({request,env}){
  if(!await verifiedAdmin(request,env))return json({ok:false,error:'admin_authorization_required'},403);
  if(!env.ISPARK_SNAPSHOTS)return json({ok:false,error:'storage_unavailable'},503);
- const item=await env.ISPARK_SNAPSHOTS.get(key,'json');
+ const kv=env.ISPARK_SNAPSHOTS;
+ const item=await kv.get(key,'json');
+ if(new URL(request.url).searchParams.get('view')==='history'){
+  const listing=await kv.list({prefix:historyPrefix,limit:100});
+  const records=(await Promise.all(listing.keys.map(k=>kv.get(k.name,'json')))).filter(Boolean).sort((a,b)=>b.createdAt-a.createdAt);
+  return json({ok:true,history:records,partial:!listing.list_complete,activeId:item&&item.expiresAt>Date.now()?item.id:null});
+ }
  return json({ok:true,message:item&&item.expiresAt>Date.now()?item:null});
 }
 export async function onRequestPost({request,env}){
@@ -40,11 +48,16 @@ export async function onRequestPost({request,env}){
  const duration=Number(body?.durationHours);
  if(![1,6,24,72].includes(duration))return json({ok:false,error:'invalid_duration'},400);
  const now=Date.now(),item={id:crypto.randomUUID(),message,type,createdAt:now,expiresAt:now+duration*3600000};
+ const previous=await env.ISPARK_SNAPSHOTS.get(key,'json');
+ if(previous)await archive(env.ISPARK_SNAPSHOTS,{...previous,removedAt:now,removalReason:'replaced'});
+ await archive(env.ISPARK_SNAPSHOTS,item);
  await env.ISPARK_SNAPSHOTS.put(key,JSON.stringify(item),{expirationTtl:duration*3600});
  return json({ok:true,message:item});
 }
 export async function onRequestDelete({request,env}){
  if(!await verifiedAdmin(request,env))return json({ok:false,error:'admin_authorization_required'},403);
  if(!env.ISPARK_SNAPSHOTS)return json({ok:false,error:'storage_unavailable'},503);
+ const current=await env.ISPARK_SNAPSHOTS.get(key,'json');
+ if(current)await archive(env.ISPARK_SNAPSHOTS,{...current,removedAt:Date.now(),removalReason:'admin_removed'});
  await env.ISPARK_SNAPSHOTS.delete(key);return json({ok:true});
 }
