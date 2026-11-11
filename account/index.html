@@ -6,12 +6,7 @@ const blockedMessage='⛔ Platform kullanımı engellenmiş kullanıcı. Hesabı
 let blockingInProgress=false;
 const checkBlocked=async()=>{if(blockingInProgress)return true;const {data:{session}}=await client.auth.getSession();if(!session)return false;
  let blocked=false;
- try{
-  const cfg=await fetch('/api/auth-config',{cache:'no-store'}).then(r=>r.json());
-  const res=await fetch(cfg.url.replace(/\\/$/,'')+'/rest/v1/rpc/rotapark_member_blocked',{method:'POST',headers:{apikey:cfg.anonKey,Authorization:'Bearer '+session.access_token,'Content-Type':'application/json'},body:'{}',cache:'no-store'});
-  if(!res.ok)throw Error('HTTP '+res.status);
-  blocked=(await res.json())===true;
- }catch(e){say('Hesap erişimi doğrulanamadı. Lütfen tekrar deneyin.');return true}
+ try{const res=await fetch('/api/member-access',{headers:{Authorization:'Bearer '+session.access_token},cache:'no-store'});const result=await res.json();if(!res.ok||!result.ok)throw Error(result.error||'status_unavailable');blocked=result.blocked}catch(e){say('Hesap erişimi doğrulanamadı: '+e.message);return true}
  if(!blocked){sessionStorage.removeItem('rotapark-account-blocked');return false}
  blockingInProgress=true;sessionStorage.setItem('rotapark-account-blocked','1');
  $('login').style.display='none';$('signed').style.display='none';say(blockedMessage);
