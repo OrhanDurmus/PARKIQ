@@ -20,3 +20,19 @@ function copy(src,dst,depth=0){
 copy(root,out);
 if(!fs.existsSync(path.join(out,'index.html')))throw new Error('Missing index.html');
 console.log('ROTAPARK mobile web assets staged in www/');
+
+// Capacitor uses a local app origin. Rewrite only local root-relative HTML assets
+// in the staged copy; never modify the live website source.
+for (const file of ['index.html']) {
+  const target=path.join(out,file);
+  let html=fs.readFileSync(target,'utf8');
+  html=html.replace(/(href|src)=(["'])\/(?!\/)([^"']+)\2/g, '$1=$2./$3$2');
+  // Native WebViews use a local origin; route server-backed API requests to the public backend.
+  html=html.replace(/fetch\((['"])\/api\//g, 'fetch($1https://rotapark.com.tr/api/');
+  html=html.replace(/const proxy=(['"])\/api\/walking-route/g, 'const proxy=$1https://rotapark.com.tr/api/walking-route');
+  fs.writeFileSync(target,html);
+}
+const mobileHtml=fs.readFileSync(path.join(out,'index.html'),'utf8');
+if (!mobileHtml.includes('src="./navigation-voice.js"')) throw new Error('Mobile navigation voice asset path not rewritten');
+if (mobileHtml.includes("fetch('/api/")) throw new Error('Unresolved mobile API fetch URL');
+console.log('ROTAPARK local assets and backend API URLs prepared for Capacitor');

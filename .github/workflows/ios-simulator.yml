@@ -1,0 +1,35 @@
+name: ROTAPARK iOS simulator build
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  ios-simulator:
+    runs-on: macos-14
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install Capacitor dependencies
+        run: npm install --no-audit --no-fund
+      - name: Prepare bundled web assets
+        run: npm run mobile:prepare
+      - name: Generate iOS project
+        run: npx cap add ios
+      - name: Configure native location permissions
+        run: node scripts/configure-native-permissions.cjs
+      - name: Show Xcode version
+        run: xcodebuild -version
+      - name: Build unsigned iOS simulator app
+        run: |
+          set -o pipefail
+          xcodebuild -project ios/App/App.xcodeproj -scheme App -configuration Debug -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' -derivedDataPath "$RUNNER_TEMP/rotapark-derived" CODE_SIGNING_ALLOWED=NO build
+      - name: Upload simulator-only app
+        uses: actions/upload-artifact@v4
+        with:
+          name: rotapark-ios-simulator
+          path: ${{ runner.temp }}/rotapark-derived/Build/Products/Debug-iphonesimulator/App.app
+          if-no-files-found: error
+          retention-days: 7

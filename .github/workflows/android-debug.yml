@@ -28,6 +28,12 @@ jobs:
         run: npm run mobile:prepare
       - name: Generate Android project
         run: npx cap add android
+      - name: Configure native location permissions
+        run: node scripts/configure-native-permissions.cjs
+      - name: Verify Android foreground location permissions
+        run: |
+          grep -q 'android.permission.ACCESS_FINE_LOCATION' android/app/src/main/AndroidManifest.xml
+          grep -q 'android.permission.ACCESS_COARSE_LOCATION' android/app/src/main/AndroidManifest.xml
       - name: Compile debug APK
         working-directory: android
         run: ./gradlew assembleDebug --no-daemon
