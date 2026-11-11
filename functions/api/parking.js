@@ -79,16 +79,23 @@ async function attachApprovedEntrances(points,env,origin){
 }
 // Only admin-approved reports for locations that are not parking are hidden.
 // Missing D1 data must not make the entire parking API unavailable.
+// Resolve both legacy prefixed IDs (way/123) and current split IDs (way, 123).
+const normalizedOsmKey=(type,id)=>{
+ const raw=String(id??'').trim(),prefix=String(type??'').trim();
+ const match=/^(node|way|relation)\/(\d+)$/.exec(raw);
+ if(match)return match[1]+'/'+match[2];
+ return ['node','way','relation'].includes(prefix)&&/^\d+$/.test(raw)?prefix+'/'+raw:'';
+};
 async function approvedNonParkingIds(env){
  if(!env.DB)return new Set();
  try{
   const result=await env.DB.prepare("SELECT DISTINCT osm_type,osm_id FROM parking_accuracy_reports WHERE status='approved' AND reason='not_parking'").all();
-  return new Set((result.results||[]).map(r=>String(r.osm_type)+'/'+String(r.osm_id).replace(/^(node|way|relation)\//,'')));
+  return new Set((result.results||[]).map(r=>normalizedOsmKey(r.osm_type,r.osm_id)).filter(Boolean));
  }catch{return new Set()}
 }
-// Confirmed by local administrator: this OSM way is not a parking facility.
+// Previously confirmed records stay excluded independently of the D1 review table.
 const confirmedNotParking=new Set(['way/882355136','way/1414411432']);
-const parkingOsmKey=p=>{const id=String(p.osmId||'');return /^(node|way|relation)\/\d+$/.test(id)?id:(p.osmType&&/^\d+$/.test(id)?String(p.osmType)+'/'+id:'')};
+const parkingOsmKey=p=>normalizedOsmKey(p.osmType,p.osmId);
 export async function onRequestGet({request,env}){
  const url=new URL(request.url),lat=Number(url.searchParams.get('lat')),lng=Number(url.searchParams.get('lng'));
  const radiusRaw=Number(url.searchParams.get('radius')||10),radiusKm=[3,10,20,30].includes(radiusRaw)?radiusRaw:10,radiusSq=(radiusKm*1000)**2;
