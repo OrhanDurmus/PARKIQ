@@ -28,7 +28,8 @@ begin
 end $$;
 revoke all on function public.rotapark_set_member_block(uuid,boolean) from public;
 grant execute on function public.rotapark_set_member_block(uuid,boolean) to authenticated;
-create or replace function public.rotapark_list_members(page_number integer default 1, page_size integer default 25, search_email text default '')
+drop function if exists public.rotapark_list_members(integer,integer,text);
+create function public.rotapark_list_members(page_number integer default 1, page_size integer default 25, search_email text default '')
 returns table(user_id uuid,email text,created_at timestamptz,last_sign_in_at timestamptz,email_verified boolean,phone_verified boolean,staff_role text,total_count bigint,blocked boolean)
 language plpgsql stable security definer set search_path=''
 as $$
