@@ -2,5 +2,11 @@
   "appId": "tr.com.rotapark.app",
   "appName": "ROTAPARK",
   "webDir": "www",
-  "bundledWebRuntime": false
+  "server": {
+    "url": "https://rotapark.com.tr",
+    "cleartext": false,
+    "allowNavigation": [
+      "rotapark.com.tr"
+    ]
+  }
 }
