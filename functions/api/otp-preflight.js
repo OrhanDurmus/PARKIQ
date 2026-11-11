@@ -9,6 +9,6 @@ export async function onRequestPost({request,env}){
   const r=await fetch(url+'/rest/v1/rpc/rotapark_email_is_blocked',{method:'POST',headers:{apikey:service,Authorization:'Bearer '+service,'Content-Type':'application/json'},body:JSON.stringify({lookup_email:email}),signal:AbortSignal.timeout(6000)});
   if(!r.ok)return json({ok:false,error:'preflight_unavailable'},503);
   const blocked=await r.json();if(typeof blocked!=='boolean')return json({ok:false,error:'preflight_unavailable'},503);
-  return json({ok:true,blocked});
+  if(blocked&&env.ISPARK_SNAPSHOTS){const ticket=crypto.randomUUID()+crypto.randomUUID();await env.ISPARK_SNAPSHOTS.put('support:ticket:'+ticket,JSON.stringify({email,createdAt:Date.now()}),{expirationTtl:600});return json({ok:true,blocked,supportTicket:ticket})}return json({ok:true,blocked});
  }catch{return json({ok:false,error:'preflight_unavailable'},503)}
 }
