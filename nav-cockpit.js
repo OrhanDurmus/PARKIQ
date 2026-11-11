@@ -6,16 +6,16 @@ const init=()=>{
  const root=host.attachShadow({mode:'open'});
  root.innerHTML=`<style>
  :host{position:absolute;inset:0;z-index:900;pointer-events:none;display:none;font-family:system-ui,-apple-system,sans-serif;color:white}
- .top{position:absolute;top:calc(env(safe-area-inset-top) + 10px);left:12px;right:12px;background:linear-gradient(130deg,#0757bd,#073c85);border:1px solid #52b9ff;border-radius:17px;box-shadow:0 8px 22px #001a3d75;padding:12px 15px}
+ .top{position:absolute;top:calc(env(safe-area-inset-top) + 10px);left:12px;right:12px;background:linear-gradient(130deg,#0757bd,#073c85);border:1px solid #52b9ff;border-radius:17px;box-shadow:0 8px 22px #001a3d75;padding:9px 12px}
  .destination{font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#d1ebff;letter-spacing:.1px;margin-bottom:6px}
- .turn{font-size:clamp(20px,5.5vw,28px);line-height:1.18;font-weight:850;max-height:2.6em;overflow:hidden}
+ .turn{font-size:clamp(19px,5vw,25px);line-height:1.18;font-weight:850;max-height:2.6em;overflow:hidden}
  .bottom{position:absolute;left:12px;right:12px;bottom:calc(env(safe-area-inset-bottom) + 12px);display:grid;gap:9px}
- .metrics{background:#092b48f4;border:1px solid #398dd2;border-radius:16px;box-shadow:0 6px 20px #001a3977;padding:12px;display:flex;justify-content:space-around;gap:8px}
- .metric{flex:1;text-align:center;min-width:0}.metric small{display:block;color:#a9d4f5;font-size:10px;font-weight:750;letter-spacing:.7px;margin-bottom:4px}.metric strong{font-size:clamp(16px,4.5vw,21px);white-space:nowrap}
- .controls{display:flex;justify-content:center;gap:9px;pointer-events:auto}
- button{appearance:none;border:1px solid #71bfd9;border-radius:12px;min-height:46px;padding:9px 15px;background:#0c6c81;color:#fff;font-size:13px;font-weight:750;box-shadow:0 5px 12px #00192d77;touch-action:manipulation}
+ .metrics{background:#092b48f4;border:1px solid #398dd2;border-radius:16px;box-shadow:0 6px 20px #001a3977;padding:9px 10px;display:flex;justify-content:space-around;gap:8px}
+ .metric{flex:1;text-align:center;min-width:0}.metric small{display:block;color:#a9d4f5;font-size:10px;font-weight:750;letter-spacing:.7px;margin-bottom:4px}.metric strong{font-size:clamp(15px,4vw,19px);white-space:nowrap}
+ .controls{display:flex;justify-content:center;gap:8px;pointer-events:auto}
+ button{appearance:none;border:1px solid #71bfd9;border-radius:12px;min-height:42px;padding:8px 12px;background:#0c6c81;color:#fff;font-size:13px;font-weight:750;box-shadow:0 5px 12px #00192d77;touch-action:manipulation}
  button.stop{background:#a02e50;border-color:#f07d9d}
- .gps{position:absolute;right:12px;bottom:calc(env(safe-area-inset-bottom) + 165px);background:#07344dbb;padding:5px 9px;border-radius:20px;font-size:10px;color:#bde9df;max-width:40vw;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+ .gps{position:absolute;right:12px;bottom:calc(env(safe-area-inset-bottom) + 142px);background:#07344dbb;padding:5px 9px;border-radius:20px;font-size:10px;color:#bde9df;max-width:40vw;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
  @media(max-height:570px){.top{padding:8px 11px}.turn{font-size:18px}.metrics{padding:8px}.gps{display:none}}
  </style>
  <div class="top"><div class="destination" id="dest"></div><div class="turn" id="turn"></div></div>
