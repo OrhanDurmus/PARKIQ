@@ -83,10 +83,10 @@ async function approvedNonParkingIds(env){
  if(!env.DB)return new Set();
  try{
   const result=await env.DB.prepare("SELECT DISTINCT osm_type,osm_id FROM parking_accuracy_reports WHERE status='approved' AND reason='not_parking'").all();
-  return new Set((result.results||[]).map(r=>String(r.osm_type)+'/'+String(r.osm_id).replace(/^(node|way|relation)\\//,'')));
+  return new Set((result.results||[]).map(r=>String(r.osm_type)+'/'+String(r.osm_id).replace(/^(node|way|relation)\//,'')));
  }catch{return new Set()}
 }
-const parkingOsmKey=p=>{const id=String(p.osmId||'');return /^(node|way|relation)\\/\\d+$/.test(id)?id:(p.osmType&&/^\\d+$/.test(id)?String(p.osmType)+'/'+id:'')};
+const parkingOsmKey=p=>{const id=String(p.osmId||'');return /^(node|way|relation)\/\d+$/.test(id)?id:(p.osmType&&/^\d+$/.test(id)?String(p.osmType)+'/'+id:'')};
 export async function onRequestGet({request,env}){
  const url=new URL(request.url),lat=Number(url.searchParams.get('lat')),lng=Number(url.searchParams.get('lng'));
  const radiusRaw=Number(url.searchParams.get('radius')||10),radiusKm=[3,10,20,30].includes(radiusRaw)?radiusRaw:10,radiusSq=(radiusKm*1000)**2;
