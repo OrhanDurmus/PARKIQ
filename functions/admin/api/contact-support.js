@@ -25,11 +25,15 @@ async function verifiedAdmin(request,env){
 const reply=(data,status=200)=>Response.json(data,{status,headers:{'Cache-Control':'no-store'}});
 export async function onRequestGet({request,env}){
  if(!await verifiedAdmin(request,env))return reply({ok:false},403);if(!env.DB)return reply({ok:false},503);
- try{await env.DB.prepare("CREATE TABLE IF NOT EXISTS contact_support_requests (id TEXT PRIMARY KEY, email TEXT NOT NULL, topic TEXT NOT NULL, message TEXT NOT NULL, status TEXT NOT NULL DEFAULT 'open', created_at INTEGER NOT NULL)").run();const rows=await env.DB.prepare('SELECT id,email,topic,message,status,created_at FROM contact_support_requests ORDER BY created_at DESC LIMIT 100').all();return reply({ok:true,items:rows.results||[]})}catch{return reply({ok:false},503)}
+ try{await env.DB.prepare("CREATE TABLE IF NOT EXISTS contact_support_requests (id TEXT PRIMARY KEY, email TEXT NOT NULL, topic TEXT NOT NULL, message TEXT NOT NULL, status TEXT NOT NULL DEFAULT 'open', created_at INTEGER NOT NULL)").run();await env.DB.prepare("CREATE TABLE IF NOT EXISTS support_admin_replies (request_id TEXT PRIMARY KEY, message TEXT NOT NULL, replied_at INTEGER NOT NULL)").run();const rows=await env.DB.prepare('SELECT t.*,r.message AS admin_reply,r.replied_at FROM contact_support_requests t LEFT JOIN support_admin_replies r ON r.request_id=t.id ORDER BY t.created_at DESC LIMIT 100').all();return reply({ok:true,items:rows.results||[]})}catch{return reply({ok:false},503)}
 }
 export async function onRequestPost({request,env}){
  if(!await verifiedAdmin(request,env))return reply({ok:false},403);if(!env.DB)return reply({ok:false},503);
  let body;try{body=await request.json()}catch{return reply({ok:false},400)}
+ if(body.action==='reply'){
+  const id=String(body.id||''),message=String(body.message||'').trim();if(!/^[0-9a-f-]{36}$/i.test(id)||message.length<2||message.length>2000)return reply({ok:false,error:'invalid_request'},400);
+  try{const exists=await env.DB.prepare('SELECT id FROM contact_support_requests WHERE id=?').bind(id).first();if(!exists)return reply({ok:false},404);await env.DB.prepare("CREATE TABLE IF NOT EXISTS support_admin_replies (request_id TEXT PRIMARY KEY, message TEXT NOT NULL, replied_at INTEGER NOT NULL)").run();await env.DB.prepare('INSERT INTO support_admin_replies(request_id,message,replied_at) VALUES(?,?,?) ON CONFLICT(request_id) DO UPDATE SET message=excluded.message,replied_at=excluded.replied_at').bind(id,message,Date.now()).run();await env.DB.prepare('UPDATE contact_support_requests SET status=? WHERE id=?').bind('reviewed',id).run();return reply({ok:true})}catch{return reply({ok:false,error:'storage_unavailable'},503)}
+ }
  if(!/^[0-9a-f-]{36}$/i.test(String(body.id||''))||!['open','reviewed','closed'].includes(body.status))return reply({ok:false},400);
  try{await env.DB.prepare('UPDATE contact_support_requests SET status=? WHERE id=?').bind(body.status,body.id).run();return reply({ok:true})}catch{return reply({ok:false},503)}
 }
