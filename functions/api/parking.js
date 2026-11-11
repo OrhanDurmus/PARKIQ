@@ -26,7 +26,7 @@ const parkingAccess=p=>String(p.access??p['access']??p.tags?.access??p.motorVehi
 const restrictedParking=p=>['private','no','customers','residents','employees','staff','permit','delivery','destination','agricultural','forestry','military'].includes(parkingAccess(p))||p.publicAccess===false||p.isPublic===false;
 const publicParking=p=>!restrictedParking(p);
 const labelParkingAccess=p=>({...p,publicAccessStatus:p.verifiedBusiness===true||['yes','permissive'].includes(parkingAccess(p))?'public':'unverified'});
-const response=(points,source,updatedAt)=>Response.json({points,source,updatedAt},{headers:{'Cache-Control':'public,max-age=600','X-Content-Type-Options':'nosniff'}});
+const response=(points,source,updatedAt)=>Response.json({points,source,updatedAt},{headers:{'Cache-Control':'no-store','X-Content-Type-Options':'nosniff'}});
 function fromOsm(el){
  const t=el.tags||{},lat=Number(el.lat??el.center?.lat),lng=Number(el.lon??el.center?.lon);
  if(!Number.isFinite(lat)||!Number.isFinite(lng))return null;
@@ -77,17 +77,28 @@ async function attachApprovedEntrances(points,env,origin){
   });
  }catch{return points}
 }
+// Only admin-approved reports for locations that are not parking are hidden.
+// Missing D1 data must not make the entire parking API unavailable.
+async function approvedNonParkingIds(env){
+ if(!env.DB)return new Set();
+ try{
+  const result=await env.DB.prepare("SELECT DISTINCT osm_type,osm_id FROM parking_accuracy_reports WHERE status='approved' AND reason='not_parking'").all();
+  return new Set((result.results||[]).map(r=>String(r.osm_type)+'/'+String(r.osm_id).replace(/^(node|way|relation)\\//,'')));
+ }catch{return new Set()}
+}
+const parkingOsmKey=p=>{const id=String(p.osmId||'');return /^(node|way|relation)\\/\\d+$/.test(id)?id:(p.osmType&&/^\\d+$/.test(id)?String(p.osmType)+'/'+id:'')};
 export async function onRequestGet({request,env}){
  const url=new URL(request.url),lat=Number(url.searchParams.get('lat')),lng=Number(url.searchParams.get('lng'));
  const radiusRaw=Number(url.searchParams.get('radius')||10),radiusKm=[3,10,20,30].includes(radiusRaw)?radiusRaw:10,radiusSq=(radiusKm*1000)**2;
  if(!inTurkey(lat,lng))return Response.json({error:'Koordinatlar Türkiye sınırları dışında'},{status:400});
+ const excluded=await approvedNonParkingIds(env);
  if(inIstanbul(lat,lng)){
   const asset=await env.ASSETS.fetch(new URL('/data/parking.json',url.origin).toString());
   if(!asset.ok)return Response.json({error:'İstanbul otopark veri dosyası bulunamadı'},{status:503});
   try{
    const data=await asset.json();
    if(!Array.isArray(data.points))throw Error('Invalid data');
-   const points=data.points.filter(p=>validPoint(p)&&publicParking(p)&&!(p.geographicStatus==='confirmed_outside_istanbul'&&p.geographicReviewVerified===true)&&distanceSq(p,lat,lng)<=radiusSq).sort((a,b)=>distanceSq(a,lat,lng)-distanceSq(b,lat,lng)).slice(0,250);
+   const points=data.points.filter(p=>validPoint(p)&&publicParking(p)&&!excluded.has(parkingOsmKey(p))&&!(p.geographicStatus==='confirmed_outside_istanbul'&&p.geographicReviewVerified===true)&&distanceSq(p,lat,lng)<=radiusSq).sort((a,b)=>distanceSq(a,lat,lng)-distanceSq(b,lat,lng)).slice(0,250);
    return response((await attachOfficialIsparkNames(await attachApprovedEntrances(points,env,url.origin),env)).map(enrichName).map(labelParkingAccess),data.source,data.updatedAt);
   }catch{return Response.json({error:'İstanbul otopark dosyası okunamadı'},{status:503})}
  }
@@ -97,7 +108,7 @@ export async function onRequestGet({request,env}){
  try{
   const data=await asset.json();
   if(!Array.isArray(data.points))throw Error('Invalid data');
-  const points=data.points.filter(p=>validPoint(p)&&publicParking(p)&&distanceSq(p,lat,lng)<=radiusSq).sort((a,b)=>distanceSq(a,lat,lng)-distanceSq(b,lat,lng)).slice(0,250);
+  const points=data.points.filter(p=>validPoint(p)&&publicParking(p)&&!excluded.has(parkingOsmKey(p))&&distanceSq(p,lat,lng)<=radiusSq).sort((a,b)=>distanceSq(a,lat,lng)-distanceSq(b,lat,lng)).slice(0,250);
   return response((await attachApprovedEntrances(points,env,url.origin)).map(labelParkingAccess),data.source,data.updatedAt);
  }catch{return Response.json({error:'Türkiye otopark veri dosyası okunamadı'},{status:503})}
 }
