@@ -23,6 +23,7 @@ export async function onRequestPost({request,env}){
  if(!tokenValid(ownerToken)||!validCoord(lat,lng)||note.length>160||address.length>200||displayName.length>32||/[<>\x00-\x1f\x7f]/.test(displayName)||!['space','no_space'].includes(data.type))return json({ok:false,error:'invalid_report'},400);
  const user=await authenticatedUser(request,env);if(!user)return json({ok:false,error:'login_required'},401);
  if(await kv.get('community:user:blocked:'+user.id))return json({ok:false,error:'account_blocked'},403);
+ try{const base=String(env.SUPABASE_URL||'').replace(/\\/$/,'');const anon=String(env.SUPABASE_ANON_KEY||'');const auth=request.headers.get('Authorization');const status=await fetch(base+'/rest/v1/rpc/rotapark_member_blocked',{method:'POST',headers:{apikey:anon,Authorization:auth,'Content-Type':'application/json'},body:'{}',signal:AbortSignal.timeout(6000)});if(!status.ok)return json({ok:false,error:'account_status_unavailable'},503);if(await status.json()===true)return json({ok:false,error:'account_blocked'},403)}catch{return json({ok:false,error:'account_status_unavailable'},503)}
  const ip=request.headers.get('CF-Connecting-IP')||'unknown';
  // Short cooldown plus hourly quota. KV is eventually consistent; these are soft abuse limits.
  const ipKey='community:rate:'+ip, hourKey='community:hour:'+ip;
