@@ -9,7 +9,7 @@ records={}
 entrance_candidates=[]
 def detail(tags,lat,lon):
     fee=tags.get('fee','').lower()
-    access=tags.get('access','')
+    access=tags.get('access','') or tags.get('motor_vehicle','') or tags.get('vehicle','')
     kind=tags.get('parking','')
     address=', '.join(x for x in [tags.get('addr:street',''),tags.get('addr:housenumber',''),tags.get('addr:suburb','')] if x)
     return {'lat':round(lat,6),'lng':round(lon,6),'name':tags.get('name','Otopark kaydı'),'fee':fee if fee in ('yes','no') else 'unknown','kind':kind if kind in ('surface','underground','multi-storey','street_side','lane','rooftop') else 'unknown','address':address,'access':access,'operator':tags.get('operator',''),'city':tags.get('addr:city',''),'province':tags.get('addr:province',tags.get('addr:state',''))}

@@ -20,6 +20,12 @@ const enrichName=p=>{
  }
  return p;
 };
+// Do not offer restricted facilities as public parking destinations.
+// Keep untagged facilities visible but explicitly mark their access as unverified.
+const parkingAccess=p=>String(p.access??p['access']??p.tags?.access??p.motorVehicleAccess??p.motor_vehicle??p.tags?.motor_vehicle??'').trim().toLowerCase();
+const restrictedParking=p=>['private','no','customers','residents','employees','staff','permit','delivery','destination','agricultural','forestry','military'].includes(parkingAccess(p))||p.publicAccess===false||p.isPublic===false;
+const publicParking=p=>!restrictedParking(p);
+const labelParkingAccess=p=>({...p,publicAccessStatus:p.verifiedBusiness===true||['yes','permissive'].includes(parkingAccess(p))?'public':'unverified'});
 const response=(points,source,updatedAt)=>Response.json({points,source,updatedAt},{headers:{'Cache-Control':'public,max-age=600','X-Content-Type-Options':'nosniff'}});
 function fromOsm(el){
  const t=el.tags||{},lat=Number(el.lat??el.center?.lat),lng=Number(el.lon??el.center?.lon);
@@ -81,8 +87,8 @@ export async function onRequestGet({request,env}){
   try{
    const data=await asset.json();
    if(!Array.isArray(data.points))throw Error('Invalid data');
-   const points=data.points.filter(p=>validPoint(p)&&!(p.geographicStatus==='confirmed_outside_istanbul'&&p.geographicReviewVerified===true)&&distanceSq(p,lat,lng)<=radiusSq).sort((a,b)=>distanceSq(a,lat,lng)-distanceSq(b,lat,lng)).slice(0,250);
-   return response((await attachOfficialIsparkNames(await attachApprovedEntrances(points,env,url.origin),env)).map(enrichName),data.source,data.updatedAt);
+   const points=data.points.filter(p=>validPoint(p)&&publicParking(p)&&!(p.geographicStatus==='confirmed_outside_istanbul'&&p.geographicReviewVerified===true)&&distanceSq(p,lat,lng)<=radiusSq).sort((a,b)=>distanceSq(a,lat,lng)-distanceSq(b,lat,lng)).slice(0,250);
+   return response((await attachOfficialIsparkNames(await attachApprovedEntrances(points,env,url.origin),env)).map(enrichName).map(labelParkingAccess),data.source,data.updatedAt);
   }catch{return Response.json({error:'İstanbul otopark dosyası okunamadı'},{status:503})}
  }
  // Static nationwide dataset avoids public Overpass outages during user searches.
@@ -91,7 +97,7 @@ export async function onRequestGet({request,env}){
  try{
   const data=await asset.json();
   if(!Array.isArray(data.points))throw Error('Invalid data');
-  const points=data.points.filter(p=>validPoint(p)&&distanceSq(p,lat,lng)<=radiusSq).sort((a,b)=>distanceSq(a,lat,lng)-distanceSq(b,lat,lng)).slice(0,250);
-  return response(await attachApprovedEntrances(points,env,url.origin),data.source,data.updatedAt);
+  const points=data.points.filter(p=>validPoint(p)&&publicParking(p)&&distanceSq(p,lat,lng)<=radiusSq).sort((a,b)=>distanceSq(a,lat,lng)-distanceSq(b,lat,lng)).slice(0,250);
+  return response((await attachApprovedEntrances(points,env,url.origin)).map(labelParkingAccess),data.source,data.updatedAt);
  }catch{return Response.json({error:'Türkiye otopark veri dosyası okunamadı'},{status:503})}
 }
