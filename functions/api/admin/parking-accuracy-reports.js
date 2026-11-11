@@ -1,7 +1,31 @@
+const TEAM='plain-feather-2800.cloudflareaccess.com';
+const decode64=v=>{const b=atob(v.replace(/-/g,'+').replace(/_/g,'/'));return Uint8Array.from(b,c=>c.charCodeAt(0))};
+async function verifiedAdmin(request,env){
+ const token=request.headers.get('Cf-Access-Jwt-Assertion');
+ if(!token)return false;
+ const parts=token.split('.');if(parts.length!==3)return false;
+ let header,claims;
+ try{header=JSON.parse(new TextDecoder().decode(decode64(parts[0])));claims=JSON.parse(new TextDecoder().decode(decode64(parts[1])))}catch{return false}
+ if(header.alg!=='RS256'||!header.kid||claims.iss!=='https://'+TEAM||!claims.exp||claims.exp<=Date.now()/1000||claims.nbf>Date.now()/1000)return false;
+ // Optional strict application audience when configured in Pages environment.
+ if(env.ACCESS_ADMIN_AUD&&!(Array.isArray(claims.aud)?claims.aud:[claims.aud]).includes(env.ACCESS_ADMIN_AUD))return false;
+ const permitted=String(env.ACCESS_ADMIN_EMAILS||'o.durmus1903@gmail.com').toLowerCase().split(',').map(x=>x.trim()).filter(Boolean);
+ if(!permitted.includes(String(claims.email||'').toLowerCase()))return false;
+ try{
+  const response=await fetch('https://'+TEAM+'/cdn-cgi/access/certs',{cf:{cacheTtl:300,cacheEverything:true}});
+  if(!response.ok)return false;
+  const certs=await response.json();
+  const jwk=(certs.keys||[]).find(k=>k.kid===header.kid&&k.kty==='RSA');
+  if(!jwk)return false;
+  const key=await crypto.subtle.importKey('jwk',jwk,{name:'RSASSA-PKCS1-v1_5',hash:'SHA-256'},false,['verify']);
+  return await crypto.subtle.verify('RSASSA-PKCS1-v1_5',key,decode64(parts[2]),new TextEncoder().encode(parts[0]+'.'+parts[1]));
+ }catch{return false}
+}
+
 // Server-only admin review; SUPABASE admin role is never trusted from user-editable metadata.
 const authenticatedUser=async(request,env)=>{const auth=request.headers.get('Authorization')||'';const match=/^Bearer (\S+)$/.exec(auth);if(!match)return null;const url=String(env.SUPABASE_URL||'').replace(/\/$/,'');const key=String(env.SUPABASE_ANON_KEY||'');if(!/^https:\/\/[a-z0-9-]+\.supabase\.co$/i.test(url)||!key)return null;try{const res=await fetch(url+'/auth/v1/user',{headers:{apikey:key,Authorization:'Bearer '+match[1]},signal:AbortSignal.timeout(6000)});if(!res.ok)return null;const user=await res.json();return typeof user.id==='string'&&user.id.length>0?user:null}catch{return null}};
 const reply=(data,status=200)=>Response.json(data,{status,headers:{'Cache-Control':'no-store','X-Content-Type-Options':'nosniff'}});
-const authorize=async(request,env)=>{const user=await authenticatedUser(request,env);if(!user)return {error:reply({error:'Giriş gerekli.'},401)};const allowed=String(env.PARKING_REPORT_ADMIN_IDS||'').split(',').map(s=>s.trim()).filter(Boolean);if(!allowed.includes(user.id))return {error:reply({error:'Yönetici yetkisi gerekli.'},403)};return {user}};
+const authorize=async(request,env)=>{if(await verifiedAdmin(request,env))return {access:true};const user=await authenticatedUser(request,env);if(!user)return {error:reply({error:'Giriş gerekli.'},401)};const allowed=String(env.PARKING_REPORT_ADMIN_IDS||'').split(',').map(s=>s.trim()).filter(Boolean);if(!allowed.includes(user.id))return {error:reply({error:'Yönetici yetkisi gerekli.'},403)};return {user}};
 export async function onRequestGet({request,env}){const a=await authorize(request,env);if(a.error)return a.error;if(!env.DB)return reply({error:'Veritabanı bağlı değil.'},503);try{const url=new URL(request.url);const status=url.searchParams.get('status')||'pending';if(!['pending','approved','rejected','archived'].includes(status))return reply({error:'Geçersiz durum.'},400);await env.DB.prepare("CREATE TABLE IF NOT EXISTS parking_accuracy_reports (id INTEGER PRIMARY KEY AUTOINCREMENT, osm_type TEXT NOT NULL, osm_id TEXT NOT NULL, lat REAL NOT NULL, lng REAL NOT NULL, name TEXT, reason TEXT NOT NULL, note TEXT, status TEXT NOT NULL DEFAULT 'pending', created_at TEXT NOT NULL DEFAULT (datetime('now')))").run();await env.DB.prepare('ALTER TABLE parking_accuracy_reports ADD COLUMN archived_at TEXT').run().catch(e=>{if(!/duplicate column name/i.test(String(e)))throw e});const query=status==='archived'?'SELECT id,osm_type,osm_id,lat,lng,name,reason,note,status,created_at,archived_at FROM parking_accuracy_reports WHERE archived_at IS NOT NULL ORDER BY archived_at DESC LIMIT 100':'SELECT id,osm_type,osm_id,lat,lng,name,reason,note,status,created_at,archived_at FROM parking_accuracy_reports WHERE status=? AND archived_at IS NULL ORDER BY id DESC LIMIT 100';const rows=await (status==='archived'?env.DB.prepare(query):env.DB.prepare(query).bind(status)).all();return reply({ok:true,reports:rows.results||[]})}catch{return reply({error:'Bildirimler okunamadı.'},503)}}
 export async function onRequestPatch({request,env}){const a=await authorize(request,env);if(a.error)return a.error;if(!env.DB)return reply({error:'Veritabanı bağlı değil.'},503);let data;try{data=await request.json()}catch{return reply({error:'Geçersiz istek.'},400)}const id=Number(data?.id),status=String(data?.status||''),reason=data?.reason===undefined?null:String(data.reason);if(!Number.isSafeInteger(id)||id<1||!['approved','rejected'].includes(status)||(reason!==null&&!['not_parking','not_public','wrong_location','closed','other'].includes(reason)))return reply({error:'Geçersiz kayıt veya karar.'},400);try{const result=await env.DB.prepare("UPDATE parking_accuracy_reports SET status=?,reason=COALESCE(?,reason) WHERE id=? AND status='pending' AND archived_at IS NULL").bind(status,reason,id).run();if(!result.meta?.changes)return reply({error:'Bekleyen bildirim bulunamadı.'},404);return reply({ok:true,status})}catch{return reply({error:'Karar kaydedilemedi.'},503)}}
 
