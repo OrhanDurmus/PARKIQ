@@ -86,6 +86,8 @@ async function approvedNonParkingIds(env){
   return new Set((result.results||[]).map(r=>String(r.osm_type)+'/'+String(r.osm_id).replace(/^(node|way|relation)\//,'')));
  }catch{return new Set()}
 }
+// Confirmed by local administrator: this OSM way is not a parking facility.
+const confirmedNotParking=new Set(['way/882355136']);
 const parkingOsmKey=p=>{const id=String(p.osmId||'');return /^(node|way|relation)\/\d+$/.test(id)?id:(p.osmType&&/^\d+$/.test(id)?String(p.osmType)+'/'+id:'')};
 export async function onRequestGet({request,env}){
  const url=new URL(request.url),lat=Number(url.searchParams.get('lat')),lng=Number(url.searchParams.get('lng'));
@@ -98,7 +100,7 @@ export async function onRequestGet({request,env}){
   try{
    const data=await asset.json();
    if(!Array.isArray(data.points))throw Error('Invalid data');
-   const points=data.points.filter(p=>validPoint(p)&&publicParking(p)&&!excluded.has(parkingOsmKey(p))&&!(p.geographicStatus==='confirmed_outside_istanbul'&&p.geographicReviewVerified===true)&&distanceSq(p,lat,lng)<=radiusSq).sort((a,b)=>distanceSq(a,lat,lng)-distanceSq(b,lat,lng)).slice(0,250);
+   const points=data.points.filter(p=>validPoint(p)&&publicParking(p)&&!excluded.has(parkingOsmKey(p))&&!confirmedNotParking.has(parkingOsmKey(p))&&!(p.geographicStatus==='confirmed_outside_istanbul'&&p.geographicReviewVerified===true)&&distanceSq(p,lat,lng)<=radiusSq).sort((a,b)=>distanceSq(a,lat,lng)-distanceSq(b,lat,lng)).slice(0,250);
    return response((await attachOfficialIsparkNames(await attachApprovedEntrances(points,env,url.origin),env)).map(enrichName).map(labelParkingAccess),data.source,data.updatedAt);
   }catch{return Response.json({error:'İstanbul otopark dosyası okunamadı'},{status:503})}
  }
@@ -108,7 +110,7 @@ export async function onRequestGet({request,env}){
  try{
   const data=await asset.json();
   if(!Array.isArray(data.points))throw Error('Invalid data');
-  const points=data.points.filter(p=>validPoint(p)&&publicParking(p)&&!excluded.has(parkingOsmKey(p))&&distanceSq(p,lat,lng)<=radiusSq).sort((a,b)=>distanceSq(a,lat,lng)-distanceSq(b,lat,lng)).slice(0,250);
+  const points=data.points.filter(p=>validPoint(p)&&publicParking(p)&&!excluded.has(parkingOsmKey(p))&&!confirmedNotParking.has(parkingOsmKey(p))&&distanceSq(p,lat,lng)<=radiusSq).sort((a,b)=>distanceSq(a,lat,lng)-distanceSq(b,lat,lng)).slice(0,250);
   return response((await attachApprovedEntrances(points,env,url.origin)).map(labelParkingAccess),data.source,data.updatedAt);
  }catch{return Response.json({error:'Türkiye otopark veri dosyası okunamadı'},{status:503})}
 }
