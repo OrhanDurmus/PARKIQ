@@ -36,9 +36,10 @@ export async function onRequestPost({request,env}){
  let body;try{body=await request.json()}catch{return json({ok:false,error:'invalid_json'},400)}
  const message=String(body?.message||'').trim();
  if(message.length<1||message.length>400)return json({ok:false,error:'Mesaj 1-400 karakter olmalı.'},400);
+ const type=String(body?.type||'info');if(!['info','warning','urgent'].includes(type))return json({ok:false,error:'invalid_type'},400);
  const duration=Number(body?.durationHours);
  if(![1,6,24,72].includes(duration))return json({ok:false,error:'invalid_duration'},400);
- const now=Date.now(),item={id:crypto.randomUUID(),message,createdAt:now,expiresAt:now+duration*3600000};
+ const now=Date.now(),item={id:crypto.randomUUID(),message,type,createdAt:now,expiresAt:now+duration*3600000};
  await env.ISPARK_SNAPSHOTS.put(key,JSON.stringify(item),{expirationTtl:duration*3600});
  return json({ok:true,message:item});
 }
