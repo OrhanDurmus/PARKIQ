@@ -47,9 +47,12 @@ export async function onRequestPost({request,env}){
  const type=String(body?.type||'info');if(!['info','warning','urgent'].includes(type))return json({ok:false,error:'invalid_type'},400);
  const duration=Number(body?.durationHours);
  if(![1,6,24,72].includes(duration))return json({ok:false,error:'invalid_duration'},400);
- const now=Date.now(),item={id:crypto.randomUUID(),message,type,createdAt:now,expiresAt:now+duration*3600000};
+ const now=Date.now();
  const previous=await env.ISPARK_SNAPSHOTS.get(key,'json');
- if(previous)await archive(env.ISPARK_SNAPSHOTS,{...previous,removedAt:now,removalReason:'replaced'});
+ const editId=body?.editId===undefined?null:String(body.editId);
+ if(editId&&(!previous||previous.id!==editId||previous.expiresAt<=now))return json({ok:false,error:'Duyuru değişmiş veya süresi dolmuş. Sayfayı yenileyin.'},409);
+ const item={id:crypto.randomUUID(),message,type,createdAt:now,expiresAt:now+duration*3600000,...(editId?{editedFrom:editId}:{})};
+ if(previous)await archive(env.ISPARK_SNAPSHOTS,{...previous,removedAt:now,removalReason:editId?'edited':'replaced'});
  await archive(env.ISPARK_SNAPSHOTS,item);
  await env.ISPARK_SNAPSHOTS.put(key,JSON.stringify(item),{expirationTtl:duration*3600});
  return json({ok:true,message:item});
