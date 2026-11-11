@@ -21,12 +21,13 @@ async function load(){
  if(!rows.length)$('members').textContent='Bu aramada üye bulunamadı.';
  for(const u of rows){
  const card=el('article','member'),top=el('div','top'),name=el('span','email',u.email||'E-posta yok'),badge=el('span','pill'+(u.staff_role==='founder'?' founder':''),labels[u.staff_role]||u.staff_role);
- top.append(name,badge);card.append(top);
+ top.append(name,badge);if(u.blocked)top.append(el('span','pill','⛔ Engelli'));card.append(top);
  const details=el('div','details');
  for(const t of ['E-posta: '+(u.email_verified?'✓ Onaylı':'Onaysız'),'Telefon: '+(u.phone_verified?'✓ Onaylı':'Onaysız'),'Kayıt: '+fmt(u.created_at),'Son giriş: '+fmt(u.last_sign_in_at)])details.append(el('span','',t));
  card.append(details);
  if(u.staff_role!=='founder'&&u.user_id!==user.id&&u.email){
  const actions=el('div','actions'),select=el('select');
+ const ban=el('button','',u.blocked?'Engeli Kaldır':'⛔ Engelle');ban.style.background=u.blocked?'#48cfaf':'#e35e6d';ban.style.color=u.blocked?'#062820':'white';ban.onclick=async()=>{if(!confirm(u.email+' hesabı için '+(u.blocked?'engeli kaldırmak':'platform kullanımını engellemek')+' istiyor musun?'))return;ban.disabled=true;try{const {error}=await sb.rpc('rotapark_set_member_block',{target_id:u.user_id,should_block:!u.blocked});if(error)throw error;$('notice').textContent=u.blocked?'Üyenin engeli kaldırıldı.':'Üyenin platform erişimi engellendi.';await loadAfterSave()}catch(e){$('error').textContent=e.message}finally{ban.disabled=false}};
  for(const [value,label] of [['user','Yetkiyi kaldır / Kullanıcı'],['moderator','Moderatör ata'],['admin','Yönetici ata']]){const option=el('option','',label);option.value=value;select.append(option)}
  select.value=u.staff_role;const save=el('button','','Yetkiyi kaydet');
  save.onclick=async()=>{
@@ -36,7 +37,7 @@ async function load(){
   try{const {error}=await sb.rpc('rotapark_set_staff_role',{target_email:u.email,new_role:select.value});if(error)throw error;$('notice').textContent='Yetki güncellendi ve işlem geçmişine kaydedildi.';await loadAfterSave()}
   catch(e){$('error').textContent=e.message}finally{save.disabled=false}
  };
- actions.append(select,save);card.append(actions)
+ actions.append(select,save,ban);card.append(actions)
  }else card.append(el('p','muted','Kurucu hesabı bu panelden değiştirilemez.'));
  $('members').append(card);
  }
