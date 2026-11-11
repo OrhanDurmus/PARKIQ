@@ -82,7 +82,7 @@ async function attachApprovedEntrances(points,env,origin){
 async function approvedNonParkingIds(env){
  if(!env.DB)return new Set();
  try{
-  const result=await env.DB.prepare("SELECT DISTINCT osm_type,osm_id FROM parking_accuracy_reports WHERE status='approved' AND reason='not_parking'").all();
+  const result=await env.DB.prepare("SELECT DISTINCT osm_type,osm_id FROM parking_accuracy_reports WHERE status='approved' AND reason IN ('not_parking','not_public')").all();
   return new Set((result.results||[]).map(r=>String(r.osm_type)+'/'+String(r.osm_id).replace(/^(node|way|relation)\//,'')));
  }catch{return new Set()}
 }
