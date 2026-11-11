@@ -2,16 +2,16 @@
 const $=id=>document.getElementById(id),say=s=>$('status').textContent=s;let client;
 const params=new URLSearchParams(location.search);
 const destination=(()=>{const next=params.get('next');return next&&next.startsWith('/')&&!next.startsWith('//')&&!next.includes('\\\\')?next:'/';})();
-const blockedMessage='⛔ Platform kullanımı engellenmiş kullanıcı. Hesabınızla ROTAPARK\'a erişemezsiniz.';
+const blockedMessage='⛔ Platform kullanımı engellenmiş kullanıcı. Hesabınızla ROTAPARK\'a erişemezsiniz.';const blockedText=()=>blockedMessage+(sessionStorage.getItem('rotapark-block-reason')?' Engel nedeni: '+sessionStorage.getItem('rotapark-block-reason'):'');
 let blockingInProgress=false;
 const checkBlocked=async()=>{if(blockingInProgress)return true;const {data:{session}}=await client.auth.getSession();if(!session)return false;
- let blocked=false;
- try{const res=await fetch('/api/member-access',{headers:{Authorization:'Bearer '+session.access_token},cache:'no-store'});const result=await res.json();if(!res.ok||!result.ok)throw Error(result.error||'status_unavailable');blocked=result.blocked}catch(e){say('Hesap erişimi doğrulanamadı: '+e.message);return true}
+ let blocked=false,blockReason=null;
+ try{const res=await fetch('/api/member-access',{headers:{Authorization:'Bearer '+session.access_token},cache:'no-store'});const result=await res.json();if(!res.ok||!result.ok)throw Error(result.error||'status_unavailable');blocked=result.blocked;blockReason=result.reason}catch(e){say('Hesap erişimi doğrulanamadı: '+e.message);return true}
  if(!blocked){sessionStorage.removeItem('rotapark-account-blocked');return false}
- blockingInProgress=true;sessionStorage.setItem('rotapark-account-blocked','1');
- $('login').style.display='none';$('signed').style.display='none';say(blockedMessage);
+ blockingInProgress=true;sessionStorage.setItem('rotapark-account-blocked','1');if(blockReason)sessionStorage.setItem('rotapark-block-reason',blockReason);else sessionStorage.removeItem('rotapark-block-reason');
+ $('login').style.display='none';$('signed').style.display='none';say(blockedText());
  try{await client.auth.signOut()}catch(_){}
- $('login').style.display='none';$('signed').style.display='none';say(blockedMessage);
+ $('login').style.display='none';$('signed').style.display='none';say(blockedText());
  blockingInProgress=false;return true
 };
 const redirectAfterLogin=async()=>{if(await checkBlocked())return;location.replace(destination)};
@@ -51,7 +51,7 @@ try{
 };
  const verified=user=>Boolean(user?.email_confirmed_at&&user?.phone_confirmed_at&&user?.email&&user?.phone&&String(user.user_metadata?.first_name||'').trim()&&String(user.user_metadata?.last_name||'').trim());
  const fillProfile=user=>{if(!user)return;const m=user.user_metadata||{};$('first-name').value=m.first_name||'';$('last-name').value=m.last_name||'';$('profile-email').value=user.email||'';$('profile-phone').value=user.phone||'';const ok=verified(user);$('verification-status').replaceChildren();if(ok){const badge=document.createElement('span');badge.className='verified-badge';badge.textContent='✓ Onaylı hesap';$('verification-status').append(badge)}else{$('verification-status').textContent='Hesap doğrulama durumu: '+(user.email_confirmed_at?'E-posta onaylı':'E-posta doğrulanmadı')+' · '+(user.phone_confirmed_at?'Telefon onaylı':'Telefon doğrulanmadı')+' · '+(m.first_name&&m.last_name?'Ad soyad kayıtlı':'Ad soyad eksik')}};
- const show=async()=>{if(sessionStorage.getItem('rotapark-account-blocked')==='1'){say(blockedMessage);$('login').style.display='none';$('signed').style.display='none'}if(await checkBlocked())return;const {data:{user}}=await client.auth.getUser();$('login').style.display=user?'none':'block';$('signed').style.display=user?'block':'none';$('profile').textContent=user?'Giriş yapıldı: '+(user.email||'Hesap'):'';say(user?'Hesabın doğrulandı.':sessionStorage.getItem('rotapark-account-blocked')==='1'?blockedMessage:'Giriş yapabilirsin.');if(user){fillProfile(user);await loadReports()}else {$('my-reports').replaceChildren();$('profile-editor').hidden=true;$('edit-profile-toggle').setAttribute('aria-expanded','false')}};
+ const show=async()=>{if(sessionStorage.getItem('rotapark-account-blocked')==='1'){say(blockedText());$('login').style.display='none';$('signed').style.display='none'}if(await checkBlocked())return;const {data:{user}}=await client.auth.getUser();$('login').style.display=user?'none':'block';$('signed').style.display=user?'block':'none';$('profile').textContent=user?'Giriş yapıldı: '+(user.email||'Hesap'):'';say(user?'Hesabın doğrulandı.':sessionStorage.getItem('rotapark-account-blocked')==='1'?blockedText():'Giriş yapabilirsin.');if(user){fillProfile(user);await loadReports()}else {$('my-reports').replaceChildren();$('profile-editor').hidden=true;$('edit-profile-toggle').setAttribute('aria-expanded','false')}};
  const callback=new URL(location.href);if(callback.searchParams.has('code')){say('Giriş bağlantısı doğrulanıyor…');const {error}=await client.auth.exchangeCodeForSession(callback.searchParams.get('code'));if(error)say('Giriş bağlantısı doğrulanamadı: '+error.message);else {history.replaceState({},'',location.pathname);await redirectAfterLogin();}}
  if(params.get('auth_return')==='1'){const {data:{session}}=await client.auth.getSession();if(session)await redirectAfterLogin();}
  await show();client.auth.onAuthStateChange(()=>{setTimeout(show,0)});
