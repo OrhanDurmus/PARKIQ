@@ -14,6 +14,7 @@ export async function onRequestGet({request,env}){
   if(!result.ok)return json({ok:false,error:'ban_check_failed',status:result.status},503);
   const blocked=await result.json();
   if(typeof blocked!=='boolean')return json({ok:false,error:'invalid_ban_response'},503);
-  return json({ok:true,blocked,userId:user.id,version:2});
+  let reason=null;if(blocked){try{const why=await fetch(base+'/rest/v1/rpc/rotapark_my_ban_reason',{method:'POST',headers:{...headers,'Content-Type':'application/json'},body:'{}',signal:AbortSignal.timeout(7000)});if(why.ok){const value=await why.json();if(typeof value==='string')reason=value.slice(0,300)}}catch{}}
+  return json({ok:true,blocked,reason,userId:user.id,version:3});
  }catch{return json({ok:false,error:'ban_check_unavailable'},503)}
 }
