@@ -1,8 +1,8 @@
 const json=(data,status=200)=>Response.json(data,{status,headers:{'Cache-Control':'no-store','X-Content-Type-Options':'nosniff'}});
 export async function onRequestGet({request,env}){
- const token=/^Bearer (\\S+)$/.exec(request.headers.get('Authorization')||'')?.[1];
+ const token=/^Bearer (\S+)$/.exec(request.headers.get('Authorization')||'')?.[1];
  if(!token)return json({ok:false,error:'login_required'},401);
- const base=String(env.SUPABASE_URL||'').replace(/\\/$/,'');
+ const base=String(env.SUPABASE_URL||'').replace(/\/$/,'');
  const key=String(env.SUPABASE_ANON_KEY||'');
  if(!/^https:\/\/[a-z0-9-]+\.supabase\.co$/i.test(base)||!key)return json({ok:false,error:'not_configured'},503);
  try{
