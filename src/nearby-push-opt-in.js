@@ -42,7 +42,7 @@ export async function disableNearbyParkingPush() {
   const response = await fetch('/api/nearby-push', {
     method: 'DELETE', credentials: 'same-origin',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ endpoint: subscription.endpoint })
+    body: JSON.stringify({ endpoint: subscription.endpoint, auth: subscription.toJSON().keys?.auth })
   });
   if (!response.ok) throw new Error('subscription_delete_failed');
   await subscription.unsubscribe();
