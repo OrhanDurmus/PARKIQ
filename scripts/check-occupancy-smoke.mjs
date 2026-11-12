@@ -52,4 +52,31 @@ try{
  assert.equal(observed.opts.headers.Authorization,'Bearer test-jwt');
  assert.deepEqual(JSON.parse(observed.opts.body),{p_parking_id:'ispark:1',p_eta_minutes:10});
 }finally{globalThis.fetch=originalFetch}
+// Ingestion must reject unauthenticated calls, skip unverified snapshots,
+// and write only verified timestamped records using the service role.
+const {onRequestPost:ingestPost}=await import('data:text/javascript;base64,'+Buffer.from(ingest).toString('base64'));
+const ingestUrl='https://rotapark.test/api/occupancy-ingest';
+const ingestEnv={SUPABASE_URL:'https://example.supabase.co',SUPABASE_SERVICE_ROLE_KEY:'test-service',ROTAPARK_OCCUPANCY_INGEST_SECRET:'test-secret'};
+const denied=await ingestPost({request:new Request(ingestUrl,{method:'POST'}),env:ingestEnv});
+assert.equal(denied.status,401,'Ingestion must require secret');
+const ingestionCalls=[];
+try{
+ globalThis.fetch=async(url,opts)=>{
+  ingestionCalls.push({url:String(url),opts});
+  if(String(url).includes('/api/ispark-occupancy'))return Response.json({points:[
+   {id:'12',verifiedLive:true,freeSpaces:3,capacity:10,occupancyUpdatedAt:new Date().toISOString()},
+   {id:'13',verifiedLive:false,freeSpaces:0,capacity:10,occupancyUpdatedAt:new Date().toISOString()},
+   {id:'14',verifiedLive:true,freeSpaces:1,capacity:10,occupancyUpdatedAt:'2020-01-01T00:00:00Z'}
+  ]});
+  return new Response(null,{status:201});
+ };
+ const accepted=await ingestPost({request:new Request(ingestUrl,{method:'POST',headers:{Authorization:'Bearer test-secret'}}),env:ingestEnv});
+ assert.equal(accepted.status,200);
+ const saved=ingestionCalls.find(c=>c.url.includes('/rest/v1/rotapark_occupancy_snapshots'));
+ assert.ok(saved,'Ingestion should write verified snapshots');
+ assert.equal(saved.opts.headers.Authorization,'Bearer test-service');
+ const records=JSON.parse(saved.opts.body);
+ assert.equal(records.length,1,'Reject unverified and stale snapshots');
+ assert.equal(records[0].parking_id,'ispark:12');
+}finally{globalThis.fetch=originalFetch}
 console.log('PASS: '+checked+' JavaScript syntax checks and feature invariants');
