@@ -39,15 +39,22 @@
 #mapWrap.navigation-fullscreen #navOverlayActions{gap:8px}
 #mapWrap.navigation-fullscreen #navDiagnosticPanel{display:none!important}
 .external-nav-warning{display:block;flex-basis:100%;color:#f8d49a;font-size:12px;line-height:1.45;margin:2px 0 4px}
+/* Keep driving buttons outside transformed/clipped overlay: mapWrap is their stable containing block. */
+#mapWrap.navigation-fullscreen #navOverlayActions{z-index:10020!important;pointer-events:none!important}
+#mapWrap.navigation-fullscreen #navOverlayActions #navVoice,
+#mapWrap.navigation-fullscreen #navOverlayActions #navStop{pointer-events:auto!important}
 /* Compact driving controls matching the requested reference screenshot. */
 #mapWrap.navigation-fullscreen #navOverlayActions{
   position:fixed!important;
-  left:50%!important;
-  right:auto!important;
+  left:0!important;
+  right:0!important;
   bottom:calc(env(safe-area-inset-bottom) + 38px)!important;
-  width:max-content!important;
-  max-width:calc(100vw - 24px)!important;
-  transform:translateX(-50%)!important;
+  width:100%!important;
+  max-width:100%!important;
+  box-sizing:border-box!important;
+  padding:0 12px!important;
+  margin:0!important;
+  transform:none!important;
   display:flex!important;
   flex-direction:row!important;
   flex-wrap:nowrap!important;
@@ -221,4 +228,26 @@ if(!tickets.length){active.textContent='Henüz takip edilen talep yok.';archive.
 let openCount=0,archivedCount=0;for(const ticket of tickets){try{const res=await fetch('/api/support-status',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(ticket),cache:'no-store'});if(!res.ok)continue;const d=await res.json();if(!d.ok)continue;const answered=Boolean(d.reply)||d.status==='closed';const line=document.createElement('div');line.style.cssText='padding:12px;margin:9px 0;border:1px solid #456879;border-radius:12px;background:#152f40;overflow-wrap:anywhere';const title=document.createElement('strong');title.textContent='Talep · '+new Date(d.createdAt).toLocaleDateString('tr-TR')+' · '+({open:'Açık',reviewed:'İncelendi',closed:'Kapatıldı'}[d.status]||d.status);line.append(title);const msg=document.createElement('p');msg.style.whiteSpace='pre-wrap';msg.textContent=d.reply?'Yönetici yanıtı: '+d.reply:'Henüz yanıt verilmedi.';line.append(msg);if(answered){archivedCount++}else{active.append(line);openCount++}}catch{}}
 if(!openCount)active.textContent='Bekleyen destek talebiniz yok.';
 }
-window.rotaparkLoadSupportTickets=load;document.getElementById('support-ticket-refresh').onclick=load;load()})();</script><script src="/support-notifications.js?v=3" defer></script></body></html>
+window.rotaparkLoadSupportTickets=load;document.getElementById('support-ticket-refresh').onclick=load;load()})();</script><script src="/support-notifications.js?v=3" defer></script><script>
+(function(){
+ const setup=()=>{
+  const wrap=document.getElementById('mapWrap');
+  const overlay=document.getElementById('navOverlay');
+  const actions=document.getElementById('navOverlayActions');
+  if(!wrap||!overlay||!actions)return;
+  const home=actions.parentNode;
+  const next=actions.nextSibling;
+  const sync=()=>{
+   if(wrap.classList.contains('navigation-fullscreen')){
+    if(actions.parentNode!==wrap)wrap.appendChild(actions);
+   }else if(actions.parentNode!==home){
+    if(next&&next.parentNode===home)home.insertBefore(actions,next);
+    else home.appendChild(actions);
+   }
+  };
+  new MutationObserver(sync).observe(wrap,{attributes:true,attributeFilter:['class']});
+  sync();
+ };
+ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',setup,{once:true});else setup();
+})();
+</script></body></html>
