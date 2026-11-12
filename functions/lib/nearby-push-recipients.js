@@ -16,9 +16,9 @@ export async function findNearbyPushRecipients(db, {latitude, longitude, reportI
     throw new Error('invalid_nearby_push_query');
   }
   // Bounding box is an optimization only; final filter uses great-circle distance.
-  const latDelta = MAX_RADIUS_METERS / 111320;
+  const latDelta = MAX_RADIUS_METERS / 110500;
   const cosLat = Math.cos(latitude * Math.PI / 180);
-  const lonDelta = Math.min(180, MAX_RADIUS_METERS / (111320 * Math.max(cosLat, 0.01)));
+  const lonDelta = Math.min(180, MAX_RADIUS_METERS / (110500 * Math.max(cosLat, 0.01)));
   const result = await db.prepare(`
     SELECT s.endpoint_hash,s.endpoint,s.p256dh,s.auth,s.latitude,s.longitude
     FROM nearby_push_subscriptions s
