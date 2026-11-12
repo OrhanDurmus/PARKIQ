@@ -61,3 +61,5 @@ Repeated runs ignore duplicate observations.
 
 **Important:** GPS checks sent by the browser are not cryptographically attested.
 The departure-report flow still needs abuse testing before general release.
+
+<!-- Cloudflare Git build trigger: isolated occupancy cron worker -->
