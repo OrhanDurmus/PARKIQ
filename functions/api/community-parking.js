@@ -46,7 +46,7 @@ export async function onRequestPost({request,env,context}){
    const job=(async()=>{
     try{
      const recipients=await findNearbyPushRecipients(env.DB,{latitude:point.lat,longitude:point.lng,reportId:id});
-     for(const recipient of recipients){
+     for(const recipient of recipients.slice(0,25)){
       let reserved=false;
       try{
        reserved=await reserveNearbyPushDelivery(env.DB,id,recipient.endpoint_hash);
