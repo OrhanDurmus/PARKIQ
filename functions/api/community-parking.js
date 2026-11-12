@@ -20,26 +20,30 @@ export async function onRequestPost({request,env,context}){
  const length=Number(request.headers.get('content-length')||0);if(length>2500)return json({ok:false,error:'too_large'},413);
  let data;try{const raw=await request.text();if(raw.length>2500)return json({ok:false,error:'too_large'},413);data=JSON.parse(raw)}catch{return json({ok:false,error:'invalid_json'},400)}
  const lat=Number(data.lat),lng=Number(data.lng),note=String(data.note||'').trim(),address=String(data.address||'').trim(),ownerToken=data.ownerToken,displayName=String(data.displayName||'').trim();
- if(!tokenValid(ownerToken)||!validCoord(lat,lng)||note.length>160||address.length>200||displayName.length>32||/[<>\x00-\x1f\x7f]/.test(displayName)||!['space','no_space'].includes(data.type))return json({ok:false,error:'invalid_report'},400);
+ if(!tokenValid(ownerToken)||!validCoord(lat,lng)||note.length>160||address.length>200||displayName.length>32||/[<>\x00-\x1f\x7f]/.test(displayName)||!['space','no_space','departure'].includes(data.type))return json({ok:false,error:'invalid_report'},400);
  const user=await authenticatedUser(request,env);if(!user)return json({ok:false,error:'login_required'},401);
+ if(data.type==='departure'&&(data.gpsVerified!==true||!Number.isFinite(Number(data.gpsAccuracy))||Number(data.gpsAccuracy)>100||Number(data.gpsAccuracy)<0))return json({ok:false,error:'gps_required'},400);
  if(await kv.get('community:user:blocked:'+user.id))return json({ok:false,error:'account_blocked'},403);
  try{const base=String(env.SUPABASE_URL||'').replace(/\/$/,'');const anon=String(env.SUPABASE_ANON_KEY||'');const auth=request.headers.get('Authorization');const status=await fetch(base+'/rest/v1/rpc/rotapark_member_blocked',{method:'POST',headers:{apikey:anon,Authorization:auth,'Content-Type':'application/json'},body:'{}',signal:AbortSignal.timeout(6000)});if(!status.ok)return json({ok:false,error:'account_status_unavailable'},503);if(await status.json()===true)return json({ok:false,error:'account_blocked'},403)}catch{return json({ok:false,error:'account_status_unavailable'},503)}
  const ip=request.headers.get('CF-Connecting-IP')||'unknown';
  // Short cooldown plus hourly quota. KV is eventually consistent; these are soft abuse limits.
  const ipKey='community:rate:'+ip, hourKey='community:hour:'+ip;
+ const departureKey='community:departure:rate:'+user.id;
  try{
   if(await kv.get(ipKey))return json({ok:false,error:'rate_limited',retryAfterSeconds:120},429);
+  if(data.type==='departure'&&await kv.get(departureKey))return json({ok:false,error:'departure_cooldown',retryAfterSeconds:900},429);
   const hourly=Number(await kv.get(hourKey)||0);
   if(hourly>=5)return json({ok:false,error:'hourly_limit'},429);
   const id=crypto.randomUUID(),now=Date.now();
-  const point={id,lat:Math.round(lat*1e5)/1e5,lng:Math.round(lng*1e5)/1e5,type:data.type,note,address,displayName:displayName||String(user.user_metadata?.full_name||user.user_metadata?.name||user.email?.split('@')[0]||'ROTAPARK kullanıcısı').slice(0,32),verifiedAccount:true,createdAt:now,expiresAt:now+2*60*60*1000};
+  const point={id,lat:Math.round(lat*1e5)/1e5,lng:Math.round(lng*1e5)/1e5,type:data.type,note,address,displayName:displayName||String(user.user_metadata?.full_name||user.user_metadata?.name||user.email?.split('@')[0]||'ROTAPARK kullanıcısı').slice(0,32),verifiedAccount:true,createdAt:now,expiresAt:now+(data.type==='departure'?15:120)*60*1000};
   const stored={...point,ownerId:user.id,ownerTokenHash:await tokenHash(ownerToken)};
-  await kv.put(keyPrefix+id,JSON.stringify(stored),{expirationTtl:7200});
+  await kv.put(keyPrefix+id,JSON.stringify(stored),{expirationTtl:data.type==='departure'?900:7200});
   await kv.put('community:user:history:'+user.id+':'+id,JSON.stringify({id,createdAt:now,address:point.address,type:point.type,lat:point.lat,lng:point.lng,status:'active'}),{expirationTtl:60*60*24*90});
   await kv.put('community:user:seen:'+user.id,JSON.stringify({id:user.id,email:String(user.email||''),displayName:point.displayName,lastReportAt:now}),{expirationTtl:60*60*24*90});
   await kv.put(ipKey,id,{expirationTtl:120});
+  if(data.type==='departure')await kv.put(departureKey,id,{expirationTtl:900});
   await kv.put(hourKey,String(hourly+1),{expirationTtl:3600});
-  if(point.type==='space'&&env.NEARBY_PUSH_QUEUE?.send){
+  if((point.type==='space'||point.type==='departure')&&env.NEARBY_PUSH_QUEUE?.send){
    // One lightweight enqueue per report. Queue consumer fans out with paginated D1 queries.
    try{
     await env.NEARBY_PUSH_QUEUE.send({kind:'nearby-report',reportId:id,latitude:point.lat,longitude:point.lng,createdAt:now});

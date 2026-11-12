@@ -1,0 +1,25 @@
+name: Smart parking smoke checks
+on:
+  pull_request:
+    paths:
+      - 'index.html'
+      - 'functions/api/community-parking.js'
+      - 'functions/api/occupancy-*.js'
+      - 'scripts/check-occupancy-smoke.mjs'
+      - 'workers/occupancy-cron.js'
+      - 'supabase/migrations/20261112_occupancy_eta.sql'
+      - '.github/workflows/occupancy-smoke.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  syntax-and-invariants:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Check syntax and feature invariants
+        run: node scripts/check-occupancy-smoke.mjs
