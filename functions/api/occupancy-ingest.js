@@ -25,8 +25,8 @@ export async function onRequestPost({request,env}){
       source:'ibb_ispark'
     }));
   if(!rows.length)return json({ok:true,inserted:0,reason:'no_verified_live_rows'});
-  const result=await fetch(base+'/rest/v1/rotapark_occupancy_snapshots',{
-    method:'POST',headers:{apikey:service,Authorization:'Bearer '+service,'Content-Type':'application/json',Prefer:'return=minimal'},
+  const result=await fetch(base+'/rest/v1/rotapark_occupancy_snapshots?on_conflict=parking_id,observed_at,source',{
+    method:'POST',headers:{apikey:service,Authorization:'Bearer '+service,'Content-Type':'application/json',Prefer:'resolution=ignore-duplicates,return=minimal'},
     body:JSON.stringify(rows),signal:AbortSignal.timeout(10000)
   });
   if(!result.ok)return json({ok:false,error:'database_write_failed'},503);
