@@ -1,6 +1,3 @@
-import {findNearbyPushRecipients} from '../lib/nearby-push-recipients.js';
-import {reserveNearbyPushDelivery,releaseNearbyPushDelivery,deleteExpiredPushSubscription} from '../lib/nearby-push-delivery.js';
-import {sendNearbyParkingPush} from '../lib/web-push.js';
 // Community reports are short-lived observations, not verified legal parking permissions.
 const json=(data,status=200)=>Response.json(data,{status,headers:{'Cache-Control':'no-store','X-Content-Type-Options':'nosniff'}});
 const keyPrefix='community:street:';
@@ -42,26 +39,11 @@ export async function onRequestPost({request,env,context}){
   await kv.put('community:user:seen:'+user.id,JSON.stringify({id:user.id,email:String(user.email||''),displayName:point.displayName,lastReportAt:now}),{expirationTtl:60*60*24*90});
   await kv.put(ipKey,id,{expirationTtl:120});
   await kv.put(hourKey,String(hourly+1),{expirationTtl:3600});
-  if(point.type==='space'&&env.DB&&env.WEB_PUSH_PRIVATE_KEY&&env.WEB_PUSH_PUBLIC_KEY){
-   const job=(async()=>{
-    try{
-     const recipients=await findNearbyPushRecipients(env.DB,{latitude:point.lat,longitude:point.lng,reportId:id});
-     for(const recipient of recipients.slice(0,25)){
-      let reserved=false;
-      try{
-       reserved=await reserveNearbyPushDelivery(env.DB,id,recipient.endpoint_hash);
-       if(!reserved)continue;
-       const sent=await sendNearbyParkingPush(env,recipient,{reportId:id,distanceMeters:recipient.distanceMeters});
-       if(sent.expired){await deleteExpiredPushSubscription(env.DB,recipient.endpoint_hash);continue}
-       if(!sent.ok)await releaseNearbyPushDelivery(env.DB,id,recipient.endpoint_hash);
-      }catch(e){
-       if(reserved)try{await releaseNearbyPushDelivery(env.DB,id,recipient.endpoint_hash)}catch{}
-       console.error('nearby_push_delivery_failed',String(e?.message||e));
-      }
-     }
-    }catch(e){console.error('nearby_push_batch_failed',String(e?.message||e))}
-   })();
-   if(context?.waitUntil)context.waitUntil(job);else await job;
+  if(point.type==='space'&&env.NEARBY_PUSH_QUEUE?.send){
+   // One lightweight enqueue per report. Queue consumer fans out with paginated D1 queries.
+   try{
+    await env.NEARBY_PUSH_QUEUE.send({kind:'nearby-report',reportId:id,latitude:point.lat,longitude:point.lng,createdAt:now});
+   }catch(e){console.error('nearby_push_enqueue_failed',String(e?.message||e))}
   }
   return json({ok:true,point},201);
  }catch{return json({ok:false,error:'storage_unavailable'},503)}
