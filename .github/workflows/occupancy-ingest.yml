@@ -1,0 +1,24 @@
+name: Occupancy snapshot ingestion
+on:
+  schedule:
+    - cron: '*/15 * * * *'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  ingest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Send authorized ingestion request
+        env:
+          INGEST_TOKEN: ${{ secrets.ROTAPARK_OCCUPANCY_INGEST_SECRET }}
+        run: |
+          if [ -z "$INGEST_TOKEN" ]; then
+            echo "ROTAPARK_OCCUPANCY_INGEST_SECRET is not configured."
+            exit 1
+          fi
+          curl --fail-with-body --silent --show-error --max-time 35 --retry 1 \
+            -X POST 'https://parkiq.pages.dev/api/occupancy-ingest' \
+            -H "Authorization: Bearer $INGEST_TOKEN" \
+            -H 'Content-Type: application/json'
