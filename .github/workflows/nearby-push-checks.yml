@@ -8,6 +8,8 @@ on:
       - 'src/nearby-push-*.js'
       - 'sw.js'
       - 'tests/nearby-push.test.mjs'
+      - 'workers/nearby-push-worker.js'
+      - 'wrangler.nearby-push.toml'
       - '.github/workflows/nearby-push-checks.yml'
   workflow_dispatch:
 jobs:
@@ -20,6 +22,6 @@ jobs:
           node-version: '22'
       - name: Check syntax
         run: |
-          for f in functions/api/community-parking.js functions/api/nearby-push.js functions/lib/nearby-push-*.js functions/lib/web-push.js src/nearby-push-*.js sw.js; do node --check "$f"; done
+          for f in functions/api/community-parking.js functions/api/nearby-push.js functions/lib/nearby-push-*.js functions/lib/web-push.js src/nearby-push-*.js workers/nearby-push-worker.js sw.js; do node --check "$f"; done
       - name: Run nearby push regression tests
         run: node --test tests/nearby-push.test.mjs
