@@ -15,7 +15,7 @@ export async function onRequestGet({env}){
   return json({ok:true,points:items.map(({ownerTokenHash,ownerId,...point})=>point)});
  }catch(e){return json({ok:false,error:'storage_unavailable'},503)}
 }
-export async function onRequestPost({request,env}){
+export async function onRequestPost({request,env,context}){
  const kv=store(env);if(!kv?.put||!kv?.get)return json({ok:false,error:'not_configured'},503);
  const length=Number(request.headers.get('content-length')||0);if(length>2500)return json({ok:false,error:'too_large'},413);
  let data;try{const raw=await request.text();if(raw.length>2500)return json({ok:false,error:'too_large'},413);data=JSON.parse(raw)}catch{return json({ok:false,error:'invalid_json'},400)}
@@ -39,6 +39,12 @@ export async function onRequestPost({request,env}){
   await kv.put('community:user:seen:'+user.id,JSON.stringify({id:user.id,email:String(user.email||''),displayName:point.displayName,lastReportAt:now}),{expirationTtl:60*60*24*90});
   await kv.put(ipKey,id,{expirationTtl:120});
   await kv.put(hourKey,String(hourly+1),{expirationTtl:3600});
+  if(point.type==='space'&&env.NEARBY_PUSH_QUEUE?.send){
+   // One lightweight enqueue per report. Queue consumer fans out with paginated D1 queries.
+   try{
+    await env.NEARBY_PUSH_QUEUE.send({kind:'nearby-report',reportId:id,latitude:point.lat,longitude:point.lng,createdAt:now});
+   }catch(e){console.error('nearby_push_enqueue_failed',String(e?.message||e))}
+  }
   return json({ok:true,point},201);
  }catch{return json({ok:false,error:'storage_unavailable'},503)}
 }
