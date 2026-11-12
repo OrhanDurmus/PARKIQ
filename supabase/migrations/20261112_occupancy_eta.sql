@@ -26,7 +26,7 @@ returns table (
   confidence text,
   latest_observed_at timestamptz
 )
-language sql stable security invoker
+language sql stable security definer
 set search_path = ''
 as $$
   with target as (
@@ -66,8 +66,12 @@ as $$
          when stats.n >= 20 then 'high'
          else 'medium' end as confidence,
     latest.observed_at as latest_observed_at
-  from stats left join latest on true;
+  from stats left join latest on true
+  where p_parking_id is not null and length(p_parking_id) between 1 and 180
+    and p_eta_minutes between 0 and 240;
 $$;
 revoke all on function public.rotapark_predict_occupancy(text, integer) from public, anon;
 grant execute on function public.rotapark_predict_occupancy(text, integer) to authenticated, service_role;
--- Security note: authenticated callers can only read aggregate predictions, not raw snapshots.
+-- SECURITY DEFINER is required because authenticated users cannot SELECT snapshots.
+-- The function has no dynamic SQL, fixes its search_path, and returns aggregate results only.
+-- Run migration as the trusted database owner (Supabase SQL Editor), not an untrusted role.
