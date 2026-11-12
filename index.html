@@ -158,6 +158,19 @@ async function reports(){
    if(point.address){const address=document.createElement('p');address.textContent='📍 '+point.address;popup.appendChild(address)}const note=document.createElement('p');note.textContent=point.note||'Kullanıcı bildirimi';popup.appendChild(note);
    const age=document.createElement('small');age.textContent='Kullanıcı bildirimi · Doğrulanmadı · 2 saat sonra kalkar';popup.appendChild(age);const ownedIds=read('rotapark_community_own_reports',[]);const isMine=Array.isArray(ownedIds)&&ownedIds.includes(point.id);if(isMine)popup.appendChild(communityDeleteButton(point));if(point.type==='space'){available++;const go=document.createElement('button');go.type='button';go.textContent='🚗 Park yerine git';go.onclick=()=>{document.getElementById('sideMenuClose')?.click();navigateToParking(point.lat,point.lng,point.address||'Bildirilen sokak park yeri')};popup.appendChild(go);const item=document.createElement('div');item.className='community-place-item';const name=document.createElement('div');name.textContent='📍 '+(point.address||point.note||'Bildirilen park konumu');item.appendChild(name);const by=document.createElement('small');by.textContent='👤 Bildiren: '+(point.displayName||'Misafir kullanıcı')+(point.verifiedAccount?' · Doğrulanmış hesap':' · Doğrulanmamış ad');item.appendChild(by);const warning=document.createElement('small');warning.textContent='Kullanıcı bildirimi · Yer ve park izni doğrulanmadı';item.appendChild(warning);const buttons=document.createElement('div');buttons.className='community-place-actions';const mapButton=document.createElement('button');mapButton.type='button';mapButton.textContent='🗺️ Haritada göster';mapButton.onclick=()=>{document.getElementById('sideMenuClose')?.click();map.setView([point.lat,point.lng],17);marker.openPopup();document.getElementById('map').scrollIntoView({behavior:'smooth',block:'center'})};const routeButton=document.createElement('button');routeButton.type='button';routeButton.textContent='🚗 Park yerine git';routeButton.onclick=()=>{document.getElementById('sideMenuClose')?.click();navigateToParking(point.lat,point.lng,point.address||'Bildirilen sokak park yeri')};buttons.append(mapButton,routeButton);item.appendChild(buttons);if(isMine)item.appendChild(communityDeleteButton(point));places.appendChild(item)}marker.bindPopup(popup);
   }
+  const requestedReport=new URLSearchParams(location.search).get('parkingReport');
+  if(requestedReport&&/^[0-9a-f-]{36}$/i.test(requestedReport)){
+   const selected=payload.points.find(p=>p.id===requestedReport&&p.type==='space');
+   if(selected){
+    map.setView([selected.lat,selected.lng],17);
+    communityMarkers.eachLayer(layer=>{
+     const center=layer.getLatLng?.();
+     if(center&&Math.abs(center.lat-selected.lat)<0.000001&&Math.abs(center.lng-selected.lng)<0.000001)layer.openPopup();
+    });
+    document.getElementById('map')?.scrollIntoView({behavior:'smooth',block:'center'});
+   }else status('Bu park bildirimi artık aktif değil.');
+   const url=new URL(location.href);url.searchParams.delete('parkingReport');history.replaceState(null,'',url.pathname+url.search+url.hash);
+  }
   list.textContent=payload.points.length+' güncel sokak park bildirimi haritada gösteriliyor (doğrulanmamış).';if(!available){places.textContent='Şu anda park yeri bildirimi bulunmuyor.'}
  }catch{$('reports').textContent='Topluluk bildirimleri şu anda yüklenemiyor.';$('communityPlaces').replaceChildren();}
 }
