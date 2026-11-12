@@ -23,6 +23,7 @@ if ('serviceWorker' in navigator && 'PushManager' in window && 'Notification' in
       const subscription=await registration?.pushManager.getSubscription();
       if(subscription){await disableNearbyParkingPush();}
       else{
+        if(Notification.permission==='default') {const permission=await Notification.requestPermission();if(permission!=='granted')throw Error('permission_not_granted')}
         if(!navigator.geolocation)throw Error('Konum desteği yok');
         const location=await new Promise((resolve,reject)=>navigator.geolocation.getCurrentPosition(resolve,reject,{enableHighAccuracy:true,timeout:12000,maximumAge:30000}));
         await enableNearbyParkingPush({latitude:location.coords.latitude,longitude:location.coords.longitude});
