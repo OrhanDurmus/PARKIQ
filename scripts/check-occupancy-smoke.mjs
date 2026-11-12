@@ -8,7 +8,7 @@ const scripts=[...html.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script>/gi)];
 const dir=mkdtempSync(join(tmpdir(),'rotapark-smoke-'));
 let checked=0;
 for(const [,attrs,body] of scripts){
- if(!body.trim()||/\bsrc\s*=/.test(attrs))continue;
+ if(!body.trim()||/\bsrc\s*=/.test(attrs)||/\btype\s*=\s*["'](?:application\/ld\+json|importmap|application\/json)["']/i.test(attrs))continue;
  const path=join(dir,'inline-'+checked+(/\btype\s*=\s*["']module["']/.test(attrs)?'.mjs':'.cjs'));
  writeFileSync(path,body);
  execFileSync(process.execPath,['--check',path],{stdio:'pipe'});
@@ -34,4 +34,22 @@ assert.match(sql,/rotapark_snapshot_unique/);
 const api=readFileSync('functions/api/community-parking.js','utf8');
 assert.match(api,/data\.type==='departure'\?900:7200/);
 assert.match(api,/community:departure:rate:/);
+// Exercise the prediction handler without external credentials or network calls.
+const {onRequestGet}=await import('data:text/javascript;base64,'+Buffer.from(prediction).toString('base64'));
+const env={SUPABASE_URL:'https://example.supabase.co',SUPABASE_ANON_KEY:'test-anon'};
+const makeRequest=(url,token)=>new Request(url,{headers:token?{Authorization:'Bearer '+token}:{}});
+const invalid=await onRequestGet({request:makeRequest('https://rotapark.test/api/occupancy-prediction?parkingId=ispark%3A1&etaMinutes=-1','test-jwt'),env});
+assert.equal(invalid.status,400,'Invalid ETA must be rejected');
+const unauth=await onRequestGet({request:makeRequest('https://rotapark.test/api/occupancy-prediction?parkingId=ispark%3A1&etaMinutes=10'),env});
+assert.equal(unauth.status,401,'Missing JWT must be rejected');
+const originalFetch=globalThis.fetch;
+let observed=null;
+try{
+ globalThis.fetch=async(url,opts)=>{observed={url,opts};return Response.json([{predicted_free_spaces:4,latest_free_spaces:6,sample_count:9,confidence:'medium'}])};
+ const ok=await onRequestGet({request:makeRequest('https://rotapark.test/api/occupancy-prediction?parkingId=ispark%3A1&etaMinutes=10','test-jwt'),env});
+ assert.equal(ok.status,200);
+ assert.equal((await ok.json()).prediction.predicted_free_spaces,4);
+ assert.equal(observed.opts.headers.Authorization,'Bearer test-jwt');
+ assert.deepEqual(JSON.parse(observed.opts.body),{p_parking_id:'ispark:1',p_eta_minutes:10});
+}finally{globalThis.fetch=originalFetch}
 console.log('PASS: '+checked+' JavaScript syntax checks and feature invariants');
