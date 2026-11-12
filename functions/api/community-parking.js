@@ -28,8 +28,10 @@ export async function onRequestPost({request,env,context}){
  const ip=request.headers.get('CF-Connecting-IP')||'unknown';
  // Short cooldown plus hourly quota. KV is eventually consistent; these are soft abuse limits.
  const ipKey='community:rate:'+ip, hourKey='community:hour:'+ip;
+ const departureKey='community:departure:rate:'+user.id;
  try{
   if(await kv.get(ipKey))return json({ok:false,error:'rate_limited',retryAfterSeconds:120},429);
+  if(data.type==='departure'&&await kv.get(departureKey))return json({ok:false,error:'departure_cooldown',retryAfterSeconds:900},429);
   const hourly=Number(await kv.get(hourKey)||0);
   if(hourly>=5)return json({ok:false,error:'hourly_limit'},429);
   const id=crypto.randomUUID(),now=Date.now();
@@ -39,6 +41,7 @@ export async function onRequestPost({request,env,context}){
   await kv.put('community:user:history:'+user.id+':'+id,JSON.stringify({id,createdAt:now,address:point.address,type:point.type,lat:point.lat,lng:point.lng,status:'active'}),{expirationTtl:60*60*24*90});
   await kv.put('community:user:seen:'+user.id,JSON.stringify({id:user.id,email:String(user.email||''),displayName:point.displayName,lastReportAt:now}),{expirationTtl:60*60*24*90});
   await kv.put(ipKey,id,{expirationTtl:120});
+  if(data.type==='departure')await kv.put(departureKey,id,{expirationTtl:900});
   await kv.put(hourKey,String(hourly+1),{expirationTtl:3600});
   if((point.type==='space'||point.type==='departure')&&env.NEARBY_PUSH_QUEUE?.send){
    // One lightweight enqueue per report. Queue consumer fans out with paginated D1 queries.
