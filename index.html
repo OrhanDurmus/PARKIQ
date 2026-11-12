@@ -79,6 +79,55 @@
 }
 #mapWrap.navigation-fullscreen #navOverlayActions #navVoice{background:#08718a!important;border:1px solid #59c9d6!important}
 #mapWrap.navigation-fullscreen #navOverlayActions #navStop{background:#a02c50!important;border:1px solid #ed7b9e!important}
+
+/* Compact fullscreen turn card: keep instructions readable while opening map space. */
+#mapWrap.navigation-fullscreen #navOverlay{
+ top:calc(env(safe-area-inset-top) + 10px)!important;
+ left:12px!important;right:12px!important;
+ width:auto!important;max-width:none!important;
+ padding:0!important;
+}
+#mapWrap.navigation-fullscreen #navOverlayText{
+ padding:11px 14px!important;
+ border-radius:17px!important;
+ box-shadow:0 5px 14px #001a2a55!important;
+}
+#mapWrap.navigation-fullscreen #navDestination{
+ font-size:11px!important;line-height:1.2!important;
+ margin:0 0 6px!important;white-space:nowrap!important;
+ overflow:hidden!important;text-overflow:ellipsis!important;
+}
+#mapWrap.navigation-fullscreen #navTurnText{
+ font-size:clamp(20px,5.4vw,27px)!important;
+ line-height:1.15!important;margin:0!important;
+ font-weight:800!important;
+}
+#mapWrap.navigation-fullscreen #navTripMetrics{
+ display:grid!important;grid-template-columns:1fr 1fr!important;
+ gap:6px!important;margin:9px 0 0!important;
+ padding:8px 0 0!important;
+ border-top:1px solid #ffffff30!important;
+}
+#mapWrap.navigation-fullscreen #navTripMetrics[hidden]{display:none!important}
+#mapWrap.navigation-fullscreen #navTripMetrics .nav-metric{
+ min-width:0!important;padding:0!important;
+}
+#mapWrap.navigation-fullscreen #navTripMetrics .nav-metric small{
+ font-size:9px!important;letter-spacing:.5px!important;
+}
+#mapWrap.navigation-fullscreen #navTripMetrics .nav-metric span{
+ font-size:16px!important;line-height:1.2!important;
+}
+#mapWrap.navigation-fullscreen #navTripMetrics .nav-speed,
+#mapWrap.navigation-fullscreen #navHeading,
+#mapWrap.navigation-fullscreen #navProgress{display:none!important}
+#mapWrap.navigation-fullscreen #navGpsQuality{
+ display:inline-block!important;width:auto!important;
+ max-width:100%!important;box-sizing:border-box!important;
+ padding:3px 8px!important;margin:7px 0 0!important;
+ font-size:10px!important;line-height:1.2!important;
+}
+#mapWrap.navigation-fullscreen #navGpsQuality[hidden]{display:none!important}
 </style></head><body><style>#locationConsent:not([hidden]){display:flex}#locationConsent[hidden]{display:none}</style><div id="locationConsent" role="dialog" aria-modal="true" aria-labelledby="locationConsentTitle" hidden style="position:fixed;inset:0;z-index:3000;background:#06111dd9;align-items:center;justify-content:center;padding:22px"><div style="width:min(100%,390px);padding:25px;background:#14283c;border:1px solid #4ee0bc;border-radius:22px;box-shadow:0 15px 65px #000a"><div style="font-size:38px">📍</div><h2 id="locationConsentTitle">Konumunu paylaş</h2><p style="color:#c8d8e6;line-height:1.5">Yakınındaki otoparkları bulmak ve navigasyonu başlatmak için konum izni gerekiyor.</p><div id="locationConsentMessage" role="status" aria-live="polite" style="color:#c5d7e5;margin:10px 0">Konumu bulmak için izin verin.</div><button id="locationConsentAllow" type="button" style="width:100%;margin:8px 0">📍 Konuma izin ver</button><button id="locationConsentLater" type="button" style="width:100%;background:#29475c;color:#fff">Şimdi değil</button></div></div><div id="rotaParkIntro" aria-hidden="true"><div class="mark"><img src="/apple-touch-icon.jpg" width="96" height="96" alt="" decoding="async"></div><strong>Rota<span>Park</span></strong><small>Şehrinin akıllı park asistanı.</small></div><div id="pullRefresh" role="status" aria-live="polite">↓ Yenilemek için aşağı çek</div><header><button type="button" id="sideMenuOpen" aria-label="Menüyü aç" aria-controls="sideMenu" aria-expanded="false">☰</button><div class="header-brand"><img src="/apple-touch-icon.jpg" width="42" height="42" alt="" aria-hidden="true" decoding="async"><h1>Rota<span>Park</span></h1></div><small>Türkiye • Otopark ve rota planlama</small><a id="rotaparkAccountLink" href="/account/" aria-label="Hesabım ve giriş durumu" style="margin-left:auto;display:inline-flex;align-items:center;gap:6px;padding:10px 12px;background:#203a4d;border:1px solid #467184;border-radius:12px;color:#e9f8ff;text-decoration:none;font-size:13px;font-weight:700;max-width:100%;overflow:hidden"><span aria-hidden="true">👤</span><span id="rotaparkAccountLabel">Giriş yap</span></a></header><style>
 /* Compact accordion navigation: only the selected drawer form is visible */
 #sideMenu #communityReportSection,#sideMenu #businessSection,#sideMenu #contactSupport{display:none!important}
