@@ -25,10 +25,10 @@ export async function onRequestDelete({request,env}){
  if(origin!==new URL(request.url).origin)return reply({ok:false,error:'invalid_origin'},403);
  if(Number(request.headers.get('content-length'))>8192)return reply({ok:false},413);
  let data;try{data=await request.json()}catch{return reply({ok:false,error:'invalid_json'},400)}
- const endpoint=data?.endpoint;
- if(typeof endpoint!=='string'||!validEndpoint(endpoint))return reply({ok:false,error:'invalid_endpoint'},400);
+ const endpoint=data?.endpoint,auth=data?.auth;
+ if(typeof endpoint!=='string'||!validEndpoint(endpoint)||typeof auth!=='string'||!/^[A-Za-z0-9_-]{15,80}$/.test(auth))return reply({ok:false,error:'invalid_endpoint'},400);
  try{
-  await env.DB.prepare('DELETE FROM nearby_push_subscriptions WHERE endpoint_hash=?').bind(await hash(endpoint)).run();
+  await env.DB.prepare('DELETE FROM nearby_push_subscriptions WHERE endpoint_hash=? AND auth=?').bind(await hash(endpoint),auth).run();
   return reply({ok:true});
  }catch{return reply({ok:false,error:'database_unavailable'},503)}
 }
