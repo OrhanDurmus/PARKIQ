@@ -175,7 +175,10 @@ const updateDriveCamera=(duration=0)=>{
  const bottom=hud?.querySelector('.bottom')?.getBoundingClientRect();
  const minY=top?.height?top.bottom-canvas.top+24:canvas.height*.45;
  const maxY=bottom?.height?bottom.top-canvas.top-24:canvas.height*.76;
- const targetY=Math.min(Math.max(canvas.height*drivingCamera.vehicleY,minY),Math.max(canvas.height*.5,maxY));
+ if(canvas.height<=0||canvas.width<=0)return;
+ const safeMinY=Math.min(Math.max(0,minY),canvas.height);
+ const safeMaxY=Math.max(safeMinY,Math.min(canvas.height,maxY));
+ const targetY=Math.min(Math.max(canvas.height*drivingCamera.vehicleY,safeMinY),safeMaxY);
  const svg=drive3dVehicle?.getElement().querySelector('svg');
  if(svg)svg.style.transform='rotate(0deg)';
  const options={center:[pose.lng,pose.lat],bearing:pose.bearing,zoom:drivingCamera.zoom,pitch:drivingCamera.pitch,padding:{top:Math.max(0,Math.round(2*targetY-canvas.height)),bottom:0,left:0,right:0}};
