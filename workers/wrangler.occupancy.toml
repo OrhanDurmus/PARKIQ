@@ -1,0 +1,5 @@
+# Isolated Cloudflare Worker. Never use for the ROTAPARK Pages site.
+name = "rotapark-occupancy-cron"
+main = "./occupancy-cron.js"
+compatibility_date = "2026-11-12"
+workers_dev = true
