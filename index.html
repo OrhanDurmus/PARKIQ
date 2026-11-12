@@ -233,7 +233,7 @@ async function showEtaOccupancy(target,minutes){
  const destination=$('navDestination');if(!target||!destination||activeRouteMode!=='driving')return;
  const parking=allParking.find(p=>p.isparkParkID!=null&&Math.hypot((Number(p.lat)-Number(target.lat))*111195,(Number(p.lng)-Number(target.lng))*111195*Math.cos(Number(target.lat)*Math.PI/180))<100);
  if(!parking)return;
- const token=await window.rotaparkAuthToken?.();if(!token||routeDestination!==target)return;
+ let token;try{token=await window.rotaparkAuthToken?.()}catch{return}if(!token||routeDestination!==target)return;
  try{
   const response=await fetch('/api/occupancy-prediction?parkingId='+encodeURIComponent('ispark:'+parking.isparkParkID)+'&etaMinutes='+encodeURIComponent(Math.max(0,Math.min(240,Math.ceil(minutes)))),{headers:{Authorization:'Bearer '+token},cache:'no-store',signal:AbortSignal.timeout(8000)});
   if(!response.ok||routeDestination!==target)return;
@@ -248,7 +248,7 @@ async function showEtaOccupancy(target,minutes){
 const occupancyCoords=p=>{const lat=Number(p.entranceLat),lng=Number(p.entranceLng);return p.entranceVerified===true&&Number.isFinite(lat)&&Number.isFinite(lng)&&Math.abs(lat)<=90&&Math.abs(lng)<=180&&!(lat===0&&lng===0)?{lat,lng}:null};
 async function checkNavigationOccupancy(){
  if(occupancyCheckBusy||routeWatch===null||activeRouteMode!=='driving'||!routeDestination||!navigator.onLine||document.hidden||rerouting||!lastGps||Date.now()-gpsLastAcceptedAt>15000||Date.now()-occupancyLastAlternativeAt<120000)return;
- const target=allParking.find(p=>Math.hypot((Number(p.lat)-Number(routeDestination.lat))*111195,(Number(p.lng)-Number(routeDestination.lng))*111195*Math.cos(Number(p.lat)*Math.PI/180))<100);
+ const target=allParking.find(p=>p.isparkParkID!=null&&Math.hypot((Number(p.lat)-Number(routeDestination.lat))*111195,(Number(p.lng)-Number(routeDestination.lng))*111195*Math.cos(Number(p.lat)*Math.PI/180))<100);
  if(!target)return;
  occupancyCheckBusy=true;
  try{
