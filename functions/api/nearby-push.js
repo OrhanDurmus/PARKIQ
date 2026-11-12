@@ -3,7 +3,11 @@ const hash=async value=>Array.from(new Uint8Array(await crypto.subtle.digest('SH
 const validEndpoint=value=>{try{const url=new URL(value);return url.protocol==='https:'&&value.length<2048&&/^(?:[a-z0-9-]+\.)*(?:push\.apple\.com|push\.services\.mozilla\.com|fcm\.googleapis\.com|updates\.push\.services\.mozilla\.com)$/i.test(url.hostname)}catch{return false}};
 export async function onRequestGet({env}) {
  const key=env.WEB_PUSH_PUBLIC_KEY;
- return key&&/^[A-Za-z0-9_-]{80,120}$/.test(key)?reply({ok:true,publicKey:key}):reply({ok:false,error:'push_not_configured'},503);
+ const configuration={publicKey:typeof key==='string'&&/^[A-Za-z0-9_-]{80,120}$/.test(key),database:typeof env.DB?.prepare==='function',queue:typeof env.NEARBY_PUSH_QUEUE?.send==='function'};
+ // A public key alone does not mean reports can reach the delivery worker.
+ // Expose only binding availability, never subscription records or secrets.
+ if(!Object.values(configuration).every(Boolean))return reply({ok:false,error:'push_not_configured',configuration},503);
+ return reply({ok:true,publicKey:key,configuration});
 }
 export async function onRequestPost({request,env}){
  if(!env.DB||!env.WEB_PUSH_PUBLIC_KEY)return reply({ok:false,error:'push_not_configured'},503);
