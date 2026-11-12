@@ -22,7 +22,19 @@ Set these **server-side** variables for the deployment environment:
 
 Do not place either secret in `index.html`, GitHub Actions logs or screenshots.
 
-## 3. Scheduled collector
+## 3. Connect the isolated Cloudflare Worker to GitHub
+
+In Worker **rotapark-occupancy-cron** → Settings → Builds → Connect:
+
+- Git repository: `OrhanDurmus/PARKIQ`
+- Production branch (until PR #268 is merged): `feature/eta-occupancy-and-smart-parking`
+- Build command: leave empty
+- **Deploy command: `npx wrangler deploy --config workers/wrangler.occupancy.toml`**
+- This config targets **only** `rotapark-occupancy-cron`, never the existing Pages app.
+- Keep cron disabled until the Pages ingestion API is deployed and secrets are configured.
+- After PR is merged, update the Worker production branch to `main`.
+
+## 4. Scheduled collector
 
 Configure a separate trusted Cloudflare Worker Cron Trigger (e.g. every 5 minutes)
 to POST to `https://parkiq.pages.dev/api/occupancy-ingest` with
@@ -35,7 +47,7 @@ If İSPARK does not provide a reliable timestamp, it correctly inserts **zero**
 rows; do not fabricate freshness or use the receipt time as an observation time.
 Repeated runs ignore duplicate observations.
 
-## 4. Verification
+## 5. Verification
 
 1. GitHub Actions: `Smart parking smoke checks` must pass on PR #268.
 2. Without a bearer token, `POST /api/occupancy-ingest` must return 401.
