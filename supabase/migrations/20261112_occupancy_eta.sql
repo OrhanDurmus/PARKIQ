@@ -7,6 +7,7 @@ create table if not exists public.rotapark_occupancy_snapshots (
   free_spaces integer not null check (free_spaces >= 0),
   capacity integer check (capacity is null or capacity >= 0),
   source text not null default 'provider',
+  constraint rotapark_snapshot_unique unique(parking_id, observed_at, source),
   constraint rotapark_snapshot_capacity_check check (capacity is null or free_spaces <= capacity)
 );
 create index if not exists rotapark_occupancy_snapshots_lookup
@@ -56,7 +57,7 @@ as $$
     select count(*)::integer n, avg(free_spaces) historical_average from comparable
   )
   select
-    case when stats.n < 5 or latest.observed_at < now() - interval '30 minutes'
+    case when stats.n < 5 or latest.observed_at is null or latest.observed_at < now() - interval '30 minutes'
       then null
       else greatest(0, round(0.65 * stats.historical_average + 0.35 * latest.free_spaces)::integer)
     end as predicted_free_spaces,
