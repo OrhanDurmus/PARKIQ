@@ -31,3 +31,20 @@ export async function enableNearbyParkingPush({ latitude, longitude }) {
   if (!response.ok) throw new Error('subscription_save_failed');
   return { enabled: true };
 }
+
+export async function disableNearbyParkingPush() {
+  if (!('serviceWorker' in navigator)) return { enabled: false };
+  const registration = await navigator.serviceWorker.getRegistration('/');
+  if (!registration) return { enabled: false };
+  const subscription = await registration.pushManager.getSubscription();
+  if (!subscription) return { enabled: false };
+  // Remove server record first; otherwise a failed request would leave an orphaned record.
+  const response = await fetch('/api/nearby-push', {
+    method: 'DELETE', credentials: 'same-origin',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ endpoint: subscription.endpoint })
+  });
+  if (!response.ok) throw new Error('subscription_delete_failed');
+  await subscription.unsubscribe();
+  return { enabled: false };
+}
