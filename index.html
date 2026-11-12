@@ -38,7 +38,41 @@
 #mapWrap.navigation-fullscreen #navOverlayActions #navStop{background:#8b2733;color:#fff;border-color:#e3898c}
 #mapWrap.navigation-fullscreen #navOverlayActions{gap:8px}
 #mapWrap.navigation-fullscreen #navDiagnosticPanel{display:none!important}
-.external-nav-warning{display:block;flex-basis:100%;color:#f8d49a;font-size:12px;line-height:1.45;margin:2px 0 4px}</style></head><body><style>#locationConsent:not([hidden]){display:flex}#locationConsent[hidden]{display:none}</style><div id="locationConsent" role="dialog" aria-modal="true" aria-labelledby="locationConsentTitle" hidden style="position:fixed;inset:0;z-index:3000;background:#06111dd9;align-items:center;justify-content:center;padding:22px"><div style="width:min(100%,390px);padding:25px;background:#14283c;border:1px solid #4ee0bc;border-radius:22px;box-shadow:0 15px 65px #000a"><div style="font-size:38px">📍</div><h2 id="locationConsentTitle">Konumunu paylaş</h2><p style="color:#c8d8e6;line-height:1.5">Yakınındaki otoparkları bulmak ve navigasyonu başlatmak için konum izni gerekiyor.</p><div id="locationConsentMessage" role="status" aria-live="polite" style="color:#c5d7e5;margin:10px 0">Konumu bulmak için izin verin.</div><button id="locationConsentAllow" type="button" style="width:100%;margin:8px 0">📍 Konuma izin ver</button><button id="locationConsentLater" type="button" style="width:100%;background:#29475c;color:#fff">Şimdi değil</button></div></div><div id="rotaParkIntro" aria-hidden="true"><div class="mark"><img src="/apple-touch-icon.jpg" width="96" height="96" alt="" decoding="async"></div><strong>Rota<span>Park</span></strong><small>Şehrinin akıllı park asistanı.</small></div><div id="pullRefresh" role="status" aria-live="polite">↓ Yenilemek için aşağı çek</div><header><button type="button" id="sideMenuOpen" aria-label="Menüyü aç" aria-controls="sideMenu" aria-expanded="false">☰</button><div class="header-brand"><img src="/apple-touch-icon.jpg" width="42" height="42" alt="" aria-hidden="true" decoding="async"><h1>Rota<span>Park</span></h1></div><small>Türkiye • Otopark ve rota planlama</small><a id="rotaparkAccountLink" href="/account/" aria-label="Hesabım ve giriş durumu" style="margin-left:auto;display:inline-flex;align-items:center;gap:6px;padding:10px 12px;background:#203a4d;border:1px solid #467184;border-radius:12px;color:#e9f8ff;text-decoration:none;font-size:13px;font-weight:700;max-width:100%;overflow:hidden"><span aria-hidden="true">👤</span><span id="rotaparkAccountLabel">Giriş yap</span></a></header><style>
+.external-nav-warning{display:block;flex-basis:100%;color:#f8d49a;font-size:12px;line-height:1.45;margin:2px 0 4px}
+/* Compact driving controls matching the requested reference screenshot. */
+#mapWrap.navigation-fullscreen #navOverlayActions{
+  position:fixed!important;
+  left:50%!important;
+  right:auto!important;
+  bottom:calc(env(safe-area-inset-bottom) + 38px)!important;
+  width:max-content!important;
+  max-width:calc(100vw - 24px)!important;
+  transform:translateX(-50%)!important;
+  display:flex!important;
+  flex-direction:row!important;
+  flex-wrap:nowrap!important;
+  align-items:center!important;
+  justify-content:center!important;
+  gap:10px!important;
+}
+#mapWrap.navigation-fullscreen #navOverlayActions #navVoice,
+#mapWrap.navigation-fullscreen #navOverlayActions #navStop{
+  flex:0 0 auto!important;
+  width:auto!important;
+  min-width:0!important;
+  max-width:none!important;
+  min-height:43px!important;
+  padding:9px 14px!important;
+  border-radius:12px!important;
+  font-size:12px!important;
+  line-height:1.25!important;
+  font-weight:750!important;
+  white-space:nowrap!important;
+  box-shadow:0 4px 12px #001a2b66!important;
+}
+#mapWrap.navigation-fullscreen #navOverlayActions #navVoice{background:#08718a!important;border:1px solid #59c9d6!important}
+#mapWrap.navigation-fullscreen #navOverlayActions #navStop{background:#a02c50!important;border:1px solid #ed7b9e!important}
+</style></head><body><style>#locationConsent:not([hidden]){display:flex}#locationConsent[hidden]{display:none}</style><div id="locationConsent" role="dialog" aria-modal="true" aria-labelledby="locationConsentTitle" hidden style="position:fixed;inset:0;z-index:3000;background:#06111dd9;align-items:center;justify-content:center;padding:22px"><div style="width:min(100%,390px);padding:25px;background:#14283c;border:1px solid #4ee0bc;border-radius:22px;box-shadow:0 15px 65px #000a"><div style="font-size:38px">📍</div><h2 id="locationConsentTitle">Konumunu paylaş</h2><p style="color:#c8d8e6;line-height:1.5">Yakınındaki otoparkları bulmak ve navigasyonu başlatmak için konum izni gerekiyor.</p><div id="locationConsentMessage" role="status" aria-live="polite" style="color:#c5d7e5;margin:10px 0">Konumu bulmak için izin verin.</div><button id="locationConsentAllow" type="button" style="width:100%;margin:8px 0">📍 Konuma izin ver</button><button id="locationConsentLater" type="button" style="width:100%;background:#29475c;color:#fff">Şimdi değil</button></div></div><div id="rotaParkIntro" aria-hidden="true"><div class="mark"><img src="/apple-touch-icon.jpg" width="96" height="96" alt="" decoding="async"></div><strong>Rota<span>Park</span></strong><small>Şehrinin akıllı park asistanı.</small></div><div id="pullRefresh" role="status" aria-live="polite">↓ Yenilemek için aşağı çek</div><header><button type="button" id="sideMenuOpen" aria-label="Menüyü aç" aria-controls="sideMenu" aria-expanded="false">☰</button><div class="header-brand"><img src="/apple-touch-icon.jpg" width="42" height="42" alt="" aria-hidden="true" decoding="async"><h1>Rota<span>Park</span></h1></div><small>Türkiye • Otopark ve rota planlama</small><a id="rotaparkAccountLink" href="/account/" aria-label="Hesabım ve giriş durumu" style="margin-left:auto;display:inline-flex;align-items:center;gap:6px;padding:10px 12px;background:#203a4d;border:1px solid #467184;border-radius:12px;color:#e9f8ff;text-decoration:none;font-size:13px;font-weight:700;max-width:100%;overflow:hidden"><span aria-hidden="true">👤</span><span id="rotaparkAccountLabel">Giriş yap</span></a></header><style>
 /* Compact accordion navigation: only the selected drawer form is visible */
 #sideMenu #communityReportSection,#sideMenu #businessSection,#sideMenu #contactSupport{display:none!important}
 #sideMenu #communityReportSection.rp-drawer-expanded,#sideMenu #businessSection.rp-drawer-expanded,#sideMenu #contactSupport.rp-drawer-expanded{display:block!important}
