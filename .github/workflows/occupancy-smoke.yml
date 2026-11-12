@@ -6,6 +6,7 @@ on:
       - 'functions/api/community-parking.js'
       - 'functions/api/occupancy-*.js'
       - 'scripts/check-occupancy-smoke.mjs'
+      - 'workers/occupancy-cron.js'
       - 'supabase/migrations/20261112_occupancy_eta.sql'
       - '.github/workflows/occupancy-smoke.yml'
   workflow_dispatch:
