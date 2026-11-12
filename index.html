@@ -241,7 +241,7 @@ async function checkNavigationOccupancy(){
   const data=await response.json(),rows=Array.isArray(data?.points)?data.points:[];
   const live=rows.find(p=>p.verifiedLive===true&&Number.isInteger(p.freeSpaces)&&Math.hypot((Number(p.lat)-Number(target.lat))*111195,(Number(p.lng)-Number(target.lng))*111195*Math.cos(Number(target.lat)*Math.PI/180))<65);
   if(!live||live.freeSpaces!==0)return;
-  const alternatives=allParking.filter(p=>p!==target&&fresh(p)&&p.freeSpaces>0&&occupancyCoords(p));
+  const alternatives=allParking.filter(p=>p!==target&&occupancyCoords(p)&&rows.some(row=>row.verifiedLive===true&&row.freeSpaces>0&&String(row.id)===String(p.isparkParkID??p.parkID??p.isparkId??'')&&Math.hypot((Number(row.lat)-Number(p.lat))*111195,(Number(row.lng)-Number(p.lng))*111195*Math.cos(Number(p.lat)*Math.PI/180))<100));
   alternatives.sort((a,b)=>Math.hypot((a.lat-lastGps.lat)*111195,(a.lng-lastGps.lng)*111195*Math.cos(a.lat*Math.PI/180))-Math.hypot((b.lat-lastGps.lat)*111195,(b.lng-lastGps.lng)*111195*Math.cos(b.lat*Math.PI/180)));
   const alternative=alternatives[0],entrance=alternative&&occupancyCoords(alternative);
   if(!entrance){msg.textContent='⚠️ Hedef otopark dolu. Doğrulanmış girişli müsait alternatif bulunamadı.';if(voiceOn)speakTurkish('Hedef otopark dolu. Uygun alternatif bulunamadı.');occupancyLastAlternativeAt=Date.now();return}
