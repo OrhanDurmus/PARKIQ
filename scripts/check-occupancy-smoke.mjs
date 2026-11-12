@@ -14,7 +14,7 @@ for(const [,attrs,body] of scripts){
  execFileSync(process.execPath,['--check',path],{stdio:'pipe'});
  checked++;
 }
-for(const path of ['functions/api/community-parking.js','functions/api/occupancy-prediction.js','functions/api/occupancy-ingest.js']){
+for(const path of ['functions/api/community-parking.js','functions/api/occupancy-prediction.js','functions/api/occupancy-ingest.js','workers/occupancy-cron.js']){
  execFileSync(process.execPath,['--check',path],{stdio:'pipe'});
  checked++;
 }
@@ -31,6 +31,7 @@ assert.match(ingest,/ROTAPARK_OCCUPANCY_INGEST_SECRET/);
 assert.match(ingest,/resolution=ignore-duplicates/);
 const sql=readFileSync('supabase/migrations/20261112_occupancy_eta.sql','utf8');
 assert.match(sql,/rotapark_snapshot_unique/);
+assert.match(sql,/latest\.observed_at is null or latest\.observed_at < now\(\) - interval '30 minutes'/);
 const api=readFileSync('functions/api/community-parking.js','utf8');
 assert.match(api,/data\.type==='departure'\?900:7200/);
 assert.match(api,/community:departure:rate:/);
