@@ -63,7 +63,7 @@ as $$
     end as predicted_free_spaces,
     latest.free_spaces as latest_free_spaces,
     stats.n as sample_count,
-    case when stats.n < 5 or latest.observed_at < now() - interval '30 minutes' then 'insufficient'
+    case when stats.n < 5 or latest.observed_at is null or latest.observed_at < now() - interval '30 minutes' then 'insufficient'
          when stats.n >= 20 then 'high'
          else 'medium' end as confidence,
     latest.observed_at as latest_observed_at
