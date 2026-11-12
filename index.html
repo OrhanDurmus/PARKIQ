@@ -128,6 +128,11 @@
  font-size:10px!important;line-height:1.2!important;
 }
 #mapWrap.navigation-fullscreen #navGpsQuality[hidden]{display:none!important}
+
+/* Selected B cockpit replaces only the fullscreen navigation presentation. */
+#mapWrap.navigation-fullscreen #navOverlay{visibility:hidden!important;pointer-events:none!important}
+#mapWrap.navigation-fullscreen #navOverlayActions{visibility:hidden!important;pointer-events:none!important}
+#mapWrap.navigation-fullscreen #navDiagnosticPanel{visibility:hidden!important}
 </style></head><body><style>#locationConsent:not([hidden]){display:flex}#locationConsent[hidden]{display:none}</style><div id="locationConsent" role="dialog" aria-modal="true" aria-labelledby="locationConsentTitle" hidden style="position:fixed;inset:0;z-index:3000;background:#06111dd9;align-items:center;justify-content:center;padding:22px"><div style="width:min(100%,390px);padding:25px;background:#14283c;border:1px solid #4ee0bc;border-radius:22px;box-shadow:0 15px 65px #000a"><div style="font-size:38px">📍</div><h2 id="locationConsentTitle">Konumunu paylaş</h2><p style="color:#c8d8e6;line-height:1.5">Yakınındaki otoparkları bulmak ve navigasyonu başlatmak için konum izni gerekiyor.</p><div id="locationConsentMessage" role="status" aria-live="polite" style="color:#c5d7e5;margin:10px 0">Konumu bulmak için izin verin.</div><button id="locationConsentAllow" type="button" style="width:100%;margin:8px 0">📍 Konuma izin ver</button><button id="locationConsentLater" type="button" style="width:100%;background:#29475c;color:#fff">Şimdi değil</button></div></div><div id="rotaParkIntro" aria-hidden="true"><div class="mark"><img src="/apple-touch-icon.jpg" width="96" height="96" alt="" decoding="async"></div><strong>Rota<span>Park</span></strong><small>Şehrinin akıllı park asistanı.</small></div><div id="pullRefresh" role="status" aria-live="polite">↓ Yenilemek için aşağı çek</div><header><button type="button" id="sideMenuOpen" aria-label="Menüyü aç" aria-controls="sideMenu" aria-expanded="false">☰</button><div class="header-brand"><img src="/apple-touch-icon.jpg" width="42" height="42" alt="" aria-hidden="true" decoding="async"><h1>Rota<span>Park</span></h1></div><small>Türkiye • Otopark ve rota planlama</small><a id="rotaparkAccountLink" href="/account/" aria-label="Hesabım ve giriş durumu" style="margin-left:auto;display:inline-flex;align-items:center;gap:6px;padding:10px 12px;background:#203a4d;border:1px solid #467184;border-radius:12px;color:#e9f8ff;text-decoration:none;font-size:13px;font-weight:700;max-width:100%;overflow:hidden"><span aria-hidden="true">👤</span><span id="rotaparkAccountLabel">Giriş yap</span></a></header><style>
 /* Compact accordion navigation: only the selected drawer form is visible */
 #sideMenu #communityReportSection,#sideMenu #businessSection,#sideMenu #contactSupport{display:none!important}
@@ -299,4 +304,4 @@ window.rotaparkLoadSupportTickets=load;document.getElementById('support-ticket-r
  };
  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',setup,{once:true});else setup();
 })();
-</script></body></html>
+</script><script src="/nav-b-design.js?v=1" defer></script></body></html>
