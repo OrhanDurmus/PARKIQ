@@ -239,7 +239,7 @@ async function checkNavigationOccupancy(){
   const response=await fetch('/api/ispark-occupancy',{cache:'no-store',signal:AbortSignal.timeout(9000)});
   if(!response.ok)return;
   const data=await response.json(),rows=Array.isArray(data?.points)?data.points:[];
-  const live=rows.find(p=>p.sourceSnapshot&&Number.isInteger(p.freeSpaces)&&Math.hypot((Number(p.lat)-Number(target.lat))*111195,(Number(p.lng)-Number(target.lng))*111195*Math.cos(Number(target.lat)*Math.PI/180))<65);
+  const live=rows.find(p=>p.verifiedLive===true&&Number.isInteger(p.freeSpaces)&&Math.hypot((Number(p.lat)-Number(target.lat))*111195,(Number(p.lng)-Number(target.lng))*111195*Math.cos(Number(target.lat)*Math.PI/180))<65);
   if(!live||live.freeSpaces!==0)return;
   const alternatives=allParking.filter(p=>p!==target&&fresh(p)&&p.freeSpaces>0&&occupancyCoords(p));
   alternatives.sort((a,b)=>Math.hypot((a.lat-lastGps.lat)*111195,(a.lng-lastGps.lng)*111195*Math.cos(a.lat*Math.PI/180))-Math.hypot((b.lat-lastGps.lat)*111195,(b.lng-lastGps.lng)*111195*Math.cos(b.lat*Math.PI/180)));
