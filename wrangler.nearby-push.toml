@@ -1,0 +1,25 @@
+name = "rotapark-nearby-push-worker"
+main = "workers/nearby-push-worker.js"
+compatibility_date = "2026-11-01"
+
+[[queues.consumers]]
+queue = "rotapark-nearby-push"
+max_batch_size = 10
+max_batch_timeout = 5
+max_retries = 5
+dead_letter_queue = "rotapark-nearby-push-dlq"
+
+[[queues.producers]]
+binding = "NEARBY_PUSH_QUEUE"
+queue = "rotapark-nearby-push"
+
+# Set the existing ROTAPARK database ID before deploying:
+# [[d1_databases]]
+# binding = "DB"
+# database_name = "<existing database name>"
+# database_id = "<existing D1 database UUID>"
+#
+# Secrets must be added with:
+# npx wrangler secret put WEB_PUSH_PUBLIC_KEY --config wrangler.nearby-push.toml
+# npx wrangler secret put WEB_PUSH_PRIVATE_KEY --config wrangler.nearby-push.toml
+# npx wrangler secret put WEB_PUSH_CONTACT_EMAIL --config wrangler.nearby-push.toml
