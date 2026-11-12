@@ -1,7 +1,7 @@
 // Reserve a report/device pair before sending; only one concurrent worker can win.
 // Caller must release on retryable failure. Never mark success before provider accepts.
 export async function reserveNearbyPushDelivery(db, reportId, endpointHash) {
-  if (!db || typeof reportId !== 'string' || !/^[\\w:-]{1,128}$/.test(reportId) ||
+  if (!db || typeof reportId !== 'string' || !/^[A-Za-z0-9_:-]{1,128}$/.test(reportId) ||
       typeof endpointHash !== 'string' || !/^[a-f0-9]{64}$/.test(endpointHash)) {
     throw new Error('invalid_push_delivery_reservation');
   }
