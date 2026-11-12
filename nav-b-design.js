@@ -39,7 +39,7 @@ function init(){
   const active=map.classList.contains('navigation-fullscreen')&&!old.hidden;
   host.style.display=active?'block':'none';
   if(!active)return;
-  const turn=txt('navTurnText');const cleanTurn=turn.replace(/[⬅➡⬆⬇↖↗↘↙↰↱←→↑↓↪↩]+/gu,'').replace(/\s+/g,' ').trim();$('direction').textContent=cleanTurn||'GPS bekleniyor…';
+  const turn=txt('navTurnText');const cleanTurn=turn.replace(/[⬅➡⬆⬇↖↗↘↙↰↱←→↑↓↪↩🔙🔚🔛🔜🔝]/gu,'').replace(/[\uFE0E\uFE0F\u20E3]/gu,'').replace(/\s+/g,' ').trim();$('direction').textContent=cleanTurn||'GPS bekleniyor…';
   $('arrow').textContent=/sola|sol\b/i.test(turn)?'↰':/sağa|sağ\b/i.test(turn)?'↱':/düz|devam/i.test(turn)?'↑':'➜';
   $('dest').textContent=txt('navDestination');
   $('distance').textContent=txt('navRemaining')||'—';
