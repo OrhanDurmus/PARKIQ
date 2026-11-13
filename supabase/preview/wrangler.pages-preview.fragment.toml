@@ -1,0 +1,18 @@
+# TASLAK PARÇA: tek başına deploy yapılandırması değildir. UYGULANMADI.
+# Mevcut Pages projesi rotapark; Production ayarları bu parçaya dahil değildir.
+# Yalnızca env.preview altında kullanılır. Top-level Production binding eklemeyin.
+[env.preview.vars]
+SUPABASE_URL = "https://dwlphvkcmvuroljxcdnq.supabase.co"
+
+[[env.preview.d1_databases]]
+binding = "DB"
+database_name = "rotapark-preview-db"
+database_id = "REPLACE_WITH_NEW_PREVIEW_D1_ID"
+
+[[env.preview.kv_namespaces]]
+binding = "ISPARK_SNAPSHOTS"
+id = "REPLACE_WITH_NEW_PREVIEW_KV_ID"
+
+# NEARBY_PUSH_QUEUE bağlaması kasıtlı olarak yok.
+# SUPABASE_SERVICE_ROLE_KEY ve ROTAPARK_OCCUPANCY_INGEST_SECRET secret olarak
+# Preview kapsamında ayrı girilmeli; bu dosyaya değer yazılmamalı.

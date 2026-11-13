@@ -1,0 +1,12 @@
+# TASLAK: kaynak oluşturma/deploy yapılmadı. Cron kapalı.
+# Yalnızca feature commit'inden alınan occupancy-cron.js ile kullanılabilir.
+name = "rotapark-preview-occupancy-cron"
+main = "../../workers/occupancy-cron.js"
+compatibility_date = "2026-11-12"
+workers_dev = false
+[vars]
+ROTAPARK_OCCUPANCY_INGEST_URL = "https://feature-eta-occupancy-and-smart-parking.parkiq.pages.dev/api/occupancy-ingest"
+[triggers]
+crons = []
+# ROTAPARK_OCCUPANCY_INGEST_SECRET: yalnızca Preview için yeni Worker secret.
+# Kaynak kodun Production URL fallback'i var; URL değişkenini asla boş bırakmayın.

@@ -1,0 +1,42 @@
+{
+  "_notice": "YALNIZCA TASLAK. API isteği değildir; uygulanmadı. Kaynak kimlikleri oluşturulmadı.",
+  "pages_project": "rotapark",
+  "scope": "deployment_configs.preview ONLY",
+  "source_commit": "70264e6358340caaa51fd4512aad96f7d0125d40",
+  "source_branch": "feature/eta-occupancy-and-smart-parking",
+  "vars": {
+    "SUPABASE_URL": "https://dwlphvkcmvuroljxcdnq.supabase.co"
+  },
+  "preview_only_credentials_required": {
+    "SUPABASE_ANON_KEY": "Yeni Preview projesinin anon anahtarı; henüz eklenmedi",
+    "SUPABASE_SERVICE_ROLE_KEY": "Yeni Preview projesinin service_role JWT anahtarı; secret_text; henüz eklenmedi",
+    "ROTAPARK_OCCUPANCY_INGEST_SECRET": "Yeni, yalnızca Preview için en az 32 karakter; secret_text; henüz üretilmedi",
+    "ISPARK_UPLOAD_TOKEN": "Upload testi yapılacaksa yeni Preview secret_text; henüz üretilmedi",
+    "ADMIN_TOKEN": "Yönetim testi yapılacaksa yeni Preview secret_text; henüz üretilmedi"
+  },
+  "remove_preview_variable_names": [
+    "SUPABASE_SERVİCE_ROLE_KEY"
+  ],
+  "d1_databases": {
+    "DB": {
+      "database_name": "rotapark-preview-db",
+      "id": "REPLACE_WITH_NEW_PREVIEW_D1_ID"
+    }
+  },
+  "kv_namespaces": {
+    "ISPARK_SNAPSHOTS": {
+      "title": "rotapark-preview-ispark-snapshots",
+      "namespace_id": "REPLACE_WITH_NEW_PREVIEW_KV_ID"
+    }
+  },
+  "queue_producers": {},
+  "queue_policy": "Şimdilik bağlama yok. Push testi istenirse ayrı rotapark-preview-nearby-push ve ayrı DLQ/consumer/VAPID gerekir.",
+  "other_services": "AZURE_SPEECH_* ve diğer Production anahtarları kopyalanmaz; bu bağımlılıklar şimdilik yapılandırılmaz.",
+  "cron": {
+    "new_worker_name": "rotapark-preview-occupancy-cron",
+    "enabled": false,
+    "ROTAPARK_OCCUPANCY_INGEST_URL": "https://feature-eta-occupancy-and-smart-parking.parkiq.pages.dev/api/occupancy-ingest",
+    "secret": "Preview Pages ile aynı YENİ Preview ingest secret; değer içermez"
+  },
+  "data_policy": "Boş D1/KV/Supabase. Production dump, snapshot, abone, kullanıcı veya token kopyalanmaz."
+}

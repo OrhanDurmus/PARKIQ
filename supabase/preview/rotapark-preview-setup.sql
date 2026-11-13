@@ -4,15 +4,15 @@
 -- /api/occupancy-ingest bu kaynak sürümünde YOK; ingest şeması kapsam dışı.
 -- Otomatik migration dizinine bilerek konulmadı.
 -- Önkoşul: Supabase auth şeması ve anon/authenticated/service_role rolleri.
--- Preview proje adı SQL içinde güvenilir biçimde bulunamaz. Aşağıdaki ref'i,
--- Dashboard'da rotapark-preview için doğrulanmış gerçek project ref ile doldurun.
+-- Preview proje adı SQL içinde güvenilir biçimde bulunamaz. Kullanıcının verdiği
+-- Preview project ref: dwlphvkcmvuroljxcdnq. Sunucu hedef kontrolü korunur.
 -- app.settings.api_external_url sunucu ayarı yoksa koruma DURUR; sahte bir
 -- SET ile korumayı geçmeyin. Bu durumda doğrulanmış hedef kimliği yöntemi gerekir.
 -- SQL Editor'da transaction'ın TAMAMINI tek seferde çalıştırmak gerekir.
 BEGIN;
 DO $preview_guard$
 DECLARE
- expected_ref constant text := 'REPLACE_WITH_VERIFIED_ROTAPARK_PREVIEW_PROJECT_REF';
+ expected_ref constant text := 'dwlphvkcmvuroljxcdnq';
  observed_url text := current_setting('app.settings.api_external_url', true);
 BEGIN
  IF expected_ref = 'REPLACE_WITH_VERIFIED_ROTAPARK_PREVIEW_PROJECT_REF'
@@ -24,7 +24,8 @@ BEGIN
  END IF;
  IF to_regclass('public.rotapark_staff_roles') IS NOT NULL
     OR to_regclass('public.rotapark_role_audit') IS NOT NULL
-    OR to_regclass('public.rotapark_member_bans') IS NOT NULL THEN
+    OR to_regclass('public.rotapark_member_bans') IS NOT NULL
+    OR to_regclass('public.rotapark_occupancy_snapshots') IS NOT NULL THEN
   RAISE EXCEPTION 'Bu dosya yalnızca boş Preview kurulumu içindir';
  END IF;
 END
@@ -362,6 +363,94 @@ REVOKE ALL ON FUNCTION public.rotapark_guard_founder(),
  public.rotapark_audit_staff_changes() FROM PUBLIC, anon, authenticated;
 -- service_role yalnızca OTP preflight RPC'sinde açıkça yetkilidir.
 -- Uygulamanın diğer RPC'leri authenticated rolü ve işlev içi rol kontrollerini kullanır.
+-- Preview deployment 6550a78b / kaynak commit 70264e6358340caaa51fd4512aad96f7d0125d40
+-- Kaynak: supabase/migrations/20261112_occupancy_eta.sql
+-- RotaPark: historical occupancy and ETA-based estimate.
+-- Apply in Supabase SQL Editor; no existing tables are modified.
+create table if not exists public.rotapark_occupancy_snapshots (
+  id bigint generated always as identity primary key,
+  parking_id text not null check (length(parking_id) between 1 and 180),
+  observed_at timestamptz not null default now(),
+  free_spaces integer not null check (free_spaces >= 0),
+  capacity integer check (capacity is null or capacity >= 0),
+  source text not null default 'provider',
+  constraint rotapark_snapshot_unique unique(parking_id, observed_at, source),
+  constraint rotapark_snapshot_capacity_check check (capacity is null or free_spaces <= capacity)
+);
+create index if not exists rotapark_occupancy_snapshots_lookup
+  on public.rotapark_occupancy_snapshots (parking_id, observed_at desc);
+alter table public.rotapark_occupancy_snapshots enable row level security;
+revoke all on public.rotapark_occupancy_snapshots from anon, authenticated;
+-- Insert snapshots through a trusted server using the service role, never from browser clients.
+
+create or replace function public.rotapark_predict_occupancy(
+  p_parking_id text,
+  p_eta_minutes integer
+)
+returns table (
+  predicted_free_spaces integer,
+  latest_free_spaces integer,
+  sample_count integer,
+  confidence text,
+  latest_observed_at timestamptz
+)
+language sql stable security definer
+set search_path = ''
+as $$
+  with target as (
+    select now() + make_interval(mins => greatest(0, least(p_eta_minutes, 240))) as arrival
+  ),
+  latest as (
+    select s.free_spaces, s.observed_at
+    from public.rotapark_occupancy_snapshots s
+    where s.parking_id = p_parking_id
+    order by s.observed_at desc
+    limit 1
+  ),
+  comparable as (
+    select s.free_spaces
+    from public.rotapark_occupancy_snapshots s cross join target t
+    where s.parking_id = p_parking_id
+      and s.observed_at >= now() - interval '56 days'
+      and s.observed_at < now() - interval '1 hour'
+      and extract(isodow from s.observed_at at time zone 'Europe/Istanbul') =
+          extract(isodow from t.arrival at time zone 'Europe/Istanbul')
+      and abs(extract(epoch from (
+        (s.observed_at at time zone 'Europe/Istanbul')::time -
+        (t.arrival at time zone 'Europe/Istanbul')::time
+      ))) <= 3600
+  ),
+  stats as (
+    select count(*)::integer n, avg(free_spaces) historical_average from comparable
+  )
+  select
+    case when stats.n < 5 or latest.observed_at is null or latest.observed_at < now() - interval '30 minutes'
+      then null
+      else greatest(0, round(0.65 * stats.historical_average + 0.35 * latest.free_spaces)::integer)
+    end as predicted_free_spaces,
+    latest.free_spaces as latest_free_spaces,
+    stats.n as sample_count,
+    case when stats.n < 5 or latest.observed_at is null or latest.observed_at < now() - interval '30 minutes' then 'insufficient'
+         when stats.n >= 20 then 'high'
+         else 'medium' end as confidence,
+    latest.observed_at as latest_observed_at
+  from stats left join latest on true
+  where p_parking_id is not null and length(p_parking_id) between 1 and 180
+    and p_eta_minutes between 0 and 240;
+$$;
+revoke all on function public.rotapark_predict_occupancy(text, integer) from public, anon;
+grant execute on function public.rotapark_predict_occupancy(text, integer) to authenticated, service_role;
+-- SECURITY DEFINER is required because authenticated users cannot SELECT snapshots.
+-- The function has no dynamic SQL, fixes its search_path, and returns aggregate results only.
+-- Run migration as the trusted database owner (Supabase SQL Editor), not an untrusted role.
+
+-- Ingest yalnızca INSERT ... ON CONFLICT DO NOTHING yapar; istemci erişimi yok.
+REVOKE ALL ON public.rotapark_occupancy_snapshots FROM PUBLIC, anon, authenticated, service_role;
+GRANT INSERT ON public.rotapark_occupancy_snapshots TO service_role;
+REVOKE ALL ON SEQUENCE public.rotapark_occupancy_snapshots_id_seq FROM PUBLIC, anon, authenticated, service_role;
+GRANT USAGE ON SEQUENCE public.rotapark_occupancy_snapshots_id_seq TO service_role;
+-- Supabase service_role BYPASSRLS kullanır; anonim INSERT politikası eklenmez.
+-- SECURITY DEFINER tahmin RPC'si güvenilir kurulum sahibi olarak SELECT yapar.
 COMMIT;
 -- Kullanıcı/kurucu seed'i YOK. Kurucu için ayrı bir Preview auth hesabı gerekir;
 -- bu dosya Production kullanıcılarını veya rol atamalarını taşımaz.
