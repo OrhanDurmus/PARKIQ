@@ -4,28 +4,51 @@
 -- /api/occupancy-ingest bu kaynak sürümünde YOK; ingest şeması kapsam dışı.
 -- Otomatik migration dizinine bilerek konulmadı.
 -- Önkoşul: Supabase auth şeması ve anon/authenticated/service_role rolleri.
--- Preview proje adı SQL içinde güvenilir biçimde bulunamaz. Kullanıcının verdiği
--- Preview project ref: dwlphvkcmvuroljxcdnq. Sunucu hedef kontrolü korunur.
--- app.settings.api_external_url sunucu ayarı yoksa koruma DURUR; sahte bir
--- SET ile korumayı geçmeyin. Bu durumda doğrulanmış hedef kimliği yöntemi gerekir.
+-- Hedef ref: dwlphvkcmvuroljxcdnq. Kimlik için oturum GUC'si kullanılmaz.
+-- Önkoşul: bağımsız doğrulama sonrası ayrı yönetici adımında kaydedilmiş
+-- database düzeyi rotapark.preview_project_ref ayarı (README.md).
+-- Bu dosya güven kaydını oluşturmaz; eksik/yanlış kayıtta DURUR.
 -- SQL Editor'da transaction'ın TAMAMINI tek seferde çalıştırmak gerekir.
 BEGIN;
 DO $preview_guard$
 DECLARE
  expected_ref constant text := 'dwlphvkcmvuroljxcdnq';
- observed_url text := current_setting('app.settings.api_external_url', true);
+ observed_refs text[];
 BEGIN
- IF expected_ref = 'REPLACE_WITH_VERIFIED_ROTAPARK_PREVIEW_PROJECT_REF'
-    OR expected_ref !~ '^[a-z0-9]{20}$' THEN
-  RAISE EXCEPTION 'Preview project ref doğrulanmadı; kurulum engellendi';
+ -- pg_db_role_setting kalıcı database ayarını okur. SET / SET LOCAL /
+ -- set_config ile değiştirilen oturum değerleri bu kataloğu değiştirmez.
+ -- Yalnızca bu database'e ait, role özel olmayan kaydı kabul et.
+ SELECT pg_catalog.array_agg(pg_catalog.substr(s.setting,
+          pg_catalog.length('rotapark.preview_project_ref=') + 1))
+ INTO observed_refs
+ FROM pg_catalog.pg_db_role_setting AS d
+ CROSS JOIN LATERAL pg_catalog.unnest(d.setconfig) AS s(setting)
+ WHERE d.setdatabase = (
+   SELECT oid FROM pg_catalog.pg_database
+   WHERE datname = pg_catalog.current_database()
+ )
+ AND d.setrole = 0
+ AND pg_catalog.starts_with(s.setting, 'rotapark.preview_project_ref=');
+
+ IF observed_refs IS DISTINCT FROM ARRAY[expected_ref]::text[] THEN
+  RAISE EXCEPTION 'Kalıcı Preview kimliği eksik veya hedef farklı; README önkoşulunu doğrulayın';
  END IF;
- IF observed_url IS NULL OR rtrim(observed_url, '/') <> 'https://' || expected_ref || '.supabase.co' THEN
-  RAISE EXCEPTION 'Sunucu Preview kimliği doğrulanamadı; kurulum engellendi';
+ IF pg_catalog.to_regclass('auth.users') IS NULL
+    OR pg_catalog.to_regprocedure('auth.uid()') IS NULL
+    OR (SELECT count(*) FROM pg_catalog.pg_roles
+        WHERE rolname IN ('anon', 'authenticated', 'service_role')) <> 3 THEN
+  RAISE EXCEPTION 'Supabase auth şeması/rolleri eksik; kurulum engellendi';
  END IF;
- IF to_regclass('public.rotapark_staff_roles') IS NOT NULL
-    OR to_regclass('public.rotapark_role_audit') IS NOT NULL
-    OR to_regclass('public.rotapark_member_bans') IS NOT NULL
-    OR to_regclass('public.rotapark_occupancy_snapshots') IS NOT NULL THEN
+ -- Tablo dışında eski işlev/sequence/index kalıntıları da boş kurulum değildir.
+ IF EXISTS (
+   SELECT 1 FROM pg_catalog.pg_class AS c
+   JOIN pg_catalog.pg_namespace AS n ON n.oid = c.relnamespace
+   WHERE n.nspname = 'public' AND pg_catalog.starts_with(c.relname, 'rotapark_')
+ ) OR EXISTS (
+   SELECT 1 FROM pg_catalog.pg_proc AS p
+   JOIN pg_catalog.pg_namespace AS n ON n.oid = p.pronamespace
+   WHERE n.nspname = 'public' AND pg_catalog.starts_with(p.proname, 'rotapark_')
+ ) THEN
   RAISE EXCEPTION 'Bu dosya yalnızca boş Preview kurulumu içindir';
  END IF;
 END

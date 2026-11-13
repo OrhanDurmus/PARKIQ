@@ -29,7 +29,58 @@ GET `/api/occupancy-prediction`, Preview anon anahtarı ve oturum JWT'siyle `rot
 
 `rotapark-preview-setup.sql` önceki rol/ban/audit kurulumu üzerine bu tablo ve RPC'yi ekleyecek şekilde yerelde güncellendi. Kurulum sırası roles → role_audit → user_lookup → members_directory → member_bans → member_ban_reasons → otp_preflight → occupancy_eta. Üç eski tablonun RLS ve kontrollü RPC izinleri korunur; FK ve audit zaman indeksleri vardır. Production kullanıcısı, kurucu seed'i veya veri kopyası yok.
 
-Kullanıcının verdiği Preview ref `dwlphvkcmvuroljxcdnq`; kök URL `https://dwlphvkcmvuroljxcdnq.supabase.co`. SQL guard bu ref'i kullanır ve sunucudaki `app.settings.api_external_url` ile eşleşme arar. Bu GUC'nin gerçek Supabase ortamında mevcut olduğu doğrulanmadı: yoksa dosya çalışmayı reddeder. Sahte bir SET ile geçilmemeli; güvenilir hedef kontrolü doğrulanmadan SQL hazır/çalıştırılabilir sayılmamalı. Kurulum mevcut uygulama tabloları varsa da durur. Hiçbir SQL çalıştırılmadı.
+### SQL Editor hedef doğrulaması
+
+Hedef yalnızca `dwlphvkcmvuroljxcdnq`. Eski
+`current_setting('app.settings.api_external_url', true)` kontrolü güvenilir değildi:
+oturumdaki sahte bir `SET` ile geçilebilirdi ve bu ayarın boş Supabase projesinde
+bulunması garanti değil. Proje adı, `current_database()` (genellikle `postgres`),
+request/JWT claim veya scriptin kendi eklediği marker da bağımsız kimlik kanıtı değil.
+
+Yeni guard SQL Editor'da okunabilen `pg_catalog.pg_db_role_setting` içindeki
+**bu database'e ait, role özel olmayan kalıcı kaydı** denetler. Oturum `SET`,
+`SET LOCAL`, `set_config` veya role özel ayar bu kontrolü geçiremez. Eksik, yanlış
+veya birden çok değer kurulumdan önce exception üretir. Ayar otomatik Supabase
+metadata'sı değildir; şu ayrı hazırlık önkoşulu vardır:
+
+1. Yetkili yönetici Dashboard'da proje URL/ref'ini (gerekirse Management API'deki
+   proje kaydını) bağımsız doğrular: yalnızca `dwlphvkcmvuroljxcdnq`.
+2. Aynı doğrulanmış projenin SQL Editor'ında database'in `postgres` olduğu
+   doğrulandıktan sonra aşağıdaki kalıcı güven kaydını **ayrı adımda** oluşturur.
+   Bu adım kurulum dosyasına eklenmez; yanlış projede otomatik oluşturulmaz.
+3. Kurulum tek transaction olarak bu kayıtla karşılaştırılır. Kayıt yoksa durur;
+   oturumda SET vererek veya kontrolü kaldırarak devam edilmez.
+
+Gelecekteki yetkili hazırlık adımının örneği (bu incelemede **çalıştırılmadı**):
+
+```sql
+ALTER DATABASE postgres SET rotapark.preview_project_ref = 'dwlphvkcmvuroljxcdnq';
+```
+
+Bu, güvenilir yöneticinin önceden kaydettiği proje eşlemesine dayalı bir yanlış
+hedef korumasıdır; Supabase tarafından imzalanmış, otomatik proje-ref kanıtı değildir.
+Database sahibi aynı kaydı `ALTER DATABASE` ile değiştirebilir ve scripti düzenleyebilir;
+keyfi owner SQL yetkisine karşı SQL dosyası tek başına güvenlik sınırı oluşturamaz.
+Önceden doğrulanmış kayıt olmadan boş projede kendiliğinden çalışabilen evrensel bir
+SQL-only project-ref kanıtı varsayılmadı. Şu an kalıcı kaydın varlığı bilinmiyor;
+SQL canlıda doğrulanmış/çalıştırılmaya hazır olarak işaretlenmedi.
+
+### Bu commit üzerinde statik denetim
+
+İncelenen commit: `9d0017686bbedd7597e1e47cd4d74b86eebd09f8`.
+Birleşik SQL'in sırası doğru: roles → audit → lookup → directory → bans → reasons
+→ OTP → occupancy. İlk directory tanımı, bans bölümünde DROP edilip 9 kolonlu
+sürümle yeniden oluşturuluyor; dönüş tipi çakışması yok. Reasons ve OTP tanımları
+ban tablosundan sonra geliyor. Önceki genel migration sırası uyarıları bu dosyada
+kurulum engeli değildir.
+
+Boş standart Supabase projesi için başka kesin DDL engeli görülmedi: identity
+sequence adları grant'lerle uyumlu; UUID üretim eklentisi veya kullanıcı/kurucu seed'i
+gerekmiyor; auth referansları Supabase'in hazır şemasına dayanıyor. Guard'a auth
+önkoşulları ve yalnızca dört tablo yerine public şemasındaki tüm `rotapark_`
+relation/işlev kalıntıları için erken kontrol eklendi. Owner kurulum yetkileri gerekir.
+D1 SQL'i ayrı dosyada kalır. Statik inceleme canlı yetki ve sürüm uyumluluğunu
+kanıtlamaz; hiçbir SQL (salt okunur sorgu dahil) çalıştırılmadı.
 
 ## Mevcut Preview yapılandırmasındaki sorunlar
 
