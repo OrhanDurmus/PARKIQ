@@ -22,7 +22,8 @@ export async function findNearbyPushRecipients(db, {latitude, longitude, reportI
   const result = await db.prepare(`
     SELECT s.endpoint_hash,s.endpoint,s.p256dh,s.auth,s.latitude,s.longitude
     FROM nearby_push_subscriptions s
-    WHERE s.latitude BETWEEN ? AND ?
+    WHERE s.user_id IS NOT NULL AND s.consented_at IS NOT NULL
+      AND s.latitude BETWEEN ? AND ?
       AND s.longitude BETWEEN ? AND ?
       AND s.updated_at >= datetime('now', '-30 days')
       AND NOT EXISTS (

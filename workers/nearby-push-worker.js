@@ -11,6 +11,7 @@ async function fanout(env,job){
  const {results=[]}=await env.DB.prepare(`
  SELECT endpoint_hash,latitude,longitude FROM nearby_push_subscriptions
  WHERE endpoint_hash>? AND latitude BETWEEN ? AND ? AND longitude BETWEEN ? AND ?
+ AND user_id IS NOT NULL AND consented_at IS NOT NULL
  AND updated_at>=datetime('now','-30 days')
  ORDER BY endpoint_hash LIMIT 100
  `).bind(cursor,latitude-latDelta,latitude+latDelta,longitude-lonDelta,longitude+lonDelta).all();
@@ -21,7 +22,7 @@ async function fanout(env,job){
 }
 async function deliver(env,job){
  if(!/^[0-9a-f-]{36}$/i.test(job.reportId)||!/^[a-f0-9]{64}$/.test(job.endpointHash))throw Error('invalid_delivery');
- const row=await env.DB.prepare('SELECT endpoint,p256dh,auth FROM nearby_push_subscriptions WHERE endpoint_hash=?')
+ const row=await env.DB.prepare('SELECT endpoint,p256dh,auth FROM nearby_push_subscriptions WHERE endpoint_hash=? AND user_id IS NOT NULL AND consented_at IS NOT NULL')
   .bind(job.endpointHash).first();
  if(!row)return;
  const reserved=await reserveNearbyPushDelivery(env.DB,job.reportId,job.endpointHash);
