@@ -5,33 +5,56 @@
 -- Otomatik migration dizinine bilerek konulmadı.
 -- Önkoşul: Supabase auth şeması ve anon/authenticated/service_role rolleri.
 -- Hedef ref: dwlphvkcmvuroljxcdnq. Kimlik için oturum GUC'si kullanılmaz.
--- Önkoşul: bağımsız doğrulama sonrası ayrı yönetici adımında kaydedilmiş
--- database düzeyi rotapark.preview_project_ref ayarı (README.md).
--- Bu dosya güven kaydını oluşturmaz; eksik/yanlış kayıtta DURUR.
--- SQL Editor'da transaction'ın TAMAMINI tek seferde çalıştırmak gerekir.
+-- Önkoşul: Dashboard'da bağımsız hedef doğrulaması, ardından AYRI manuel
+-- onay dosyası rotapark-preview-approve.sql (README.md). ALTER DATABASE gerekmez.
+-- Kontrol tablosu bu dosyada oluşturulmaz. Oturum GUC'leri okunmaz.
+-- SQL Editor rolü postgres olmalı; transaction'ın TAMAMI birlikte çalıştırılmalı.
 BEGIN;
 DO $preview_guard$
 DECLARE
  expected_ref constant text := 'dwlphvkcmvuroljxcdnq';
- observed_refs text[];
+ approval_found boolean;
 BEGIN
- -- pg_db_role_setting kalıcı database ayarını okur. SET / SET LOCAL /
- -- set_config ile değiştirilen oturum değerleri bu kataloğu değiştirmez.
- -- Yalnızca bu database'e ait, role özel olmayan kaydı kabul et.
- SELECT pg_catalog.array_agg(pg_catalog.substr(s.setting,
-          pg_catalog.length('rotapark.preview_project_ref=') + 1))
- INTO observed_refs
- FROM pg_catalog.pg_db_role_setting AS d
- CROSS JOIN LATERAL pg_catalog.unnest(d.setconfig) AS s(setting)
- WHERE d.setdatabase = (
-   SELECT oid FROM pg_catalog.pg_database
-   WHERE datname = pg_catalog.current_database()
- )
- AND d.setrole = 0
- AND pg_catalog.starts_with(s.setting, 'rotapark.preview_project_ref=');
-
- IF observed_refs IS DISTINCT FROM ARRAY[expected_ref]::text[] THEN
-  RAISE EXCEPTION 'Kalıcı Preview kimliği eksik veya hedef farklı; README önkoşulunu doğrulayın';
+ IF current_user <> 'postgres' THEN
+  RAISE EXCEPTION 'SQL Editor postgres rolü gerekli';
+ END IF;
+ IF pg_catalog.to_regclass('rotapark_preview_control.install_approval') IS NULL THEN
+  RAISE EXCEPTION 'Ayrı manuel Preview onayı yok; README prosedürünü izleyin';
+ END IF;
+ -- Açık şema adı temp/search_path gölgelemesini önler; güvenilen owner sabit.
+ IF NOT EXISTS (
+   SELECT 1 FROM pg_catalog.pg_class AS c
+   JOIN pg_catalog.pg_namespace AS n ON n.oid = c.relnamespace
+   JOIN pg_catalog.pg_roles AS r ON r.oid = c.relowner
+   JOIN pg_catalog.pg_roles AS nr ON nr.oid = n.nspowner
+   WHERE n.nspname = 'rotapark_preview_control'
+     AND c.relname = 'install_approval' AND c.relkind = 'r'
+     AND r.rolname = 'postgres' AND nr.rolname = 'postgres'
+ ) THEN
+  RAISE EXCEPTION 'Manuel onay nesnesinin sahibi/türü güvenilir değil';
+ END IF;
+ IF EXISTS (
+   SELECT 1 FROM pg_catalog.pg_roles AS r
+   WHERE r.rolname IN ('anon', 'authenticated', 'service_role')
+   AND (pg_catalog.has_schema_privilege(r.oid, 'rotapark_preview_control', 'CREATE')
+     OR pg_catalog.has_table_privilege(r.oid,
+       'rotapark_preview_control.install_approval', 'INSERT,UPDATE,DELETE,TRUNCATE'))
+ ) THEN
+  RAISE EXCEPTION 'Manuel onay nesnesinde istemci yazma yetkisi var';
+ END IF;
+ -- Tek kullanımlık onay aynı transaction içinde atomik tüketilir.
+ -- Sonraki DDL hata verirse tüketim de rollback olur; süre sınırı devam eder.
+ DELETE FROM rotapark_preview_control.install_approval AS a
+ WHERE a.singleton = true AND a.project_ref = expected_ref
+   AND a.database_oid = (SELECT oid FROM pg_catalog.pg_database
+                        WHERE datname = pg_catalog.current_database())
+   AND a.approved_by = 'postgres'
+   AND a.approved_at <= pg_catalog.clock_timestamp()
+   AND a.expires_at > pg_catalog.clock_timestamp()
+   AND a.expires_at <= a.approved_at + interval '30 minutes'
+ RETURNING true INTO approval_found;
+ IF approval_found IS DISTINCT FROM true THEN
+  RAISE EXCEPTION 'Preview onayı eksik, tüketilmiş, süresi dolmuş veya hedef farklı';
  END IF;
  IF pg_catalog.to_regclass('auth.users') IS NULL
     OR pg_catalog.to_regprocedure('auth.uid()') IS NULL

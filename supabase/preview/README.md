@@ -37,33 +37,53 @@ oturumdaki sahte bir `SET` ile geçilebilirdi ve bu ayarın boş Supabase projes
 bulunması garanti değil. Proje adı, `current_database()` (genellikle `postgres`),
 request/JWT claim veya scriptin kendi eklediği marker da bağımsız kimlik kanıtı değil.
 
-Yeni guard SQL Editor'da okunabilen `pg_catalog.pg_db_role_setting` içindeki
-**bu database'e ait, role özel olmayan kalıcı kaydı** denetler. Oturum `SET`,
-`SET LOCAL`, `set_config` veya role özel ayar bu kontrolü geçiremez. Eksik, yanlış
-veya birden çok değer kurulumdan önce exception üretir. Ayar otomatik Supabase
-metadata'sı değildir; şu ayrı hazırlık önkoşulu vardır:
+`ALTER DATABASE postgres SET rotapark.preview_project_ref` bu ortamda 42501
+verdiği için katalog ayarı yaklaşımı kaldırıldı. Yetki yükseltme, ALTER ROLE veya
+GUC fallback'i kullanılmaz. Alternatif, SQL Editor'ın uygulama nesnesi oluşturma
+yetkileriyle çalışan **ayrı manuel onay + korumalı onay tablosu** prosedürüdür.
+Bu prosedürün güven kökü bağımsız Dashboard kontrolüdür; tablo kendi başına
+Supabase project-ref kanıtı değildir. Aynı güven sınırı önceki yönetici kaydı için de geçerliydi.
 
-1. Yetkili yönetici Dashboard'da proje URL/ref'ini (gerekirse Management API'deki
-   proje kaydını) bağımsız doğrular: yalnızca `dwlphvkcmvuroljxcdnq`.
-2. Aynı doğrulanmış projenin SQL Editor'ında database'in `postgres` olduğu
-   doğrulandıktan sonra aşağıdaki kalıcı güven kaydını **ayrı adımda** oluşturur.
-   Bu adım kurulum dosyasına eklenmez; yanlış projede otomatik oluşturulmaz.
-3. Kurulum tek transaction olarak bu kayıtla karşılaştırılır. Kayıt yoksa durur;
-   oturumda SET vererek veya kontrolü kaldırarak devam edilmez.
+1. Dashboard'da doğru organizasyon ve projeyi açın. Adına güvenmeyin:
+   adres `https://supabase.com/dashboard/project/dwlphvkcmvuroljxcdnq/...`
+   olmalı; ayrıca proje Settings ekranındaki Reference ID tam olarak
+   `dwlphvkcmvuroljxcdnq` olmalı. İkisi uyuşmuyorsa DURUN. Production sekmelerini
+   kapatın; yeni/başka proje sekmesine kopyalayarak devam etmeyin.
+2. Aynı proje altında SQL Editor'ı açın, URL ref'ini yeniden kontrol edin ve
+   rolü `postgres` seçin. İncelenen iki dosyayı ayrı sorgular olarak hazırlayın.
+   `rotapark-preview-approve.sql` içindeki tek placeholder'ı ancak bu kontrolden
+   sonra elle `APPROVE PREVIEW dwlphvkcmvuroljxcdnq` yapın. Ayrı bir sorumlu
+   kontrolü mümkünse tercih edin. Bu dosyayı setup'ın başına eklemeyin;
+   otomasyon, migration veya uygulama istemcisinden çağırmayın.
+3. Gelecekte yetkili uygulamada önce yalnızca onay dosyasının transaction'ı
+   çalıştırılır. Bu dosya özel `rotapark_preview_control` şemasını ve postgres
+   sahipli tablosunu oluşturur; PUBLIC/anon/authenticated/service_role yetkilerini
+   kaldırır, RLS açar. Onay bu database OID'sine bağlanır, 30 dakika geçerlidir.
+   Şema zaten varsa dosya durur; var olan nesnenin üzerine yazmaz.
+4. Proje URL'sini tekrar kontrol ederek aynı projenin Editor'ında setup dosyasının
+   **tamamını** tek transaction olarak çalıştırın. Koruma eksik, yanlış, süresi
+   dolmuş veya tüketilmiş onayda durur. Şema/tablo owner'ı ve istemci yazma
+   yetkileri de kontrol edilir. Başarılı commit onay satırını tüketir;
+   sonraki DDL hatası tüm kurulumu ve tüketimi rollback eder, süre uzamaz.
+5. Süre dolduysa ya da onay aşamasından sonra vazgeçildiyse onayı otomatik
+   yenilemeyin. Aynı Dashboard doğrulamasını tekrarlayın; doğrulanmış projede
+   yalnızca bu iki dosyanın oluşturduğu kontrol şeması/tablosu olduğu incelendikten
+   sonra yönetici bunları **CASCADE kullanmadan** kaldırıp ayrı onayı yeniden
+   hazırlayabilir. Başarılı kurulumdan sonra boş kontrol tablosu erişime kapalı
+   kalabilir; yeniden setup zaten mevcut uygulama nesneleri nedeniyle durur.
 
-Gelecekteki yetkili hazırlık adımının örneği (bu incelemede **çalıştırılmadı**):
+`SET`, `SET LOCAL`, `set_config`, JWT veya request header bu kontrolü geçiremez:
+kurulum oturum GUC'si okumaz, onay tablosunu oluşturmaz, eksik kaydı tamamlamaz.
+Kalıcı kontrol şeması açık adıyla kullanılır; geçici tablo/search_path ile gölgelenmez.
+API rollerinin tabloya doğrudan erişimi veya onay oluşturan bir RPC yoktur.
 
-```sql
-ALTER DATABASE postgres SET rotapark.preview_project_ref = 'dwlphvkcmvuroljxcdnq';
-```
-
-Bu, güvenilir yöneticinin önceden kaydettiği proje eşlemesine dayalı bir yanlış
-hedef korumasıdır; Supabase tarafından imzalanmış, otomatik proje-ref kanıtı değildir.
-Database sahibi aynı kaydı `ALTER DATABASE` ile değiştirebilir ve scripti düzenleyebilir;
-keyfi owner SQL yetkisine karşı SQL dosyası tek başına güvenlik sınırı oluşturamaz.
-Önceden doğrulanmış kayıt olmadan boş projede kendiliğinden çalışabilen evrensel bir
-SQL-only project-ref kanıtı varsayılmadı. Şu an kalıcı kaydın varlığı bilinmiyor;
-SQL canlıda doğrulanmış/çalıştırılmaya hazır olarak işaretlenmedi.
+Sınır: SQL Editor'da postgres olarak keyfi SQL çalıştırabilen yönetici onayı da
+oluşturabilir veya korumayı düzenleyebilir. Yanlış projede elle onay verirse SQL
+bunu bağımsız keşfedemez. Bu yüzden Dashboard doğrulaması ve ayrı manuel onay
+zorunludur; otomatik veya kriptografik sunucu kimliği iddiası yoktur. Proje ref'ini
+SQL içinde otomatik doğrulayan taşınabilir bir Supabase işlevi varsayılmadı.
+CREATE SCHEMA/TABLE yetkisi de yoksa **durulur**; daha zayıf kontrole geçilmez.
+Bu dosyalar yalnızca yerelde hazırlandı; SQL Editor'da çalıştırılarak doğrulanmadı.
 
 ### Bu commit üzerinde statik denetim
 
