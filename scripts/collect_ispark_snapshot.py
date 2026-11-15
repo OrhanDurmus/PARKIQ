@@ -26,7 +26,8 @@ def main():
             print("Source attempt",attempt+1,"failed:",type(error).__name__,str(error)[:150],flush=True)
             if attempt<2: time.sleep(3*(attempt+1))
     if not isinstance(rows,list):
-        sys.exit("Source unavailable; existing snapshot retained")
+        print("::warning title=ISPARK source unavailable::Source fetch failed after 3 attempts; existing snapshot retained. No upload performed.",flush=True)
+        return
     body=json.dumps(rows,ensure_ascii=False,separators=(",",":")).encode("utf-8")
     if len(body)>1500000:
         sys.exit("Snapshot exceeds upload size limit")
