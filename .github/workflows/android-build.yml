@@ -26,6 +26,21 @@ jobs:
       - uses: android-actions/setup-android@v3
       - name: Install dependencies
         run: npm install --no-audit --no-fund
+      - name: Configure Preview-only test target
+        env:
+          ROTAPARK_PREVIEW_URL: https://release-rotapark-first-publi.parkiq.pages.dev
+        run: |
+          node - <<'NODE'
+          const fs = require('node:fs');
+          const url = new URL(process.env.ROTAPARK_PREVIEW_URL);
+          if (url.protocol !== 'https:' || !url.hostname.endsWith('.parkiq.pages.dev')) {
+            throw new Error('Android test must use Preview');
+          }
+          const config = JSON.parse(fs.readFileSync('capacitor.config.json', 'utf8'));
+          config.server = { url: url.origin, cleartext: false, allowNavigation: [url.hostname] };
+          fs.writeFileSync('capacitor.config.json', JSON.stringify(config, null, 2) + '\n');
+          console.log('Preview target:', url.origin);
+          NODE
       - name: Prepare web and Android
         run: |
           npm run mobile:prepare
