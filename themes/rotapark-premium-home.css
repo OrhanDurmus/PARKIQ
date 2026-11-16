@@ -219,3 +219,108 @@ body,main,.app-shell{background-color:#050506!important;color:#f7f3e8!important}
  .parking-legend{font-size:12px!important;line-height:1.55!important}
  #sideMenuOpen{position:relative!important;top:auto!important;left:auto!important}
 }
+
+/* Parking discovery and live cards — screenshot QA pass. */
+.panel:has(.parking-discovery){
+ background:#080808!important;
+ border-color:#bd8e37!important;
+ color:#f5ecdc!important;
+ box-shadow:none!important;
+}
+.panel:has(.parking-discovery)>h2{color:#fff2dc!important}
+.panel:has(.parking-discovery)>h2 small{color:#d4c2a0!important}
+.parking-discovery input,#parkingNameSearch{
+ background:#100d0a!important;
+ color:#fff5e7!important;
+ border:1px solid #e2ae43!important;
+ border-radius:16px!important;
+ box-shadow:0 0 7px #d8a33d3d!important;
+}
+.parking-discovery input::placeholder,#parkingNameSearch::placeholder{color:#cbbda8!important;opacity:1!important}
+.parking-discovery-actions button,#showAllParking,#focusNearbyParking{
+ background:linear-gradient(145deg,#241a0d,#090909)!important;
+ color:#fff0d5!important;
+ border:1px solid #e4ad40!important;
+ border-radius:15px!important;
+ box-shadow:0 0 8px #dba23c40!important;
+ font-weight:650!important;
+}
+#focusNearbyParking{
+ background:linear-gradient(180deg,#ffe18a,#eeb52d)!important;
+ color:#211606!important;
+ border-color:#ffe9a9!important;
+}
+#nearestFive{
+ background:linear-gradient(145deg,#1e160e,#0b0a09 65%)!important;
+ border:1px solid #e0ab41!important;
+ border-radius:18px!important;
+ color:#f6eedf!important;
+ box-shadow:0 0 10px #d7a03830!important;
+}
+#nearestFive h3{color:#ffe1a0!important;font-size:17px!important}
+#nearestFive .near-item{
+ background:linear-gradient(145deg,#241b12,#100d0b 65%)!important;
+ border:1px solid #bb8c37!important;
+ border-radius:15px!important;
+ padding:12px!important;
+ margin:9px 0!important;
+ display:flex!important;
+ flex-wrap:wrap!important;
+ gap:8px!important;
+ align-items:center!important;
+}
+#nearestFive .near-name{
+ color:#fff6e7!important;
+ font-size:17px!important;
+ font-weight:750!important;
+ flex:0 0 100%!important;
+ overflow-wrap:anywhere!important;
+}
+#nearestFive .near-meta{
+ color:#cfc3b0!important;
+ flex:0 0 100%!important;
+ font-size:13px!important;
+}
+#nearestFive .near-price{color:#f5cc73!important;font-weight:650!important}
+#nearestFive .near-closed{color:#ffbd88!important}
+#nearestFive .near-item button{
+ flex:1 1 0!important;
+ min-width:0!important;
+ min-height:42px!important;
+ border-radius:12px!important;
+ padding:9px 4px!important;
+ font-size:12px!important;
+ font-weight:700!important;
+ background:linear-gradient(145deg,#281e11,#0b0b0c)!important;
+ color:#f7e8ca!important;
+ border:1px solid #e0ae46!important;
+ box-shadow:0 0 6px #d69e3830!important;
+}
+#nearestFive .near-item button:nth-of-type(2){
+ background:linear-gradient(180deg,#ffe28c,#efb52e)!important;
+ color:#211504!important;
+ border-color:#ffebb3!important;
+}
+#legacyParkingCards,#parkingList{background:#080808!important}
+#parkingList .item{
+ background:linear-gradient(145deg,#21190f,#0b0b0b)!important;
+ border:1px solid #d9a442!important;
+ color:#fff1db!important;
+}
+#parkingList .item button{
+ background:#17120c!important;
+ color:#ffe1a0!important;
+ border:1px solid #d9a442!important;
+}
+#parkingList .item button:focus-visible,
+#nearestFive .near-item button:focus-visible{
+ outline:2px solid #ffe18a!important;outline-offset:2px!important;
+}
+#parkingList .note{color:#d4c5ac!important}
+@media(max-width:600px){
+ .panel:has(.parking-discovery){padding:12px!important}
+ #nearestFive{padding:10px!important}
+ #nearestFive .near-item{padding:10px!important}
+ #nearestFive .near-item button{font-size:11px!important;white-space:normal!important;line-height:1.2!important}
+ .parking-discovery-actions button{font-size:12px!important;line-height:1.25!important;min-height:51px!important;padding:8px!important}
+}
