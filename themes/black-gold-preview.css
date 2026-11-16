@@ -617,3 +617,25 @@ header .header-brand h1 span{
   animation:none!important;transition:none!important;
  }
 }
+
+/* Signature pass 20 — real Istanbul night photography, replacing SVG skyline.
+   Photo: "Galata Tower night photo.jpg", Kübradereli1, CC0 (Wikimedia Commons).
+   Network fallback: dark gold gradient. The Bosphorus bridge in the previous
+   concept was a composite; this is a genuine Galata Tower photograph. */
+header{
+ background-image:
+  linear-gradient(180deg,#08090dd9 0%,#08090da6 40%,#110c0a70 100%),
+  url("https://commons.wikimedia.org/wiki/Special:Redirect/file/Galata_Tower_night_photo.jpg?width=1280")!important;
+ background-position:center,center 56%!important;
+ background-size:cover,cover!important;
+ background-repeat:no-repeat!important;
+}
+header::before{display:none!important}
+@media(max-width:600px){
+ header{
+  min-height:0!important;
+  padding-bottom:46px!important;
+  background-position:center,center 57%!important;
+  background-size:cover,cover!important;
+ }
+}
