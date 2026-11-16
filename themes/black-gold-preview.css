@@ -157,3 +157,41 @@ header::after{
  pointer-events:none
 }
 @media(max-width:600px){header{padding-bottom:52px!important}header::before{height:74px;background-size:auto 74px!important}}
+
+/* Signature pass 7 — reference-inspired golden waterfront, with restrained glow.
+   This is illustrative CSS, not a photographic Istanbul asset. */
+header{
+ background:
+ radial-gradient(ellipse 100% 38% at 50% 100%,#e9a72b33,transparent 80%),
+ radial-gradient(ellipse 65% 70% at 12% 65%,#9b5e152b,transparent 75%),
+ linear-gradient(165deg,#090909 0%,#17120d 70%,#090909 100%)!important;
+}
+header::before{
+ height:114px!important;opacity:1!important;
+ background-image:url('/themes/istanbul-skyline.svg')!important;
+ background-repeat:repeat-x!important;background-position:center bottom 6px!important;
+ background-size:auto 114px!important;
+ filter:drop-shadow(0 0 5px #e3ad3a88) drop-shadow(0 0 13px #d7972755);
+ -webkit-mask-image:linear-gradient(to top,#000 15%,#000 90%,transparent 100%)!important;
+ mask-image:linear-gradient(to top,#000 15%,#000 90%,transparent 100%)!important
+}
+header::after{
+ height:5px!important;bottom:0!important;
+ background:linear-gradient(90deg,transparent,#e5b33d88 22%,#ffe69d 50%,#e5b33d88 78%,transparent)!important;
+ box-shadow:0 0 13px #dca63188;opacity:.8
+}
+#savedParkingSection{
+ box-shadow:inset 0 1px 0 #fff1,0 6px 24px #0008,0 0 13px #b78b2426!important;
+}
+#savedParkingSection #saveParkingLocation{
+ box-shadow:inset 0 1px 0 #fff8,0 4px 14px #d4af3740!important
+}
+.search{box-shadow:0 0 10px #b38b2d20}
+.bottom-nav button{
+ box-shadow:inset 0 1px 0 #eac65b22,0 0 9px #d4af371c!important
+}
+#installHint{margin-bottom:calc(24px + env(safe-area-inset-bottom))!important}
+@media(max-width:600px){
+ header{padding-bottom:86px!important}
+ header::before{height:100px!important;background-size:auto 100px!important}
+}
