@@ -1,0 +1,40 @@
+/* ROTAPARK Black & Gold — opt-in preview theme.
+   Load after existing styles only in Preview. Do not recolor map markers,
+   availability states, GPS arrow, or route geometry. */
+:root {
+  --rp-bg:#0b0b0f; --rp-surface:#17171c; --rp-surface-2:#232329;
+  --rp-gold:#d4af37; --rp-gold-light:#f1d47b;
+  --rp-text:#f5f1e8; --rp-muted:#c4c0b7; --rp-line:#65532b;
+}
+body{background:var(--rp-bg);color:var(--rp-text)}
+header{background:linear-gradient(145deg,#242016,var(--rp-bg) 78%)}
+header h1 span,#rotaParkIntro strong span{color:var(--rp-gold-light)}
+.tools,.panel,.parking-legend,.sort-row,#parkingSummary{background:var(--rp-bg);color:var(--rp-text)}
+.search,input,textarea,select,.filters select,#parkingNameSearch,.sort-row select{
+ background:var(--rp-surface)!important;color:var(--rp-text)!important;border-color:var(--rp-line)!important
+}
+.search,.item,#parkingList .item,#favoritesList .item,.business,#reportBox,#routePlanner,
+#nearestFive,#detailSheet,#emptyNotice,.empty-results,#parkingSummary div{
+ background:var(--rp-surface);border-color:var(--rp-line);color:var(--rp-text)
+}
+button,.search button,.quick-filters button.active,.item button,#parkingList button{
+ background:var(--rp-gold);color:#17130a
+}
+.actions button,.quick-filters button,.bottom-nav button,.sort-row button{
+ background:var(--rp-surface-2);color:var(--rp-text);border-color:var(--rp-line)
+}
+.bottom-nav{background:#0b0b0ff2;border-top-color:var(--rp-line)}
+button:focus-visible,input:focus-visible,select:focus-visible{
+ outline:2px solid var(--rp-gold-light);outline-offset:2px
+}
+small,.hint,.business p,#status,.sort-row{color:var(--rp-muted)}
+#parkingSummary strong{color:var(--rp-gold-light)}
+#rotaParkIntro{background:linear-gradient(145deg,#0b0b0f,#282113)}
+/* Safety: preserve red/green availability and blue GPS/nav semantics. */
+.park-pin.green{background:#20c997}.park-pin.red{background:#f05b66}
+.park-pin.gray{background:#8292a6}
+#parkiqGpsArrow{background:#287cf5}
+.park-pin.verified,.park-pin.ispark-official,.item.ispark-official{
+ outline-color:#e7c567;border-color:#e7c567
+}
+@media(prefers-reduced-motion:reduce){*{scroll-behavior:auto}}
