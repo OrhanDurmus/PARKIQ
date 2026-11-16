@@ -884,3 +884,30 @@ header>small{color:#f5e6c7!important;text-shadow:0 2px 8px #000!important}
  #mapQuickTools{gap:5px!important}
  #mapQuickTools button{font-size:10px!important;letter-spacing:-.02em!important}
 }
+
+/* Signature pass 26 — replace incorrect street/restaurant hero with verified
+   Bosphorus Bridge night photo. Source: Wikimedia Commons,
+   "Bosphorus-Bridge-night-view-Istanbul.jpg", SeablueTravelOfficial,
+   CC BY-SA 4.0: https://creativecommons.org/licenses/by-sa/4.0/
+   Image is used unmodified; CSS overlays do not modify the source file.
+   Credit shown directly on the hero. */
+header{
+ background-image:
+  linear-gradient(180deg,#060710dc 0%,#07081188 48%,#110d0e91 100%),
+  url("https://commons.wikimedia.org/wiki/Special:Redirect/file/Bosphorus-Bridge-night-view-Istanbul.jpg?width=1280")!important;
+ background-position:center,center 55%!important;
+ background-size:cover,cover!important;
+ background-repeat:no-repeat!important;
+ position:relative!important;
+}
+header::after{
+ content:"Fotoğraf: SeablueTravelOfficial · CC BY-SA 4.0";
+ position:absolute;right:9px;bottom:5px;
+ color:#f4dfb8!important;background:#09090b99!important;
+ font-size:9px;line-height:1.3;padding:3px 5px;border-radius:4px;
+ pointer-events:none;
+}
+@media(max-width:600px){
+ header{background-position:center,center 50%!important;background-size:cover,cover!important}
+ header::after{font-size:8px!important}
+}
