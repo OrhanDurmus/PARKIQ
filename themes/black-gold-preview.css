@@ -240,3 +240,25 @@ header .header-brand h1{
 @media(prefers-reduced-motion:reduce){
  #savedParkingSection #saveParkingLocation,.search button{transition:none!important}
 }
+
+/* Signature pass 10: atmospheric Istanbul waterfront illustration. */
+header{
+ min-height:218px;
+ padding-bottom:104px!important;
+ background:
+ linear-gradient(180deg,#08090dcc 0%,#0b090bb3 43%,#0b090b18 100%),
+ url('/themes/istanbul-night-premium.svg') center bottom / cover no-repeat!important;
+}
+header::before{display:none!important}
+header::after{height:2px!important;opacity:.65}
+header .header-brand,header small,header #rotaparkAccountLink,header #sideMenuOpen{
+ position:relative;z-index:1
+}
+@media(max-width:600px){
+ header{
+ min-height:214px;
+ padding-bottom:102px!important;
+ background-position:center bottom!important;
+ background-size:auto 220px!important
+ }
+}
