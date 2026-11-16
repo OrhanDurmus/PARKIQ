@@ -1050,3 +1050,39 @@ header::after{
  #savedParkingSection{margin-block:6px!important}
  .tools{margin-block:0!important}
 }
+
+/* Signature pass 30 — accessible horizontal premium filter chips.
+   No application logic or map layers changed. */
+@media(max-width:600px){
+ .quick-filters,.tools .filters{
+  overscroll-behavior-x:contain;
+  scroll-padding-inline:8px;
+  scrollbar-color:#bc8d34 #171418;
+ }
+ .quick-filters button{
+  border:1px solid #b98e3a!important;
+  background:linear-gradient(155deg,#29221b,#121317)!important;
+  color:#f5e6c8!important;
+  box-shadow:inset 0 1px 0 #ffe6a020!important;
+ }
+ .quick-filters button.active,
+ .quick-filters button[aria-pressed="true"]{
+  border-color:#ffe28a!important;
+  background:linear-gradient(180deg,#ffe48a,#e8b73a)!important;
+  color:#1a140a!important;
+  box-shadow:0 0 13px #f0b63b3c!important;
+ }
+ .quick-filters button:focus-visible,
+ .tools .filters select:focus-visible{
+  outline:2px solid #ffe49a!important;
+  outline-offset:2px!important;
+ }
+ .tools .filters select{
+  background-color:#1b181c!important;
+  color:#f7e9ca!important;
+  border:1px solid #b78a35!important;
+  border-radius:12px!important;
+ }
+ #mapWrap{isolation:isolate}
+ #mapQuickTools{z-index:700!important}
+}
