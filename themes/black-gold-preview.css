@@ -1380,3 +1380,59 @@ header::after{
  }
  header::before{width:43%!important;background-position:center,center 41%!important}
 }
+
+/* REFERENCE-MATCH PASS — uploaded ROTAPARK black/gold mobile mockup.
+   Restore full filter hierarchy and Park Yerim hero card; preserve functionality. */
+header{background-image:linear-gradient(180deg,#0008,#0002 54%,#000b),url("https://commons.wikimedia.org/wiki/Special:Redirect/file/Bosphorus%20Bridge%20at%20night.jpg?width=1280")!important}
+header::before{background-image:linear-gradient(180deg,#0005,#0002 65%,#0009),url("https://commons.wikimedia.org/wiki/Special:Redirect/file/Galata%20tower%20at%20night.jpg?width=640")!important}
+header .header-brand h1{font-style:italic!important;letter-spacing:-.6px!important}
+header #rotaparkAccountLink{color:#fff!important;border-radius:22px!important}
+#goldMainNav{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:18px 14px 28px}
+#goldMainNav button{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;min-height:98px;border:1.5px solid #dfae46;border-radius:20px;background:linear-gradient(155deg,#30251b,#0a0b0e 75%);color:#fff;box-shadow:0 0 12px #ffc5483d,inset 0 1px 0 #ffedac4d;font-size:17px}
+#goldMainNav button span{font-size:32px;line-height:1;color:#ffd451;text-shadow:0 0 12px #fbbd40}
+#goldMainNav button strong{font-size:15px}
+@media(max-width:600px){
+ header{height:210px!important;min-height:210px!important;padding:18px 14px 16px!important;background-position:center,center 50%!important}
+ header::before{width:46%!important}
+ header .header-brand h1{font-size:clamp(26px,7vw,35px)!important}
+ header>small{font-size:12px!important}
+ #savedParkingSection{
+  display:grid!important;grid-template-columns:1fr auto!important;
+  gap:8px!important;padding:15px!important;margin:0 12px 16px!important;
+  border:1.5px solid #e6b649!important;border-radius:24px!important;
+  background:radial-gradient(ellipse at 85% 50%,#42301955,transparent 52%),linear-gradient(140deg,#231d19,#08090c)!important;
+  box-shadow:0 0 15px #f9bd4330!important;
+ }
+ #savedParkingSection h2{grid-column:1!important;font-size:23px!important;font-weight:800!important;line-height:1.4!important}
+ #savedParkingSection #saved{grid-column:1/-1!important;text-align:left!important;font-size:16px!important;color:#eee!important}
+ #savedParkingSection #saveParkingLocation{
+  grid-column:1/-1!important;min-height:62px!important;padding:12px 16px!important;
+  font-size:15px!important;font-weight:800!important;border-radius:18px!important;
+  color:#1a1105!important;background:linear-gradient(180deg,#ffe784,#ffc42b 76%,#d9990c)!important;
+  box-shadow:0 0 13px #ffcb4c65!important;
+ }
+ .tools{padding:6px 12px 8px!important;background:transparent!important}
+ .tools .search{min-height:62px!important;margin-bottom:12px!important;border-radius:22px!important}
+ .tools .search input{min-height:60px!important;font-size:15px!important}
+ .tools .search button{min-height:52px!important;padding:8px 17px!important;font-size:18px!important}
+ .tools .actions{margin:0 0 12px!important}
+ .tools #loc{min-height:58px!important;border-radius:18px!important;font-size:17px!important;font-weight:750!important}
+ .tools .filters{
+  display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;
+  gap:7px!important;overflow:visible!important;margin:0 0 12px!important;padding:0!important;
+ }
+ .tools .filters select,.tools .filters #kindFilter{
+  min-width:0!important;width:100%!important;max-width:100%!important;
+  min-height:49px!important;flex:auto!important;padding:5px!important;
+  font-size:11px!important;border-radius:16px!important;
+ }
+ .quick-filters{gap:8px!important;margin:0 0 6px!important;padding:4px 0 8px!important}
+ .quick-filters button{min-height:53px!important;min-width:142px!important;padding:10px 13px!important;font-size:13px!important}
+ .sort-row{display:grid!important;grid-template-columns:auto 1fr 1fr!important;gap:6px!important;margin:4px 12px 12px!important;padding:0!important}
+ .sort-row>span{grid-column:auto!important;align-self:center!important;font-size:11px!important}
+ .sort-row #resetFilters,.sort-row #sortParking{min-height:46px!important;font-size:12px!important}
+ #installHint:not([hidden]){margin:10px 12px 12px!important;padding:14px!important;border:1.5px solid #ffd25b!important;border-radius:18px!important;background:linear-gradient(135deg,#3d2917,#0c0c0f)!important;box-shadow:0 0 18px #ffbe4b66!important}
+ #goldMainNav{margin:12px 12px 20px!important;gap:8px!important}
+ #goldMainNav button{min-height:95px!important}
+ #mapWrap{margin-top:10px!important}
+}
