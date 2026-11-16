@@ -572,3 +572,48 @@ header .header-brand h1 span{
  #nearestFive .near-item button{min-width:0!important;white-space:normal}
  #installHint:not([hidden]){position:relative!important;z-index:1!important}
 }
+
+/* Signature pass 19 — usability/accessibility polish across premium screens. */
+#nearestFive .near-item,
+#parkingList .item,#favoritesList .item{
+ overflow-wrap:anywhere;
+}
+#nearestFive .near-item button,
+#parkingList .item button,#favoritesList .item button,
+.bottom-nav button{
+ touch-action:manipulation;
+}
+#sideMenu a,#sideMenu button,#detailSheet button,
+#reportBox button,#refreshNow,#installUpdate{
+ min-height:44px;
+}
+#sideMenu a:focus-visible,#detailSheet button:focus-visible,
+#refreshNow:focus-visible,#installUpdate:focus-visible,
+.bottom-nav button:focus-visible{
+ outline:2px solid #ffe69b!important;
+ outline-offset:3px!important;
+}
+@media(max-width:600px){
+ #nearestFive .near-item{gap:8px!important}
+ #nearestFive .near-item button{
+  flex:1 1 100px!important;
+  padding:10px 6px!important;
+  font-size:12px!important;
+ }
+ #parkingList .item button,#favoritesList .item button{
+  min-height:44px!important;
+ }
+ #detailSheet{
+  padding-bottom:calc(18px + env(safe-area-inset-bottom))!important;
+  overscroll-behavior:contain;
+ }
+ #sideMenu{
+  padding-bottom:env(safe-area-inset-bottom)!important;
+  overflow-y:auto!important;
+ }
+}
+@media(prefers-reduced-motion:reduce){
+ #sideMenu,#detailSheet,.bottom-nav button{
+  animation:none!important;transition:none!important;
+ }
+}
