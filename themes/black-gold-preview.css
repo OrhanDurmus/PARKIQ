@@ -483,3 +483,53 @@ header .header-brand h1 span{
  background:linear-gradient(120deg,#ffe184,#e6b22e)!important;
  color:#17120b!important;border-color:#f5d374!important;
 }
+
+/* Signature pass 17 — cohesive non-navigation surfaces for full premium rollout.
+   Do not affect Leaflet map tiles, route layers, or status-color semantics. */
+#sideMenu,.side-menu-top,.side-menu-links,
+#detailSheet,#detailContent,#reportBox,#favoritesList,
+#updateNotice,#emptyNotice,.empty-results{
+ color:#f5efe4!important;
+ border-color:#9e792c!important;
+}
+#sideMenu{
+ background:linear-gradient(165deg,#242019,#0d0d10 65%)!important;
+ box-shadow:8px 0 35px #000b,1px 0 0 #d1a03955!important;
+}
+.side-menu-top{
+ background:linear-gradient(100deg,#302516,#171419)!important;
+ border-bottom:1px solid #b78b30!important;
+}
+.side-menu-links a{
+ background:#211c17!important;color:#f8e9c7!important;
+ border:1px solid #715824!important;border-radius:12px!important;
+}
+.side-menu-links a:focus-visible,#sideMenu button:focus-visible{
+ outline:2px solid #ffe187!important;outline-offset:2px!important;
+}
+#detailSheet{
+ background:linear-gradient(145deg,#262017,#111114)!important;
+ border:1px solid #d5a435!important;
+ box-shadow:0 -6px 28px #000a,0 0 18px #d7a72d24!important;
+}
+#detailContent{color:#f7efe0!important}
+#detailSheet button:not(.leaflet-control button),
+#reportBox button,#updateNotice button{
+ border:1px solid #d9aa3e!important;border-radius:12px!important;
+}
+#reportBox,#updateNotice,.empty-results,#emptyNotice{
+ background:linear-gradient(145deg,#242019,#111114)!important;
+ border:1px solid #9f7a30!important;
+ border-radius:14px!important;
+}
+#reportBox label,#detailSheet label{color:#f3d891!important}
+#reportBox input,#reportBox textarea,#reportBox select{
+ background:#171519!important;color:#fff2d3!important;
+ border:1px solid #97732e!important;
+}
+#favoritesList .item{box-shadow:inset 0 1px 0 #f8da9022,0 5px 15px #0005!important}
+#parkingDataFreshness{color:#d3c9b4!important}
+@media(max-width:600px){
+ #sideMenu{max-width:min(88vw,370px)!important}
+ #detailSheet{max-height:85dvh!important;overflow-y:auto!important}
+}
