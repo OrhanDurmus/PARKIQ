@@ -310,3 +310,20 @@ header .header-brand,header small,header #rotaparkAccountLink,header #sideMenuOp
  .sort-row #resetFilters{min-width:0!important;padding:9px 7px!important;font-size:12px!important}
  .sort-row span{align-self:center}
 }
+
+/* Signature pass 12 — screenshot-driven navigation clearance.
+   Keep bottom navigation fixed but ensure the last controls can scroll above it. */
+@media(max-width:600px){
+ body{padding-bottom:calc(170px + env(safe-area-inset-bottom))!important}
+ .tools{padding-bottom:calc(95px + env(safe-area-inset-bottom))!important}
+ .bottom-nav{
+  position:fixed!important;left:0!important;right:0!important;bottom:0!important;
+  z-index:700!important;
+ }
+ header{
+  min-height:0!important;
+  padding-bottom:42px!important;
+  background-size:auto 150px!important;
+ }
+ .quick-filters button{min-height:46px}
+}
