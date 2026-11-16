@@ -442,3 +442,44 @@ header .header-brand h1 span{
  }
  .bottom-nav button{font-size:14px!important;min-width:0!important}
 }
+
+/* Signature pass 16 — remove remaining legacy blue from parking discovery.
+   Scope to UI cards, not map route, GPS, availability or Leaflet controls. */
+#nearestFive{
+ background:linear-gradient(145deg,#191612,#101014)!important;
+ border:1px solid #b98d34!important;
+ color:#f6f0e5!important;
+ box-shadow:0 0 15px #d5a02a1c!important;
+}
+#nearestFive h3{color:#f8db85!important}
+#nearestFive .near-item{
+ background:linear-gradient(130deg,#242019,#141317 80%)!important;
+ border:1px solid #b18a37!important;
+ border-radius:15px!important;
+ padding:12px!important;
+ margin:10px 0!important;
+ box-shadow:inset 0 1px 0 #ffe4a01a,0 4px 14px #0007!important;
+ color:#f5f1e8!important;
+}
+#nearestFive .near-item .near-name{color:#fff4d2!important}
+#nearestFive .near-item .near-meta{color:#d6cec0!important}
+#nearestFive .near-item .near-price{color:#f1cd73!important}
+#nearestFive .near-item button{
+ background:linear-gradient(120deg,#ffe184,#e6b22e 75%,#c88e13)!important;
+ color:#17120b!important;border:1px solid #ffe08b!important;
+ border-radius:12px!important;font-weight:750!important;
+}
+#refreshNow{
+ background:linear-gradient(125deg,#312616,#17151a)!important;
+ color:#ffe39a!important;border:1px solid #d4a337!important;
+ border-radius:13px!important;
+ box-shadow:inset 0 1px 0 #ffe19d22,0 0 14px #d5a12c22!important;
+}
+#parkingList .item,#favoritesList .item{
+ background:linear-gradient(135deg,#242019,#121216)!important;
+ border:1px solid #a77e2c!important;color:#f7f0e6!important;
+}
+#parkingList .item button,#favoritesList .item button{
+ background:linear-gradient(120deg,#ffe184,#e6b22e)!important;
+ color:#17120b!important;border-color:#f5d374!important;
+}
