@@ -57,3 +57,85 @@ header .header-brand h1 span{color:#f6bd4c!important}
  #mapQuickTools button{font-size:10px!important}
  #savedParkingSection{margin:18px 12px!important}
 }
+
+/* Black & Gold color correction — preserve existing layout and functional elements. */
+:root{--rp-ink:#080809;--rp-surface:#14110f;--rp-gold:#f4bd48;--rp-gold-light:#ffe18a}
+body,main,.app-shell{background-color:#050506!important;color:#f7f3e8!important}
+#savedParkingSection{
+ background:linear-gradient(135deg,#211a12 0%,#11100e 45%,#08090b 100%)!important;
+ border:1px solid #e5b34d!important;
+ box-shadow:0 0 13px #d49d3938,inset 0 1px 0 #ffe6a522!important;
+ color:#fff5df!important;
+}
+#savedParkingSection h2{color:#fff3d8!important}
+#savedParkingSection #saved,#savedParkingSection .hint{color:#e2d6c3!important}
+#savedParkingSection #saveParkingLocation{
+ background:linear-gradient(180deg,#ffe38d 0%,#ffd35c 35%,#e9a919 100%)!important;
+ color:#1c1304!important;
+ border:1px solid #fff0aa!important;
+ box-shadow:0 3px 11px #efb13d4a!important;
+ font-weight:750!important;
+}
+#savedParkingSection #saveParkingLocation:hover{filter:brightness(1.04)!important}
+#sideMenuOpen{
+ background:linear-gradient(145deg,#272015,#090a0d)!important;
+ color:#ffcf60!important;border:1px solid #e5b341!important;
+ box-shadow:0 0 10px #e6a93b3d!important;
+}
+.tools .search{
+ background:#15110e!important;
+ border:1px solid #d7a23c!important;
+ border-radius:24px!important;
+ box-shadow:0 0 9px #c8963540!important;
+ padding:5px!important;
+}
+.tools .search input{background:#09090b!important;border:1px solid #e8b848!important}
+#rpFilterToggle{
+ background:linear-gradient(135deg,#2b2112,#09090a)!important;
+ border:1px solid #f0bd50!important;
+ color:#ffd15d!important;
+ box-shadow:0 0 7px #df9f384d!important;
+}
+#rpOperatorShortcuts button{
+ background:linear-gradient(150deg,#312516,#12100e 46%,#060608)!important;
+ border:1px solid #edb747!important;
+ color:#fff4d9!important;
+ box-shadow:0 0 8px #e9a93d44,inset 0 1px 0 #ffeb9d22!important;
+}
+#rpOperatorShortcuts button:active{background:#493115!important}
+#parkingSummary{background:#050506!important}
+#parkingSummary>div{
+ background:linear-gradient(145deg,#2c2114,#0a0a0c 75%)!important;
+ border:1px solid #efb744!important;
+ box-shadow:0 0 8px #e3a63a3b!important;
+}
+#parkingSummary strong{color:#ffd464!important}
+#parkingSummary span{color:#f3e9d5!important}
+.bottom-nav,#goldMainNav{
+ background:linear-gradient(180deg,#16110c,#050506)!important;
+ border-color:#d6a13d!important;
+ box-shadow:0 -3px 13px #b987332b!important;
+}
+.bottom-nav button,#goldMainNav button{
+ background:linear-gradient(145deg,#2c2215,#08090b)!important;
+ border:1px solid #e7b346!important;
+ color:#fff3dc!important;
+ box-shadow:0 0 8px #e7ae4040!important;
+}
+.bottom-nav button.active,#goldMainNav button.active{
+ background:linear-gradient(180deg,#ffe08a,#edb637)!important;
+ color:#1b1307!important;
+}
+#mapWrap{border-color:#e0af49!important}
+#mapQuickTools button{background:#100e0bee!important;color:#fff5df!important}
+#rpResultsHeading strong{color:#fff5e6!important}
+.park-card,.parking-card,.park-item{
+ background:linear-gradient(145deg,#201911,#090a0d 75%)!important;
+ border-color:#d8a53f!important;
+}
+.park-card button,.parking-card button,.park-item button{border-color:#d6a23e!important}
+@media(max-width:600px){
+ #savedParkingSection{margin:14px 12px!important}
+ #savedParkingSection #saveParkingLocation{min-height:55px!important;font-size:14px!important}
+ .bottom-nav button{color:#fce9bd!important}
+}
