@@ -327,3 +327,21 @@ header .header-brand,header small,header #rotaparkAccountLink,header #sideMenuOp
  }
  .quick-filters button{min-height:46px}
 }
+
+/* Signature pass 13 — prevent nav overlay at any scroll position.
+   Flow-based footer replaces the fixed bar in mobile Preview. */
+@media(max-width:600px){
+ .bottom-nav{
+  position:relative!important;
+  inset:auto!important;
+  bottom:auto!important;
+  z-index:2!important;
+  width:100%!important;
+  box-sizing:border-box!important;
+  margin:0!important;
+ }
+ body{padding-bottom:env(safe-area-inset-bottom)!important}
+ .tools{padding-bottom:16px!important}
+ .quick-filters{padding-bottom:12px!important}
+ .sort-row{padding-bottom:16px!important}
+}
