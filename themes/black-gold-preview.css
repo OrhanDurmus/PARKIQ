@@ -1436,3 +1436,84 @@ header #rotaparkAccountLink{color:#fff!important;border-radius:22px!important}
  #goldMainNav button{min-height:95px!important}
  #mapWrap{margin-top:10px!important}
 }
+
+/* Reference fidelity: logo and photographic gold-night hero. */
+header{
+ background-color:#050505!important;
+ border-bottom:2px solid #f2c357!important;
+ box-shadow:0 8px 18px #000a!important;
+}
+header .header-brand{
+ display:flex!important;align-items:center!important;gap:7px!important;
+ overflow:visible!important;
+}
+header .header-brand img{
+ width:64px!important;height:64px!important;object-fit:contain!important;
+ filter:drop-shadow(0 0 6px #ffc83b7c)!important;
+}
+header .header-brand h1{
+ font-style:italic!important;
+ font-weight:900!important;
+ white-space:nowrap!important;
+ color:#fff!important;
+ text-shadow:0 2px 7px #000b!important;
+}
+header .header-brand h1 span{
+ color:#f8c647!important;
+}
+header>small{
+ color:#fff!important;
+ text-shadow:0 2px 5px #000!important;
+}
+header #sideMenuOpen{
+ background:#080809!important;
+ border:1.5px solid #e6b448!important;
+ border-radius:16px!important;
+ color:#fff!important;
+ box-shadow:0 0 8px #f1c45844!important;
+}
+header #rotaparkAccountLink{
+ border-radius:999px!important;
+ border:1.5px solid #eac153!important;
+ background:linear-gradient(120deg,#171410,#080809)!important;
+ color:#fff!important;
+ box-shadow:0 0 8px #ffcb584d!important;
+}
+#savedParkingSection{position:relative!important}
+#savedParkingSection:after{
+ content:"Ⓟ"!important;
+ display:grid!important;place-items:center!important;
+ position:absolute!important;right:21px!important;top:17px!important;
+ width:43px!important;height:43px!important;border-radius:50%!important;
+ color:#111!important;background:linear-gradient(#ffe984,#e6a91b)!important;
+ border:2px solid #fce79d!important;
+ font-size:29px!important;font-weight:900!important;
+ box-shadow:0 0 15px #ffc74499!important;
+ pointer-events:none!important;
+}
+#savedParkingSection h2{padding-right:55px!important}
+#savedParkingSection #saveParkingLocation:after{
+ content:"›"!important;float:right;font-size:29px;line-height:18px;
+}
+.tools .search{position:relative!important}
+.tools .search:before{
+ content:"⌕";position:absolute;left:14px;top:50%;transform:translateY(-50%);
+ font-size:28px;color:#f9c54e;pointer-events:none;z-index:1;
+}
+.tools .search input{padding-left:46px!important}
+@media(max-width:600px){
+ header{height:212px!important;min-height:212px!important;
+  grid-template-columns:65px minmax(0,1fr) 120px!important;
+  padding:18px 13px 16px!important;column-gap:8px!important;
+ }
+ header .header-brand img{width:58px!important;height:58px!important}
+ header .header-brand h1{font-size:clamp(23px,5.6vw,31px)!important}
+ header #rotaparkAccountLink{font-size:12px!important;padding:8px 10px!important}
+ header>small{font-size:12px!important}
+ #savedParkingSection{margin-top:0!important}
+ #savedParkingSection #saved{margin-top:6px!important}
+ #savedParkingSection #saveParkingLocation{margin-top:8px!important}
+ .tools .filters select{font-size:11px!important;text-overflow:ellipsis!important}
+ #goldMainNav button{border-radius:19px!important}
+ #goldMainNav button:focus-visible{outline:2px solid #ffe389;outline-offset:3px}
+}
