@@ -1086,3 +1086,22 @@ header::after{
  #mapWrap{isolation:isolate}
  #mapQuickTools{z-index:700!important}
 }
+
+/* Signature pass 31 — final compact spacing of discovery controls.
+   Visual-only, preserving all filters, parking data and map behavior. */
+@media(max-width:600px){
+ .tools .search{margin-bottom:5px!important}
+ .tools .actions{margin-block:4px!important}
+ .tools .filters{margin-block:3px!important}
+ .quick-filters{margin-block:2px!important}
+ .sort-row{margin-block:3px!important}
+ #savedParkingSection{margin-block:5px!important}
+ #savedParkingSection #saveParkingLocation{
+  box-shadow:inset 0 1px 0 #fff3c799,0 4px 12px #0006!important;
+ }
+ #mapWrap{margin-top:8px!important}
+ #mapQuickTools button{
+  border-radius:18px!important;
+  box-shadow:0 5px 18px #000b,0 0 10px #e2ab3926!important;
+ }
+}
