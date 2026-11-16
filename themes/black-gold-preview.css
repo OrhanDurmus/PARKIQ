@@ -533,3 +533,42 @@ header .header-brand h1 span{
  #sideMenu{max-width:min(88vw,370px)!important}
  #detailSheet{max-height:85dvh!important;overflow-y:auto!important}
 }
+
+/* Signature pass 18 — complete visible parking discovery theme. */
+#parkingSummary{background:#0c0b0e!important}
+#parkingSummary>div{
+ background:linear-gradient(145deg,#242019,#111115)!important;
+ border:1px solid #b58a32!important;
+ border-radius:14px!important;
+ box-shadow:inset 0 1px 0 #ffe4a025!important;
+}
+#parkingSummary strong{color:#f9d46c!important}
+#parkingSummary span{color:#d4c8b5!important}
+#status,#parkingDataFreshness,.note,.hint{color:#cfc3ae!important}
+#emptyNotice,.empty-results{
+ box-shadow:0 0 15px #c6932a16!important;
+}
+#emptyReset,#installUpdate,#report,#dismissInstall{
+ background:linear-gradient(125deg,#f8db76,#d9a42a)!important;
+ color:#17130a!important;
+ border:1px solid #ffe18c!important;
+ border-radius:12px!important;
+}
+#favoritesTitle,#nearestFive h3{color:#f5d47b!important}
+#legacyParkingCards .note{color:#d4c7ae!important}
+#legacyParkingCards .note a{color:#e6bd55!important}
+#sideMenuClose,#closeDetails{
+ background:#2a2219!important;color:#f9d981!important;
+ border:1px solid #b98e35!important;
+}
+#sideMenuBackdrop{background:#000b!important}
+#reportBox button:focus-visible,#detailSheet button:focus-visible{
+ outline:2px solid #ffe18c!important;outline-offset:2px!important;
+}
+@media(max-width:600px){
+ #parkingSummary{gap:8px!important}
+ #parkingSummary>div{min-width:0!important;padding:10px 6px!important}
+ #parkingSummary span{font-size:11px!important}
+ #nearestFive .near-item button{min-width:0!important;white-space:normal}
+ #installHint:not([hidden]){position:relative!important;z-index:1!important}
+}
