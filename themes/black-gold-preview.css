@@ -409,3 +409,36 @@ header .header-brand h1 span{
  .bottom-nav{padding:12px!important;gap:9px!important}
  .bottom-nav button{min-height:52px!important}
 }
+
+/* Signature pass 15 — reference-inspired layout, legible sort and installation prompt. */
+@media(max-width:600px){
+ .sort-row{
+  display:grid!important;
+  grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important;
+  align-items:center!important;
+  gap:9px!important;
+  padding:12px 14px 18px!important;
+  overflow:visible!important;
+ }
+ .sort-row>span{grid-column:1/-1;color:#f2e2b9!important}
+ .sort-row #resetFilters,.sort-row #sortParking{
+  width:100%!important;max-width:none!important;min-width:0!important;
+  box-sizing:border-box!important;min-height:48px!important;
+  font-size:13px!important;
+ }
+ .sort-row #resetFilters{
+  background:linear-gradient(135deg,#352812,#1b1714)!important;
+  color:#ffe18a!important;border:1px solid #d4a73d!important;
+ }
+ #installHint:not([hidden]){display:block!important}
+ #installHint{margin:12px 14px 18px!important;padding:16px 48px 16px 16px!important}
+ .bottom-nav{
+  position:relative!important;inset:auto!important;bottom:auto!important;
+  margin:12px 12px calc(22px + env(safe-area-inset-bottom))!important;
+  width:calc(100% - 24px)!important;
+  border:1px solid #d9a52d!important;border-radius:22px!important;
+  background:linear-gradient(150deg,#19140e,#080809)!important;
+  box-shadow:0 0 16px #e7a82944,inset 0 1px 0 #ffe9a03d!important;
+ }
+ .bottom-nav button{font-size:14px!important;min-width:0!important}
+}
