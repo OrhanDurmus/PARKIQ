@@ -1517,3 +1517,44 @@ header #rotaparkAccountLink{
  #goldMainNav button{border-radius:19px!important}
  #goldMainNav button:focus-visible{outline:2px solid #ffe389;outline-offset:3px}
 }
+
+/* ROTAPARK nationwide premium concept v1: no city-specific imagery.
+   Subtle typography, restrained highlights, real controls retained. */
+header{
+ background-image:linear-gradient(180deg,#030407b8 0%,#03040718 39%,#03040788 100%),url("/themes/rotapark-turkiye-gold-hero.svg")!important;
+ background-color:#050609!important;
+ background-size:cover,cover!important;
+ background-position:center,center center!important;
+}
+header::before,header::after{display:none!important;content:none!important}
+header .header-brand h1{
+ font-style:italic!important;
+ font-weight:800!important;
+ letter-spacing:-.8px!important;
+ text-shadow:0 1px 5px #0009!important;
+}
+header .header-brand h1 span{color:#f0be52!important}
+#savedParkingSection,#installHint:not([hidden]),.tools .search,.tools #loc,
+.tools .filters select,.quick-filters button,.sort-row button,.sort-row select,#goldMainNav button{
+ box-shadow:0 2px 9px #c58b2725!important;
+}
+#savedParkingSection,#installHint:not([hidden]){border-width:1px!important}
+#goldMainNav button{border-width:1px!important}
+#goldMainNav button span{font-size:26px!important;text-shadow:0 0 7px #d4a23a55!important}
+#goldMainNav button strong{font-size:15px!important;font-weight:650!important}
+#savedParkingSection #saveParkingLocation{font-weight:700!important}
+@media(max-width:600px){
+ header{min-height:205px!important;height:205px!important;background-position:center,center 50%!important}
+ header .header-brand h1{font-size:clamp(25px,6vw,31px)!important}
+ header>small{font-size:12px!important;font-weight:450!important}
+ #savedParkingSection h2{font-size:21px!important}
+ #savedParkingSection #saved{font-size:15px!important}
+ #savedParkingSection #saveParkingLocation{font-size:15px!important;min-height:57px!important}
+ .tools .search input{font-size:15px!important}
+ .tools .search button{font-size:16px!important}
+ .tools #loc{font-size:16px!important}
+ .tools .filters select{font-size:12px!important}
+ .quick-filters button{font-size:13px!important;font-weight:650!important}
+ .sort-row>span{font-size:12px!important}
+ #goldMainNav button{min-height:84px!important}
+}
