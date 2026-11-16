@@ -735,3 +735,66 @@ header::before{display:none!important}
  }
  #sideMenu .side-menu-links button{min-height:52px!important}
 }
+
+/* Signature pass 23 — reference-inspired visual-only finishing layer.
+   No markup, business logic, data, map imagery, navigation or event handlers changed. */
+:root{--rp-gold:#f2bf3f;--rp-gold-light:#ffe69b;--rp-line:#b88a31}
+header{
+ border-bottom:1px solid #e4ad39!important;
+ box-shadow:0 8px 28px #0008,0 2px 15px #e7a72a30!important;
+}
+header h1{
+ color:#f6c64b!important;
+ font-weight:900!important;
+ letter-spacing:.035em!important;
+ text-shadow:0 2px 8px #000b,0 0 16px #ffca463d!important;
+}
+#sideMenuOpen,.quick-filters button,.filters button,
+#mapQuickTools button,#refreshNow{
+ box-shadow:inset 0 1px 0 #fff0bb33,0 4px 12px #0008,0 0 10px #e8b13a26!important;
+}
+#mapWrap{
+ border-radius:22px!important;
+ overflow:hidden!important;
+ border:1px solid #b78a34!important;
+ box-shadow:0 9px 28px #0008,0 0 16px #dfaa3026!important;
+}
+#nearestFive .near-item,#parkingList .item,#favoritesList .item{
+ background:linear-gradient(135deg,#29231c 0%,#151416 56%,#0e0e11 100%)!important;
+ border:1px solid #d5a43b!important;
+ border-radius:20px!important;
+ box-shadow:inset 0 1px 0 #ffe9a02a,0 7px 20px #0008!important;
+}
+#nearestFive .near-item button,#parkingList .item button,#favoritesList .item button{
+ background:linear-gradient(180deg,#ffe27b 0%,#e9b633 58%,#d69b1d 100%)!important;
+ color:#17120b!important;
+ border:1px solid #ffdc72!important;
+ border-radius:14px!important;
+ box-shadow:inset 0 1px 0 #fff4b988,0 4px 10px #0006!important;
+}
+#parkingSummary>div{
+ background:linear-gradient(145deg,#30251b,#151417 78%)!important;
+ border:1px solid #d7a53d!important;
+ border-radius:17px!important;
+ box-shadow:inset 0 1px 0 #ffe3a039,0 5px 18px #0006!important;
+}
+#parkingSummary strong{
+ color:#ffda65!important;
+ font-weight:900!important;
+ text-shadow:0 0 12px #eeb53733!important;
+}
+#sideMenu .side-menu-links button,#sideMenu .side-menu-links a{
+ border-color:#c99b3e!important;
+ box-shadow:inset 0 1px 0 #ffe9a02a,0 4px 12px #0006!important;
+}
+#sideMenu .side-menu-top strong{color:#ffe5a1!important}
+#detailSheet{border-radius:22px 22px 0 0!important}
+#detailContent .external-nav-link{
+ border-color:#d7aa49!important;
+ background:linear-gradient(135deg,#30251a,#141316)!important;
+}
+@media(max-width:600px){
+ #mapWrap{border-radius:18px!important}
+ #nearestFive .near-item{border-radius:16px!important}
+ #parkingSummary>div{border-radius:13px!important}
+}
