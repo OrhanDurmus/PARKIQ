@@ -69,3 +69,31 @@ header a:has(#rotaparkAccountLabel){
 .bottom-nav button:focus-visible{outline:2px solid var(--rp-gold-light)}
 #parkingList .item,#favoritesList .item{box-shadow:0 4px 14px #0004}
 @media(max-width:600px){.bottom-nav button{box-shadow:none}}
+
+/* Signature pass 3 — restrained skyline-inspired header, CSS-only; no external assets. */
+header{
+ position:relative;isolation:isolate;overflow:hidden;
+ background:radial-gradient(ellipse at 82% 0%,#6c4b1938,transparent 62%),
+ linear-gradient(160deg,#242016,#0b0b0f 75%)!important;
+ border-bottom:1px solid #94712d66;
+}
+header::before{
+ content:"";position:absolute;inset:auto 0 0;height:38px;z-index:-1;
+ opacity:.35;pointer-events:none;
+ background:linear-gradient(0deg,#b98a2c44,transparent 75%),
+ repeating-linear-gradient(90deg,transparent 0 18px,#9c772b55 19px 21px,transparent 22px 38px);
+ -webkit-mask-image:linear-gradient(to top,#000,transparent);
+ mask-image:linear-gradient(to top,#000,transparent)
+}
+header .header-brand h1{color:#f5f1e8;text-shadow:0 1px 8px #0008}
+header .header-brand h1 span{color:#f1d47b}
+header .header-brand img{
+ border:1px solid #cda642;border-radius:12px;
+ box-shadow:0 0 0 2px #d4af3722,0 4px 15px #0008
+}
+header #sideMenuOpen{
+ background:#1b1a19!important;color:#f5e8c7!important;
+ border:1px solid #b68e34!important;box-shadow:inset 0 1px 0 #fff1
+}
+header small{color:#d0c4aa}
+@media(prefers-reduced-motion:reduce){header *{transition:none!important}}
