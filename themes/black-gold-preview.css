@@ -639,3 +639,46 @@ header::before{display:none!important}
   background-size:cover,cover!important;
  }
 }
+
+/* Signature pass 21 — premium map details and external navigation controls.
+   Satellite tiles, GPS indicator, blue route and availability pins stay intact. */
+#detailSheet .external-navigation-options,
+#detailContent .external-navigation-options{
+ display:flex!important;flex-wrap:wrap!important;gap:8px!important;
+}
+#detailSheet .external-nav-link,
+#detailContent .external-nav-link{
+ display:inline-flex!important;align-items:center!important;justify-content:center!important;
+ min-height:44px!important;padding:10px 13px!important;
+ background:linear-gradient(135deg,#322613,#151418)!important;
+ border:1px solid #c6993c!important;border-radius:13px!important;
+ color:#ffe49b!important;text-decoration:none!important;font-weight:700!important;
+ box-shadow:inset 0 1px 0 #ffe8a022!important;
+}
+#detailSheet .external-nav-link:focus-visible,
+#detailContent .external-nav-link:focus-visible{
+ outline:2px solid #ffe69b!important;outline-offset:2px!important;
+}
+#detailContent button[style*="background:#384b61"]{
+ background:linear-gradient(135deg,#493519,#211b16)!important;
+ color:#ffe6a5!important;border:1px solid #c6993c!important;
+}
+#detailContent a[href*="openstreetmap.org"]{color:#f4ce71!important}
+#detailContent a[href*="openstreetmap.org"]:focus-visible{
+ outline:2px solid #ffe69b!important;outline-offset:2px!important;
+}
+#detailContent button:not(.leaflet-control button){touch-action:manipulation}
+.leaflet-control-zoom a{
+ background:#17151a!important;color:#f4d477!important;
+ border-color:#ac842f!important;
+}
+.leaflet-control-zoom{border:1px solid #c49a3e!important;border-radius:9px!important}
+.leaflet-control-attribution{
+ background:#111217d9!important;color:#d4c5a4!important;
+}
+.leaflet-control-attribution a{color:#f2cb6b!important}
+@media(max-width:600px){
+ #detailSheet .external-nav-link,#detailContent .external-nav-link{
+  flex:1 1 120px!important;font-size:13px!important;
+ }
+}
