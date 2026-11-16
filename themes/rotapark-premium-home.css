@@ -139,3 +139,83 @@ body,main,.app-shell{background-color:#050506!important;color:#f7f3e8!important}
  #savedParkingSection #saveParkingLocation{min-height:55px!important;font-size:14px!important}
  .bottom-nav button{color:#fce9bd!important}
 }
+
+/* Gold Preview: finish lower-page palette; keep status/legend meaning intact. */
+#installHint:not([hidden]){
+ background:linear-gradient(145deg,#241b11,#0c0b0b 75%)!important;
+ color:#f6eddd!important;
+ border:1px solid #e7b449!important;
+ border-radius:18px!important;
+ box-shadow:0 0 9px #e0a53736!important;
+}
+#installHint strong{color:#ffe0a0!important}
+#installHint div{color:#efe6d8!important}
+#dismissInstall{
+ background:#2c2112!important;
+ color:#ffd76e!important;
+ border:1px solid #dca940!important;
+}
+#refreshNow{
+ background:linear-gradient(180deg,#ffdf85,#efb72e)!important;
+ color:#201604!important;
+ border:1px solid #ffe6a2!important;
+ border-radius:17px!important;
+ box-shadow:0 0 12px #e6a83d5b!important;
+}
+#status,#parkingDataFreshness{background:#050506!important;color:#ddd4c5!important}
+.parking-legend{
+ background:linear-gradient(145deg,#21190f,#0b0a0a)!important;
+ border:1px solid #d7a43e!important;
+ border-radius:17px!important;
+ color:#f3e7d2!important;
+ box-shadow:0 0 8px #d4a23d2d!important;
+ padding:13px!important;
+ margin:9px 12px!important;
+}
+.parking-legend span{color:#f2e6d1!important}
+#emptyNotice,#updateNotice{
+ background:#17120c!important;
+ border:1px solid #d8a73d!important;
+ color:#f4e9d5!important;
+}
+#emptyNotice button,#installUpdate{
+ background:linear-gradient(180deg,#ffe189,#f1b934)!important;
+ color:#241705!important;
+}
+#rpResultsHeading{border-top:1px solid #c6933655!important;padding-top:13px!important}
+#rpResultsHeading strong{font-size:19px!important}
+#rpResultsCount{color:#efcc81!important}
+#mapWrap+#rpResultsHeading~section,
+#mapWrap+#rpResultsHeading~div{border-color:#cba03c}
+#nearbyParking,#nearbyParkingSection,#nearestParking,#parkingResults,#results,#parkingList{
+ background:#0a0908!important;color:#f6f0e5!important;
+}
+#nearbyParking button,#nearbyParkingSection button,#nearestParking button,
+#parkingResults button,#results button,#parkingList button{
+ border:1px solid #dbab43!important;
+ box-shadow:0 0 6px #d49d392b!important;
+}
+#nearbyParking input,#nearbyParkingSection input,#nearestParking input,
+#parkingResults input,#results input,#parkingList input{
+ background:#100e0c!important;color:#f7f0e3!important;
+ border:1px solid #d6a63f!important;
+}
+.bottom-nav,.bottom-nav-wrap,.bottom-navigation{
+ background:#090807!important;border-top:1px solid #c79b3b!important;
+}
+.bottom-nav button{
+ background:linear-gradient(145deg,#261c10,#090909)!important;
+ color:#f7e8c9!important;
+ border:1px solid #e1ad40!important;
+ box-shadow:0 0 8px #d99f3c4d!important;
+}
+#sideMenuOpen{
+ position:relative!important;top:auto!important;left:auto!important;
+ transform:none!important;z-index:4!important;
+}
+@media(max-width:600px){
+ #installHint:not([hidden]){margin:10px 12px!important;padding:14px!important}
+ #refreshNow{min-height:48px!important;font-size:14px!important}
+ .parking-legend{font-size:12px!important;line-height:1.55!important}
+ #sideMenuOpen{position:relative!important;top:auto!important;left:auto!important}
+}
