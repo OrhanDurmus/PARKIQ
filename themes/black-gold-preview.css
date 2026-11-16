@@ -798,3 +798,47 @@ header h1{
  #nearestFive .near-item{border-radius:16px!important}
  #parkingSummary>div{border-radius:13px!important}
 }
+
+/* Signature pass 24 — visual layout aligned to the chosen compact reference.
+   All original controls remain visible and operational; CSS-only Preview. */
+header{
+ min-height:230px!important;
+ padding:24px 20px 65px!important;
+ align-content:flex-start!important;
+ gap:10px!important;
+}
+.header-brand{flex:1 1 auto!important}
+.header-brand img{width:56px!important;height:56px!important;object-fit:contain!important}
+.header-brand h1{font-size:clamp(28px,6vw,43px)!important;line-height:1.05!important}
+header>small{color:#f5e6c7!important;text-shadow:0 2px 8px #000!important}
+#savedParkingSection{
+ margin:10px 14px!important;padding:10px 14px!important;
+ display:flex!important;flex-wrap:wrap!important;
+ align-items:center!important;gap:8px 14px!important;
+ background:linear-gradient(120deg,#282019,#121215)!important;
+ border:1px solid #c69b3e!important;border-radius:16px!important;
+}
+#savedParkingSection h2{font-size:15px!important;margin:0!important}
+#savedParkingSection #saved{font-size:12px!important;margin:0!important;flex:1 1 90px!important}
+#saveParkingLocation{
+ flex:0 1 auto!important;width:auto!important;min-height:42px!important;
+ padding:9px 12px!important;font-size:12px!important;
+ border-radius:12px!important;line-height:1.3!important;
+}
+.tools{margin-top:4px!important}
+.tools .search{
+ border:1px solid #dbad43!important;border-radius:25px!important;
+ background:linear-gradient(120deg,#211b16,#121216)!important;
+ box-shadow:0 0 12px #e8b13c2b!important;
+}
+.tools .search input{background:transparent!important;border:0!important;min-width:0!important}
+.tools .search button{border-radius:20px!important}
+.quick-filters button{border-radius:15px!important}
+@media(max-width:600px){
+ header{min-height:200px!important;padding:18px 16px 38px!important}
+ .header-brand img{width:48px!important;height:48px!important}
+ .header-brand h1{font-size:30px!important}
+ #savedParkingSection{margin:8px 12px!important;padding:10px 12px!important}
+ #saveParkingLocation{font-size:11px!important}
+ .tools .search{border-radius:18px!important}
+}
