@@ -1284,3 +1284,30 @@ header::after{
  #parkingSummary span{font-size:10px!important}
  #mapWrap{margin:5px 10px 10px!important}
 }
+
+/* Gold premium mobile hierarchy: discovery first, details on demand. */
+.gold-advanced-filters{
+ margin:5px 0 1px!important;
+ border:1px solid #b58b3c!important;
+ border-radius:14px!important;
+ background:#171418!important;
+ color:#f4dfb2!important;
+ overflow:hidden!important;
+}
+.gold-advanced-filters>summary{
+ cursor:pointer;
+ list-style:none;
+ padding:11px 14px!important;
+ font-size:13px!important;
+ font-weight:700!important;
+}
+.gold-advanced-filters>summary::-webkit-details-marker{display:none}
+.gold-advanced-filters>summary:after{content:"⌄";float:right;color:#f5ca68}
+.gold-advanced-filters[open]>summary:after{content:"⌃"}
+.gold-advanced-filters .filters{padding:8px!important}
+.gold-advanced-filters .sort-row{padding:8px!important}
+@media(max-width:600px){
+ #savedParkingSection{margin:8px 10px!important;border-radius:16px!important}
+ .gold-advanced-filters{margin:5px 0!important}
+ #mapWrap{margin-top:7px!important}
+}
