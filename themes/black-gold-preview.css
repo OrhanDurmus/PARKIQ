@@ -195,3 +195,21 @@ header::after{
  header{padding-bottom:86px!important}
  header::before{height:100px!important;background-size:auto 100px!important}
 }
+
+/* Signature pass 8 — practical mobile refinement: no extra fixed overlay. */
+#installHint{box-sizing:border-box;min-height:100px;overflow:visible}
+#installHint div{padding-right:4px;line-height:1.6}
+#installHint[hidden]{display:none!important}
+.bottom-nav{
+ padding-top:8px!important;
+ padding-bottom:calc(8px + env(safe-area-inset-bottom))!important;
+ background:linear-gradient(180deg,#15120fee,#0a0a0df7)!important;
+ border-top:1px solid #b58a3688!important;
+}
+.bottom-nav button{min-height:48px;line-height:1.2}
+#savedParkingSection #saveParkingLocation:focus-visible,
+#installHint button:focus-visible{outline:2px solid #ffe69d;outline-offset:3px}
+@media(max-width:600px){
+ header .header-brand img{object-fit:contain}
+ #installHint{margin-left:12px!important;margin-right:12px!important}
+}
