@@ -1206,3 +1206,81 @@ header::after{
   background:linear-gradient(125deg,#292219,#0d0e12)!important;
  }
 }
+
+/* Premium composition v2: one-screen mobile hierarchy.
+   Preserve the original controls, selectors and event handlers. */
+@media(max-width:600px){
+ header{
+  min-height:178px!important;
+  height:178px!important;
+  padding:14px 14px 14px!important;
+  grid-template-columns:48px minmax(0,1fr) 100px!important;
+  align-content:start!important;
+  gap:6px!important;
+  background-position:center,center 58%!important;
+ }
+ header .header-brand{min-width:0!important}
+ header .header-brand h1{font-size:clamp(24px,6.1vw,31px)!important}
+ header>small{font-size:11px!important;line-height:1.2!important}
+ header #rotaparkAccountLink{padding:8px!important;font-size:11px!important}
+ #savedParkingSection{
+  display:flex!important;
+  flex-wrap:wrap!important;
+  align-items:center!important;
+  gap:4px 10px!important;
+  padding:7px 11px!important;
+  margin:0 10px 6px!important;
+  border-radius:0 0 14px 14px!important;
+ }
+ #savedParkingSection h2{
+  flex:0 0 auto!important;
+  margin:0!important;
+  font-size:12px!important;
+ }
+ #savedParkingSection #saved{
+  flex:1 1 auto!important;
+  text-align:right!important;
+  margin:0!important;
+  font-size:11px!important;
+ }
+ #savedParkingSection #saveParkingLocation{
+  flex:1 0 100%!important;
+  min-height:34px!important;
+  margin:2px 0 0!important;
+  padding:6px 9px!important;
+  font-size:11px!important;
+ }
+ .tools{padding:5px 10px!important}
+ .tools .search{min-height:48px!important;margin:0!important}
+ .tools .search input{min-height:44px!important}
+ .tools .search button{min-height:40px!important}
+ .tools .actions{margin:3px 0!important}
+ .tools #loc{min-height:37px!important;padding:6px!important}
+ .tools .filters select,.tools .filters #kindFilter{
+  min-height:37px!important;
+  flex-basis:146px!important;
+  width:146px!important;
+  min-width:146px!important;
+  font-size:12px!important;
+ }
+ .quick-filters{gap:6px!important;padding:2px 1px 5px!important}
+ .quick-filters button{
+  min-height:43px!important;
+  min-width:108px!important;
+  padding:7px 10px!important;
+  font-size:12px!important;
+ }
+ .sort-row{padding:4px 10px!important;gap:5px!important}
+ .sort-row>span{font-size:11px!important}
+ .sort-row #resetFilters,.sort-row #sortParking{min-height:36px!important}
+ #parkingSummary{
+  display:grid!important;
+  grid-template-columns:repeat(3,minmax(0,1fr))!important;
+  gap:6px!important;
+  padding:5px 10px!important;
+ }
+ #parkingSummary>div{min-width:0!important;padding:8px 5px!important}
+ #parkingSummary strong{font-size:20px!important}
+ #parkingSummary span{font-size:10px!important}
+ #mapWrap{margin:5px 10px 10px!important}
+}
