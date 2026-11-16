@@ -1,0 +1,59 @@
+/* ROTAPARK screenshot-reference home: preview only, real live map and cards. */
+:root{--rp-gold:#f7c44e}
+body{background:#050609!important;color:#f7f4e9!important}
+header{background:linear-gradient(180deg,#04102430,#02030655),url("https://upload.wikimedia.org/wikipedia/commons/thumb/7/70/Istanbul_at_night.jpg/1280px-Istanbul_at_night.jpg") center/cover,#070b13!important;position:relative!important;box-sizing:border-box!important;border-bottom:1px solid #e4a93d!important}
+header .header-brand img{border-radius:0!important;box-shadow:none!important;object-fit:contain!important}
+header .header-brand h1{font-style:italic!important;white-space:nowrap!important;color:#fff!important}
+header .header-brand h1 span{color:#f6bd4c!important}
+#rpNotificationShortcut{background:#080b10d9!important;border:1px solid #e8b13d!important;border-radius:50%!important;color:#fbd56e!important;font-size:23px!important;box-shadow:0 0 9px #edb53e44!important}
+#rpFilterToggle{background:#070a10!important;color:#ffd15e!important;border:1px solid #e9b540!important;font-size:27px!important;flex:0 0 49px!important}
+.tools{background:#050609!important}
+.tools .search{display:flex!important;align-items:stretch!important;gap:7px!important}
+.tools .search input{border:1px solid #dba33a!important;border-radius:30px!important;background:#0c0c10ed!important;color:#fff!important;box-shadow:0 0 10px #d99b3c44!important}
+.tools .search #search{display:none!important}
+#rpOperatorShortcuts{display:grid!important;grid-template-columns:repeat(6,minmax(0,1fr))!important;gap:7px!important;margin:12px 0!important}
+#rpOperatorShortcuts button{min-width:0!important;min-height:69px!important;border:1px solid #e6ac3c!important;border-radius:14px!important;padding:6px 2px!important;background:linear-gradient(145deg,#282016,#080a0e 65%)!important;color:#f7f4e9!important;box-shadow:0 2px 7px #d49a3933!important;display:flex!important;flex-direction:column!important;align-items:center!important;justify-content:center!important;gap:3px!important}
+#rpOperatorShortcuts button span{font-size:23px!important;color:#ffd262!important;line-height:1!important}
+#rpOperatorShortcuts button small{font-size:10px!important;color:#fff!important;white-space:nowrap!important;letter-spacing:-.2px!important}
+#parkingSummary{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:8px!important;background:#050609!important;padding:6px 12px 12px!important;margin:0!important}
+#parkingSummary>div{background:linear-gradient(140deg,#251e13,#08090c)!important;border:1px solid #e6ae41!important;border-radius:15px!important;padding:9px 3px!important;box-shadow:0 1px 7px #dca5442c!important}
+#parkingSummary strong{font-size:23px!important;color:#ffd45f!important;font-weight:800!important}
+#parkingSummary span{font-size:10px!important;color:#eee3cd!important}
+#mapWrap{margin:0 8px!important;border:1px solid #bb913b!important;border-radius:23px!important;overflow:hidden!important;box-shadow:0 0 11px #cf9e4033!important}
+#mapQuickTools{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:5px!important}
+#mapQuickTools button{font-size:11px!important;border:1px solid #e8b13d!important;border-radius:30px!important;background:#0b0d11eb!important;color:#fff!important;box-shadow:0 0 7px #f1b74844!important;min-width:0!important;padding:9px 3px!important;white-space:normal!important}
+#rpResultsHeading{display:flex!important;align-items:baseline!important;gap:8px!important;justify-content:space-between!important;margin:14px 13px 9px!important}
+#rpResultsHeading strong{font-size:19px!important;color:#fff!important}
+#rpResultsHeading span{font-size:12px!important;color:#d8d1c7!important}
+.rp-saved-secondary{margin-top:18px!important}
+@media(max-width:600px){
+ header{height:178px!important;min-height:178px!important;padding:10px 12px!important;display:grid!important;grid-template-columns:45px minmax(0,1fr) 38px 38px!important;grid-template-rows:70px auto!important;gap:5px!important;align-items:start!important}
+ header #sideMenuOpen{grid-column:1!important;grid-row:1!important;width:43px!important;height:48px!important;align-self:center!important;font-size:22px!important}
+ header .header-brand{grid-column:2!important;grid-row:1!important;justify-self:center!important;align-self:center!important;display:flex!important;gap:4px!important;min-width:0!important}
+ header .header-brand img{width:40px!important;height:49px!important}
+ header .header-brand h1{font-size:clamp(18px,5.4vw,27px)!important;letter-spacing:-.7px!important}
+ header>small{grid-column:1/-1!important;grid-row:2!important;text-align:center!important;justify-self:center!important;font-size:11px!important;margin:0!important;color:#fff1d6!important;text-shadow:0 1px 4px #000!important}
+ header #rotaparkAccountLink{grid-column:4!important;grid-row:1!important;align-self:center!important;justify-self:end!important;width:37px!important;height:40px!important;min-width:37px!important;max-width:37px!important;overflow:hidden!important;border-radius:50%!important;padding:5px!important;display:flex!important;align-items:center!important;justify-content:center!important;background:#0a0b0de8!important;border:1px solid #e5aa3e!important;font-size:0!important}
+ header #rotaparkAccountLink span:first-child{font-size:20px!important}
+ header #rotaparkAccountLabel{display:none!important}
+ #rpNotificationShortcut{grid-column:3!important;grid-row:1!important;align-self:center!important;width:37px!important;height:40px!important;padding:4px!important}
+ .tools{padding:10px 10px 0!important}
+ .tools .search input{font-size:14px!important;min-height:47px!important;padding:11px 14px!important}
+ #rpFilterToggle{min-height:47px!important;padding:3px!important}
+ .tools .actions,.tools .filters,.tools .quick-filters,.sort-row{display:none!important}
+ body.rp-filters-open .tools .actions{display:flex!important}
+ body.rp-filters-open .tools .filters{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:5px!important}
+ body.rp-filters-open .tools .quick-filters{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:5px!important}
+ body.rp-filters-open .sort-row{display:flex!important}
+ #rpOperatorShortcuts{gap:5px!important}
+ #rpOperatorShortcuts button{min-height:65px!important;border-radius:12px!important}
+ #rpOperatorShortcuts button span{font-size:20px!important}
+ #rpOperatorShortcuts button small{font-size:9px!important}
+ #parkingSummary{gap:6px!important;padding:5px 10px 12px!important}
+ #parkingSummary>div{padding:8px 2px!important}
+ #parkingSummary strong{font-size:21px!important}
+ #parkingSummary span{font-size:9px!important}
+ #mapWrap{margin:0 7px!important}
+ #mapQuickTools button{font-size:10px!important}
+ #savedParkingSection{margin:18px 12px!important}
+}
