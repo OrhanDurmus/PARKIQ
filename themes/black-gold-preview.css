@@ -213,3 +213,30 @@ header::after{
  header .header-brand img{object-fit:contain}
  #installHint{margin-left:12px!important;margin-right:12px!important}
 }
+
+/* Signature pass 9 — premium finish without altering map/navigation colors. */
+header .header-brand h1{
+ letter-spacing:-.035em;
+ text-shadow:0 2px 12px #000a,0 0 16px #d9a73718;
+}
+#savedParkingSection,.search,#installHint{
+ backdrop-filter:none;
+}
+#savedParkingSection #saveParkingLocation,
+.search button,.quick-filters button.active{
+ background-image:linear-gradient(120deg,#f9de80,#d5a82c 70%,#b88620)!important;
+ border-color:#e3c46c!important;
+ box-shadow:inset 0 1px 0 #fff7,0 3px 12px #c59b3233!important;
+}
+#savedParkingSection #saveParkingLocation:focus-visible,
+.search button:focus-visible{
+ outline:2px solid #fff0b4!important;outline-offset:3px!important;
+}
+@media(hover:hover){
+ #savedParkingSection #saveParkingLocation:hover,.search button:hover{
+ filter:brightness(1.06);
+ }
+}
+@media(prefers-reduced-motion:reduce){
+ #savedParkingSection #saveParkingLocation,.search button{transition:none!important}
+}
