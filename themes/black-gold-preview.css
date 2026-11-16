@@ -38,3 +38,34 @@ small,.hint,.business p,#status,.sort-row{color:var(--rp-muted)}
  outline-color:#e7c567;border-color:#e7c567
 }
 @media(prefers-reduced-motion:reduce){*{scroll-behavior:auto}}
+
+/* Signature pass 2: unify legacy teal cards and controls, without altering app behavior. */
+#savedParkingSection{
+ background:linear-gradient(155deg,#252015,#141416 58%,#0f0f12);
+ border:1px solid #b38b32;box-shadow:inset 0 1px 0 #f2d78922,0 6px 22px #0005;
+ color:var(--rp-text)
+}
+#savedParkingSection h2{color:var(--rp-text)}
+#savedParkingSection #saved{color:var(--rp-muted)}
+#savedParkingSection #saveParkingLocation{
+ background:linear-gradient(135deg,#f4d76b,#d4af37 62%,#b88c24)!important;
+ color:#18140a!important;border:1px solid #e4c65a!important;
+ box-shadow:0 3px 12px #b88c2433;font-weight:750
+}
+header a:has(#rotaparkAccountLabel){
+ background:#1c1a15!important;border:1px solid #cda642!important;
+ color:#f5e4b3!important;box-shadow:0 0 0 1px #d4af3718
+}
+.quick-filters button.active{
+ background:var(--rp-gold)!important;border-color:var(--rp-gold)!important;
+ color:#17130a!important;box-shadow:none!important
+}
+.quick-filters button:not(.active){border-color:var(--rp-line)!important}
+.bottom-nav button{
+ border:1px solid #7b622c!important;
+ background:linear-gradient(165deg,#29251e,#17171c)!important;
+ color:var(--rp-text)!important;box-shadow:inset 0 1px 0 #d4af3722
+}
+.bottom-nav button:focus-visible{outline:2px solid var(--rp-gold-light)}
+#parkingList .item,#favoritesList .item{box-shadow:0 4px 14px #0004}
+@media(max-width:600px){.bottom-nav button{box-shadow:none}}
