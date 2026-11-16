@@ -324,3 +324,76 @@ body,main,.app-shell{background-color:#050506!important;color:#f7f3e8!important}
  #nearestFive .near-item button{font-size:11px!important;white-space:normal!important;line-height:1.2!important}
  .parking-discovery-actions button{font-size:12px!important;line-height:1.25!important;min-height:51px!important;padding:8px!important}
 }
+
+/* iPhone QA: saved parking actions and side drawer, functional markup unchanged. */
+#savedParkingSection #saved button{
+ background:linear-gradient(145deg,#292013,#0a0a0a)!important;
+ color:#fce9c4!important;
+ border:1px solid #e5b247!important;
+ box-shadow:0 0 7px #cfa03a38!important;
+ border-radius:14px!important;
+ font-weight:650!important;
+}
+#savedParkingSection #saved button:hover,
+#savedParkingSection #saved button:focus-visible{
+ border-color:#ffe39a!important;
+ box-shadow:0 0 11px #e9b74c70!important;
+}
+#savedParkingSection #saved button:nth-of-type(3){
+ background:#1c1510!important;
+ color:#f1d6b0!important;
+ border-color:#bd8c3c!important;
+}
+#sideMenu{
+ background:linear-gradient(160deg,#18130e,#090909 60%)!important;
+ border-right:1px solid #dba940!important;
+ color:#f7eddb!important;
+ box-shadow:12px 0 35px #000b!important;
+}
+#sideMenu .side-menu-top{color:#ffdf95!important}
+#sideMenu .side-menu-top strong{color:#ffdf95!important}
+#sideMenuClose{
+ background:linear-gradient(145deg,#2a2014,#0b0b0b)!important;
+ color:#ffe09a!important;
+ border:1px solid #dfac42!important;
+ border-radius:13px!important;
+}
+#sideMenu .side-menu-links a,
+#sideMenu .side-menu-links button{
+ background:linear-gradient(145deg,#282015,#0e0d0c)!important;
+ color:#f8ecd4!important;
+ border:1px solid #d7a443!important;
+ border-radius:14px!important;
+ box-shadow:0 0 6px #d29e3933!important;
+}
+#sideMenu .side-menu-links a:hover,
+#sideMenu .side-menu-links button:hover{
+ background:#302315!important;
+ border-color:#f3c663!important;
+}
+#sideMenu .side-menu-links button[data-drawer-section]::after{color:#eac36f!important}
+#sideMenu section,
+#sideMenu #communityReportSection,
+#sideMenu .business,
+#sideMenu #contactSupport{
+ background:linear-gradient(145deg,#1d160f,#0b0b0b)!important;
+ border:1px solid #a98339!important;
+ color:#f5ebd9!important;
+}
+#sideMenu section h2,#sideMenu section h3,#sideMenu section label{color:#ffe1a0!important}
+#sideMenu section input,#sideMenu section textarea,#sideMenu section select{
+ background:#100e0c!important;
+ border:1px solid #b99243!important;
+ color:#fff4e1!important;
+}
+#sideMenu section button{
+ background:linear-gradient(145deg,#2d2111,#11100d)!important;
+ border:1px solid #d5a23d!important;
+ color:#f7e6c1!important;
+}
+#sideMenuBackdrop{background:#000b!important}
+@media(max-width:600px){
+ #savedParkingSection #saved button{font-size:13px!important;line-height:1.3!important}
+ #sideMenu{width:min(90vw,420px)!important}
+ #sideMenu .side-menu-links a,#sideMenu .side-menu-links button{font-size:14px!important;min-height:51px!important}
+}
