@@ -115,3 +115,29 @@ body{padding-bottom:calc(116px + env(safe-area-inset-bottom))!important}
  border:1px solid #9c7b36!important;min-width:32px;min-height:32px
 }
 .bottom-nav{box-shadow:0 -8px 22px #0008}
+
+/* Signature pass 5 — legibility and touch polish on iPhone. */
+:root{color-scheme:dark}
+.tools select,.sort-row select,#parkingNameSearch,.search input{
+ color-scheme:dark!important;color:#f5f1e8!important;
+ -webkit-text-fill-color:#f5f1e8;
+}
+.tools select option,.sort-row select option{background:#17171c;color:#f5f1e8}
+.tools input::placeholder,.search input::placeholder,#parkingNameSearch::placeholder{
+ color:#bcb7ad!important;opacity:1
+}
+.tools button,.quick-filters button,.bottom-nav button,#saveParkingLocation{
+ -webkit-tap-highlight-color:transparent;touch-action:manipulation
+}
+#savedParkingSection #saveParkingLocation:active,.search button:active{
+ filter:brightness(.92)
+}
+header .header-brand{position:relative}
+header .header-brand::after{
+ content:"";position:absolute;left:54px;right:0;bottom:-9px;height:1px;
+ background:linear-gradient(90deg,#d4af37aa,transparent);pointer-events:none
+}
+@media(max-width:390px){
+ .bottom-nav{gap:6px;padding-left:8px;padding-right:8px}
+ .bottom-nav button{min-width:0;font-size:12px}
+}
