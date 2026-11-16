@@ -957,3 +957,39 @@ header::after{
  .quick-filters button{min-height:43px!important;padding:9px 7px!important;font-size:12px!important}
  .sort-row{gap:7px!important}
 }
+
+/* Signature pass 28 — safer iPhone layout and reference-like golden hierarchy.
+   No functional controls hidden or event handlers altered. */
+@media(max-width:600px){
+ header .header-brand{
+  display:flex!important;align-items:center!important;gap:7px!important;
+  max-width:100%!important;overflow:visible!important;
+ }
+ header .header-brand h1{
+  min-width:0!important;overflow:hidden!important;
+  text-overflow:ellipsis!important;font-size:clamp(23px,6vw,31px)!important;
+ }
+ header #rotaparkAccountLink{max-width:92px!important;white-space:nowrap!important}
+ .tools .search{display:flex!important;align-items:center!important;gap:4px!important}
+ .tools .search input{flex:1 1 0!important;width:0!important}
+ .tools .search button{flex:0 0 auto!important}
+ .tools .filters{
+  display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;
+ }
+ .tools .filters #kindFilter{grid-column:1/-1!important}
+ .tools .filters select{width:100%!important;min-width:0!important}
+ .quick-filters{
+  display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;
+ }
+ .quick-filters button{min-width:0!important;white-space:normal!important}
+ #mapQuickTools{max-width:calc(100% - 20px)!important}
+ #mapQuickTools button{overflow-wrap:normal!important}
+ #parkingSummary{grid-template-columns:repeat(3,minmax(0,1fr))!important}
+}
+@media(max-width:380px){
+ header{grid-template-columns:46px minmax(0,1fr) 80px!important;padding-inline:9px!important}
+ header .header-brand img{width:39px!important;height:39px!important}
+ header .header-brand h1{font-size:23px!important}
+ header #rotaparkAccountLink{max-width:80px!important;font-size:10px!important}
+ #parkingSummary strong{font-size:20px!important}
+}
