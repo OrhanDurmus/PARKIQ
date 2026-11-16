@@ -345,3 +345,67 @@ header .header-brand,header small,header #rotaparkAccountLink,header #sideMenuOp
  .quick-filters{padding-bottom:12px!important}
  .sort-row{padding-bottom:16px!important}
 }
+
+/* Signature pass 14 — user-selected premium reference: richer gold trim and layout.
+   Preserve navigation, map route, occupancy colors and existing JS behavior. */
+:root{--rp-gold:#efb92e;--rp-gold-light:#ffe07a;--rp-line:#9f7625}
+header{
+ border-bottom:1px solid #d8a735!important;
+ box-shadow:0 3px 18px #d39d232b!important;
+}
+header .header-brand h1{
+ font-weight:850!important;
+ letter-spacing:-.045em!important;
+}
+header .header-brand h1 span{
+ background:linear-gradient(115deg,#fff2ac,#f0ba31 68%,#c68d16);
+ -webkit-background-clip:text;background-clip:text;
+ -webkit-text-fill-color:transparent;
+}
+#savedParkingSection{
+ position:relative;overflow:hidden;
+ border:1px solid #e1b33b!important;
+ background:radial-gradient(ellipse at 78% 0%,#8d601b24,transparent 55%),linear-gradient(145deg,#221c13,#111114 67%)!important;
+ box-shadow:0 0 0 1px #f8cf5c12,inset 0 1px 0 #ffe4a422,0 8px 28px #0009,0 0 20px #d9a42d20!important;
+}
+#savedParkingSection::after{
+ content:"";position:absolute;left:18%;right:18%;bottom:0;height:2px;pointer-events:none;
+ background:linear-gradient(90deg,transparent,#fff0a0,transparent);
+ box-shadow:0 0 12px #f3b73f;
+}
+#savedParkingSection h2{font-weight:800;letter-spacing:-.025em}
+#savedParkingSection #saveParkingLocation{
+ border-radius:16px!important;
+ background:linear-gradient(120deg,#ffe88d,#f4c443 55%,#d99b0f)!important;
+ border:1px solid #ffe6a0!important;
+ box-shadow:inset 0 1px 0 #fff9,0 6px 20px #d6a22544!important;
+}
+.search,#installHint,.actions #loc{
+ border:1px solid #b78b2e!important;
+ box-shadow:inset 0 1px 0 #ffe19d1c,0 0 12px #d6a22520!important;
+}
+.search{border-radius:17px!important}
+.search #search{border-radius:14px!important}
+.actions #loc{background:linear-gradient(150deg,#25201a,#161619)!important;color:#f6e8bf!important}
+#installHint{
+ border:1px solid #e4b341!important;
+ background:radial-gradient(ellipse at 15% 100%,#8d621c36,transparent 58%),#141215!important;
+ box-shadow:inset 0 1px 0 #ffe5a122,0 0 20px #e3a83233!important;
+}
+#installHint strong{font-size:15px;color:#ffe185!important}
+.bottom-nav{
+ border-top-color:#a77b2f!important;
+ box-shadow:0 -4px 18px #b483231c!important;
+}
+.bottom-nav button{
+ background:linear-gradient(155deg,#29231b,#121214)!important;
+ border:1px solid #bd8d32!important;
+ border-radius:16px!important;
+}
+@media(max-width:600px){
+ header{padding-bottom:44px!important}
+ #savedParkingSection{margin-bottom:18px}
+ .quick-filters button{border-radius:14px!important}
+ .bottom-nav{padding:12px!important;gap:9px!important}
+ .bottom-nav button{min-height:52px!important}
+}
