@@ -55,3 +55,9 @@ test('search radius 3, 10, 20 and 30 km controls returned records',async()=>{
 test('unsupported search radius falls back to 10 km',async()=>{
   assert.deepEqual(await query([point('5km',{lat:center.lat+0.045}),point('15km',{lat:center.lat+0.135})],999),['5km']);
 });
+
+// Regression: do not silently cap city results at 250 records.
+test('returns all eligible records beyond the former 250-record limit',async()=>{
+ const points=Array.from({length:275},(_,i)=>point('parking-'+i,{lat:center.lat+(i%20)*0.0001,lng:center.lng+Math.floor(i/20)*0.0001}));
+ assert.equal((await query(points,10)).length,275);
+});
