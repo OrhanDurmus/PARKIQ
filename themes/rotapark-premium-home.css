@@ -663,3 +663,60 @@ header #rpNotificationShortcut:focus-visible{outline:2px solid #ffe18c!important
  header .header-brand h1{font-size:clamp(20px,3vw,28px)!important}
  header #rotaparkAccountLink{font-size:11px!important}
 }
+
+/* Tablet parity: the phone's approved JPG is the actual hero. Previous
+   tablet CSS kept the legacy nationwide SVG, so cache busts could not fix it. */
+@media (min-width:601px){
+ header{
+  display:block!important;position:relative!important;
+  width:100%!important;height:clamp(260px,37.6vw,420px)!important;
+  min-height:0!important;aspect-ratio:auto!important;
+  padding:0!important;margin:0!important;
+  background-color:#020202!important;
+  background-image:url("/themes/rotapark-ilk-eskiz-ust-gorsel.jpg")!important;
+  background-position:center center!important;
+  background-size:100% 100%!important;
+  background-repeat:no-repeat!important;
+  border-bottom:1px solid #d7a13c!important;
+ }
+ header::before,header::after{display:none!important;content:none!important}
+ header .header-brand,header>small{display:none!important}
+ header #sideMenuOpen{
+  display:block!important;position:absolute!important;
+  top:7%!important;left:3.5%!important;right:auto!important;
+  width:12%!important;height:26%!important;
+  min-width:0!important;min-height:0!important;
+  margin:0!important;padding:0!important;
+  background:transparent!important;border:0!important;
+  box-shadow:none!important;color:transparent!important;
+  font-size:0!important;opacity:0!important;z-index:5!important;
+ }
+ header #rotaparkAccountLink{
+  display:flex!important;position:absolute!important;
+  top:7%!important;right:2.5%!important;left:auto!important;
+  width:23%!important;max-width:none!important;height:27%!important;
+  min-width:0!important;min-height:0!important;
+  margin:0!important;padding:4px 38px 4px 10px!important;
+  align-items:center!important;justify-content:flex-start!important;
+  background:#0c0a08!important;border:1px solid #e3b64f!important;
+  border-radius:30px!important;box-shadow:0 0 8px #e9ae4b55!important;
+  color:#ffe4a1!important;font-size:clamp(11px,1.5vw,15px)!important;
+  overflow:hidden!important;white-space:nowrap!important;z-index:6!important;
+ }
+ header #rotaparkAccountLink #rotaparkAccountLabel{
+  display:block!important;overflow:hidden!important;
+  text-overflow:ellipsis!important;white-space:nowrap!important;
+ }
+ header #rpNotificationShortcut{
+  display:flex!important;position:absolute!important;
+  top:10%!important;right:3.5%!important;left:auto!important;
+  width:clamp(27px,3.7vw,38px)!important;height:20%!important;
+  min-width:0!important;min-height:0!important;
+  padding:0 0 0 4px!important;
+  border:0!important;border-left:1px solid #8b682e!important;
+  border-radius:0!important;background:transparent!important;
+  box-shadow:none!important;color:#f4cb70!important;
+  align-items:center!important;justify-content:center!important;z-index:8!important;
+ }
+ header #rpNotificationShortcut svg{width:20px!important;height:20px!important}
+}
