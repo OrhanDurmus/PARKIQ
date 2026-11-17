@@ -511,4 +511,22 @@ window.rotaparkLoadSupportTickets=load;document.getElementById('support-ticket-r
  };
  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',setup,{once:true});else setup();
 })();
-</script><script src="/nav-b-design.js?v=20261112-4" defer></script><script type="module" src="/src/nearby-push-controls.js"></script><script src="/ev-charging.js?v=1" defer></script></body></html>
+</script><script src="/nav-b-design.js?v=20261112-4" defer></script><script type="module" src="/src/nearby-push-controls.js"></script><script src="/ev-charging.js?v=1" defer></script><script>
+/* Opt-in preview diagnostics: append ?rpLayoutDebug=1 to inspect tablet viewport. */
+(function(){
+ if(!new URLSearchParams(location.search).has('rpLayoutDebug'))return;
+ function report(){
+  var h=document.querySelector('header');
+  var brand=h&&h.querySelector('.header-brand');
+  var panel=document.createElement('output');
+  panel.id='rpLayoutDebugPanel';
+  panel.setAttribute('aria-label','Ekran düzeni tanılama');
+  panel.style.cssText='position:fixed;top:8px;left:8px;z-index:99999;background:#111;color:#ffe08a;border:1px solid #d5a644;padding:9px 12px;border-radius:9px;font:12px/1.5 monospace;max-width:calc(100vw - 32px);pointer-events:none';
+  var rules=window.matchMedia('(min-width:601px)').matches;
+  var b=brand&&getComputedStyle(brand);
+  panel.textContent='ROTAPARK PREVIEW | CSS width: '+innerWidth+'px | desktop rules: '+rules+' | DPR: '+devicePixelRatio+' | brand: '+(b?b.display:'missing')+' | screen: '+screen.width+'px';
+  document.body.appendChild(panel);
+ }
+ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',report,{once:true});else report();
+})();
+</script></body></html>
