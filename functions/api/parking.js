@@ -121,8 +121,11 @@ const confirmedNotParking=new Set(['way/882355136','way/1414411432']);
 const parkingOsmKey=p=>{const id=String(p.osmId||'');return /^(node|way|relation)\/\d+$/.test(id)?id:(p.osmType&&/^\d+$/.test(id)?String(p.osmType)+'/'+id:'')};
 // Cache parsed static OSM assets for a short time within a warm Worker isolate.
 // Failed reads are not cached, and every minute the current deployed asset is rechecked.
-const parkingAssetCache=new Map();
+const parkingAssetCaches=new WeakMap();
 async function readParkingAsset(env,origin,path){
+ // Cache per ASSETS binding, never share one tenant/test fixture's dataset with another.
+ let parkingAssetCache=parkingAssetCaches.get(env.ASSETS);
+ if(!parkingAssetCache){parkingAssetCache=new Map();parkingAssetCaches.set(env.ASSETS,parkingAssetCache)}
  const now=Date.now(),cached=parkingAssetCache.get(path);
  if(cached&&cached.expires>now)return cached.data;
  const asset=await env.ASSETS.fetch(new URL(path,origin).toString());
