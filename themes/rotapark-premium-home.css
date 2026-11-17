@@ -617,13 +617,13 @@ header #rpNotificationShortcut:focus-visible{outline:2px solid #ffe18c!important
 @media (min-width:601px){
  header{
   display:block!important;position:relative!important;
-  width:100%!important;height:clamp(260px,37.6vw,420px)!important;
+  width:100%!important;height:min(37.6056vw,620px)!important;
   min-height:0!important;aspect-ratio:auto!important;
   padding:0!important;margin:0!important;
   background-color:#020202!important;
   background-image:url("/themes/rotapark-ilk-eskiz-ust-gorsel.jpg")!important;
   background-position:center center!important;
-  background-size:100% 100%!important;
+  background-size:contain!important;
   background-repeat:no-repeat!important;
   border-bottom:1px solid #d7a13c!important;
  }
@@ -667,4 +667,129 @@ header #rpNotificationShortcut:focus-visible{outline:2px solid #ffe18c!important
   align-items:center!important;justify-content:center!important;z-index:8!important;
  }
  header #rpNotificationShortcut svg{width:20px!important;height:20px!important}
+}
+
+/* Desktop/tablet layout refinement based on PR #342 preview screenshot.
+   Preserve the mobile cockpit and all navigation state styles. */
+@media (min-width: 601px) {
+ header #rotaparkAccountLink {
+  top:7%!important;right:3.4%!important;
+  width:clamp(132px,15vw,225px)!important;
+  height:clamp(38px,4.2vw,58px)!important;
+  padding:5px 42px 5px 12px!important;
+  border-radius:24px!important;
+  font-size:clamp(12px,1vw,15px)!important;
+ }
+ header #rpNotificationShortcut {
+  top:calc(7% + 5px)!important;right:calc(3.4% + 6px)!important;
+  width:32px!important;height:clamp(28px,3.3vw,45px)!important;
+  padding:0!important;border-left:1px solid #8b682e!important;
+ }
+ #savedParkingSection,
+ .tools,
+ #parkingSummary,
+ #mapWrap {
+  box-sizing:border-box!important;
+  width:min(calc(100% - 32px),1280px)!important;
+  max-width:1280px!important;
+  margin-left:auto!important;
+  margin-right:auto!important;
+ }
+ #savedParkingSection{margin-top:18px!important;margin-bottom:16px!important;padding:18px!important}
+ #savedParkingSection h2{font-size:19px!important}
+ #savedParkingSection #saved{font-size:13px!important}
+ #rpOperatorShortcuts{gap:10px!important}
+ #rpOperatorShortcuts button{min-height:76px!important;padding:10px 6px!important}
+ #rpOperatorShortcuts button small{font-size:12px!important}
+ #parkingSummary{gap:12px!important;padding:12px 0!important}
+ #parkingSummary>div{padding:16px 8px!important}
+ #parkingSummary strong{font-size:27px!important}
+ #parkingSummary span{font-size:12px!important}
+ #mapWrap:not(.navigation-fullscreen){margin-top:8px!important}
+ #mapWrap:not(.navigation-fullscreen) #map{min-height:440px!important}
+}
+@media (min-width:601px) and (max-width:900px){
+ #rpOperatorShortcuts{grid-template-columns:repeat(3,minmax(0,1fr))!important}
+ #savedParkingSection,.tools,#parkingSummary,#mapWrap{width:calc(100% - 24px)!important}
+}
+
+/* Desktop results follow the same content rail as the map above. */
+@media (min-width:601px){
+ #mapWrap + .panel,
+ .parking-legend,
+ #status,
+ #parkingDataFreshness,
+ #emptyNotice,
+ #updateNotice,
+ div:has(> #refreshNow) {
+  box-sizing:border-box!important;
+  width:min(calc(100% - 32px),1280px)!important;
+  max-width:1280px!important;
+  margin-left:auto!important;
+  margin-right:auto!important;
+ }
+ #mapWrap + .panel{padding:16px!important}
+ #mapWrap + .panel h2{font-size:19px!important}
+ #mapWrap + .panel #listCount{font-size:12px!important}
+ div:has(> #refreshNow){padding-left:0!important;padding-right:0!important}
+ .parking-legend{padding:12px!important}
+}
+@media (min-width:601px) and (max-width:900px){
+ #mapWrap + .panel,.parking-legend,#status,#parkingDataFreshness,
+ #emptyNotice,#updateNotice,div:has(> #refreshNow){
+  width:calc(100% - 24px)!important;
+ }
+}
+
+/* Ensure the complete results section uses the same desktop content rail. */
+@media (min-width:601px){
+ .panel:has(> #nearestFive){
+  box-sizing:border-box!important;
+  width:min(calc(100% - 32px),1280px)!important;
+  max-width:1280px!important;
+  margin:12px auto 24px!important;
+  padding:16px!important;
+ }
+ .panel:has(> #nearestFive) h2{font-size:19px!important}
+ .panel:has(> #nearestFive) #listCount{font-size:12px!important}
+}
+@media (min-width:601px) and (max-width:900px){
+ .panel:has(> #nearestFive){width:calc(100% - 24px)!important}
+}
+
+/* 601px tablet viewport boundary: do not overlay a second brand on the
+   branded JPG. Keep real menu, account and notification controls usable. */
+@media (min-width:550px) and (max-width:700px){
+ header .header-brand,header > small{
+  display:none!important;visibility:hidden!important;
+ }
+ header #sideMenuOpen{
+  position:absolute!important;display:flex!important;
+  top:11%!important;left:3%!important;right:auto!important;
+  width:clamp(40px,7vw,54px)!important;
+  height:clamp(40px,7vw,54px)!important;
+  opacity:1!important;visibility:visible!important;
+  color:#f5c95f!important;background:#14100bdc!important;
+  border:1px solid #d5a13f!important;border-radius:12px!important;
+  align-items:center!important;justify-content:center!important;
+  z-index:10!important;
+ }
+ header #rotaparkAccountLink{
+  position:absolute!important;display:flex!important;
+  top:auto!important;bottom:8%!important;right:11%!important;left:auto!important;
+  width:clamp(105px,17vw,140px)!important;
+  height:42px!important;opacity:1!important;visibility:visible!important;
+  color:#f7e8c5!important;background:#14212c!important;
+  border:1px solid #cda04c!important;border-radius:12px!important;
+  align-items:center!important;justify-content:center!important;
+  font-size:13px!important;z-index:10!important;
+ }
+ header #rpNotificationShortcut{
+  position:absolute!important;display:flex!important;
+  top:auto!important;bottom:8%!important;right:3%!important;left:auto!important;
+  width:42px!important;height:42px!important;
+  opacity:1!important;visibility:visible!important;
+  align-items:center!important;justify-content:center!important;
+  z-index:11!important;
+ }
 }
