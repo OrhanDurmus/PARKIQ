@@ -2,6 +2,8 @@
 import csv,json,math,sys,unicodedata,osmium
 PROVINCES="""Adana|Adıyaman|Afyonkarahisar|Ağrı|Amasya|Ankara|Antalya|Artvin|Aydın|Balıkesir|Bilecik|Bingöl|Bitlis|Bolu|Burdur|Bursa|Çanakkale|Çankırı|Çorum|Denizli|Diyarbakır|Edirne|Elazığ|Erzincan|Erzurum|Eskişehir|Gaziantep|Giresun|Gümüşhane|Hakkâri|Hatay|Isparta|Mersin|İstanbul|İzmir|Kars|Kastamonu|Kayseri|Kırklareli|Kırşehir|Kocaeli|Konya|Kütahya|Malatya|Manisa|Kahramanmaraş|Mardin|Muğla|Muş|Nevşehir|Niğde|Ordu|Rize|Sakarya|Samsun|Siirt|Sinop|Sivas|Tekirdağ|Tokat|Trabzon|Tunceli|Şanlıurfa|Uşak|Van|Yozgat|Zonguldak|Aksaray|Bayburt|Karaman|Kırıkkale|Batman|Şırnak|Bartın|Ardahan|Iğdır|Yalova|Karabük|Kilis|Osmaniye|Düzce""".split('|')
 assert len(PROVINCES)==81 and len(set(PROVINCES))==81
+METROPOLITAN=set('Adana|Ankara|Antalya|Aydın|Balıkesir|Bursa|Denizli|Diyarbakır|Erzurum|Eskişehir|Gaziantep|Hatay|İstanbul|İzmir|Kahramanmaraş|Kayseri|Kocaeli|Konya|Malatya|Manisa|Mardin|Mersin|Muğla|Ordu|Sakarya|Samsun|Şanlıurfa|Tekirdağ|Trabzon|Van'.split('|'))
+assert len(METROPOLITAN)==30 and METROPOLITAN<=set(PROVINCES)
 ALIASES={'Kocaeli':['İzmit'],'Sakarya':['Adapazarı'],'Hatay':['Antakya'],'Mersin':['İçel'],'Kahramanmaraş':['Maraş'],'Afyonkarahisar':['Afyon']}
 def norm(v):
  return ''.join(c for c in unicodedata.normalize('NFKD',v.casefold().replace('ı','i')) if not unicodedata.combining(c))
@@ -34,6 +36,12 @@ with open(sys.argv[4],'w',encoding='utf-8') as f:
  f.write('# ROTAPARK 81 il otopark kapsam denetimi\n\n')
  f.write('Kaynak: Geofabrik OSM PBF ve aynı çalışmada oluşturulan Türkiye otopark dosyası; merkezden 10 km.\n\n')
  f.write(f'Denetlenen: {len(rows)}; OSM otopark kaydı olmayan: {len(missing)}; merkez bulunamayan: {len(unknown)}. İstanbul ayrı veri kaynağında.\n\n')
+ metro=[r for r in rows if r[0] in METROPOLITAN]
+ f.write('## Öncelikli 30 büyükşehir denetimi\\n\\n')
+ f.write('| Büyükşehir | 10 km kayıt | İsimli kayıt | Durum |\\n|---|---:|---:|---|\\n')
+ for province,lat,lng,count,named,status in sorted(metro,key=lambda r:(r[-1]=='OK',r[3] if isinstance(r[3],int) else -1,r[0])):
+  f.write(f'| {province} | {count if count!="" else "—"} | {named if named!="" else "—"} | {status} |\\n')
+ f.write('\\n**Not:** İstanbul bu Türkiye dosyasında ayrı tutuluyor; büyükşehir raporunda İstanbul verisinin ayrıca kontrol edilmesi gerekir.\\n\\n')
  f.write('## OSM verisi eksik iller\n'+(', '.join(missing) if missing else 'Yok')+'\n\n')
  f.write('## Şehir merkezi bulunamayan iller\n'+(', '.join(unknown) if unknown else 'Yok')+'\n\n')
  f.write('Sıfır OSM kaydı fiziksel otopark bulunmadığı anlamına gelmez.\n')
