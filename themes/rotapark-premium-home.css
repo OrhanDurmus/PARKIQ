@@ -565,3 +565,10 @@ body.rp-filters-open .sort-row{display:none!important}
   box-shadow:0 0 8px #e9ae4b55!important;
  }
 }
+
+/* Refined monochrome gold notification icon: no platform emoji or oversized halo. */
+header #rpNotificationShortcut{display:flex!important;align-items:center!important;justify-content:center!important;box-sizing:border-box!important;width:36px!important;height:36px!important;min-width:36px!important;min-height:36px!important;padding:0!important;border:1px solid #bd9141!important;border-radius:11px!important;background:linear-gradient(145deg,#21180d,#0a0908)!important;color:#f4cb70!important;box-shadow:0 2px 8px #0009!important;line-height:1!important;cursor:pointer!important;transition:background .15s ease,border-color .15s ease!important}
+header #rpNotificationShortcut svg{display:block!important;width:19px!important;height:19px!important;flex:none!important}
+header #rpNotificationShortcut:focus-visible{outline:2px solid #ffe18c!important;outline-offset:3px!important}
+@media(hover:hover){header #rpNotificationShortcut:hover{background:#33240f!important;border-color:#f0c568!important}}
+@media(max-width:600px){header #rpNotificationShortcut{top:calc(54px + (100vw * 267 / 710) * .06)!important;right:25.5%!important;width:clamp(29px,7vw,36px)!important;height:clamp(29px,7vw,36px)!important;min-width:0!important;min-height:0!important;border-radius:10px!important;box-shadow:0 2px 8px #0009!important}}
