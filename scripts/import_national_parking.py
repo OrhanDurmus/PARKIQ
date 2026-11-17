@@ -3,8 +3,8 @@ import datetime,json,sys,osmium
 points={}
 def record(tags,lat,lng,typ,oid):
     if not (35.5<=lat<=42.5 and 25.5<=lng<=45):return
-    # Existing Istanbul dataset remains the authoritative source in that region.
-    if 40<=lat<=42.5 and 26<=lng<=31:return
+    # Keep all Türkiye parking records, including Marmara provinces. Istanbul's
+    # curated data takes precedence during API merging, not during extraction.
     fee=tags.get('fee','').lower()
     kind=tags.get('parking','')
     access=tags.get('access','') or tags.get('motor_vehicle','') or tags.get('vehicle','')
