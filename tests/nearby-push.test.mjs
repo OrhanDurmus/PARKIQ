@@ -35,3 +35,12 @@ test('delivery reservation accepts valid report IDs and deduplicates', async () 
   assert.equal(await delivery.reserveNearbyPushDelivery(db,'report-1',id),false);
   await assert.rejects(delivery.reserveNearbyPushDelivery(db,'report/id',id),/invalid_push_delivery_reservation/);
 });
+
+test('queued nearby reports expire after two hours and reject missing/future timestamps',()=>{
+ const now=Date.parse('2026-11-17T20:00:00Z');
+ assert.equal(recipients.isActiveNearbyReport(now-1000,now),true);
+ assert.equal(recipients.isActiveNearbyReport(now-2*60*60*1000+1,now),true);
+ assert.equal(recipients.isActiveNearbyReport(now-2*60*60*1000,now),false);
+ assert.equal(recipients.isActiveNearbyReport(now+1000,now),false);
+ assert.equal(recipients.isActiveNearbyReport(undefined,now),false);
+});
