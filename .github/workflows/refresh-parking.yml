@@ -17,7 +17,7 @@ jobs:
   refresh:
     runs-on: ubuntu-latest
     concurrency:
-      group: parking-dataset-refresh
+      group: parking-dataset-refresh-v2
       cancel-in-progress: false
     timeout-minutes: 45
     steps:
