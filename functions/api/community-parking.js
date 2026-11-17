@@ -7,7 +7,7 @@ const validCoord=(lat,lng)=>Number.isFinite(lat)&&Number.isFinite(lng)&&lat>=35.
 const store=env=>env?.ISPARK_SNAPSHOTS;
 const tokenValid=t=>typeof t==='string'&&/^[a-f0-9]{64}$/.test(t);
 const tokenHash=async token=>Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(token)))).map(b=>b.toString(16).padStart(2,'0')).join('');
-export async function onRequestGet({env}){
+export async function onRequestGet({request,env}){
  const kv=store(env);if(!kv?.list||!kv?.get)return json({ok:false,error:'not_configured'},503);
  try{
   const keys=await kv.list({prefix:keyPrefix,limit:200});
@@ -60,7 +60,7 @@ export async function onRequestDelete({request,env}){
   const accountOwner=!!(point.ownerId&&user?.id===point.ownerId);
   const legacyOwner=!point.ownerId&&tokenValid(ownerToken)&&point.ownerTokenHash===await tokenHash(ownerToken);
   if(!accountOwner&&!legacyOwner)return json({ok:false,error:'forbidden'},403);
-  if(point.ownerId){const historyKey='community:user:history:'+point.ownerId+':'+id;const history=await kv.get(historyKey,'json');if(history)await kv.put(historyKey,JSON.stringify({...history,status:'owner_deleted',deletedAt:Date.now()}),{expirationTtl:60*60*24*90});}
+  if(point.ownerId){try{const historyKey='community:user:history:'+point.ownerId+':'+id;const history=await kv.get(historyKey,'json');if(history)await kv.put(historyKey,JSON.stringify({...history,status:'owner_deleted',deletedAt:Date.now()}),{expirationTtl:60*60*24*90})}catch(e){console.error('community_delete_history_update_failed',String(e?.message||e))}}
   await kv.delete(keyPrefix+id);
   // Let the verified report owner correct a mistake without waiting for the short cooldown.
   // The hourly quota remains in place to prevent repeated delete-and-repost spam.
