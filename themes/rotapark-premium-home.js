@@ -12,9 +12,9 @@
   bell.addEventListener('click',function(){var targets=[document.querySelector('[data-drawer-section*="notification"]'),document.querySelector('#notificationButton'),document.querySelector('#notificationsButton'),document.querySelector('#sideMenuOpen')];var t=targets.find(function(x){return x&&x!==bell});if(t)t.click()});
   var search=$('.tools .search');if(search){var filterBtn=document.createElement('button');filterBtn.type='button';filterBtn.id='rpFilterToggle';filterBtn.textContent='☷';filterBtn.setAttribute('aria-label','Filtreleri aç');search.appendChild(filterBtn);filterBtn.addEventListener('click',function(){document.body.classList.toggle('rp-filters-open')});}
   var quick=document.createElement('nav');quick.id='rpOperatorShortcuts';quick.setAttribute('aria-label','Otopark hızlı erişim');
-  [['📍','En Yakın',''],['Ⓟ','İSPARK','İSPARK'],['◆','İZELMAN','İZELMAN'],['▰','ANKAŞARK','ANKAŞARK'],['⚡','EV Şarj','şarj'],['♿','Engelli','engelli']].forEach(function(a){
+  [['📍','En Yakın',''],['Ⓟ','İSPARK','İSPARK'],['◆','İZELMAN','İZELMAN'],['▰','ANKAŞARK','ANPARK'],['⚡','EV Şarj','şarj'],['♿','Engelli','engelli']].forEach(function(a){
    var b=document.createElement('button');b.type='button';b.innerHTML='<span aria-hidden="true">'+a[0]+'</span><small>'+a[1]+'</small>';
-   b.addEventListener('click',function(){var q=$('#q');if(q)q.value=a[2];var searchBtn=$('#search');if(searchBtn)searchBtn.click();if(a[2])document.body.classList.add('rp-filters-open')});
+   b.addEventListener('click',function(){var q=$('#q');if(q)q.value=a[2];if(a[1]==='En Yakın'){var loc=$('#loc');if(loc){loc.click();return;}}var searchBtn=$('#search');if(searchBtn)searchBtn.click();if(a[2])document.body.classList.add('rp-filters-open')});
    quick.appendChild(b);
   });
   if(search)search.insertAdjacentElement('afterend',quick);
