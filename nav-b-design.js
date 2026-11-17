@@ -8,14 +8,14 @@ function init(){
  sh.innerHTML=`<style>
  :host{display:none;position:absolute;inset:0;z-index:12000;pointer-events:none;font-family:system-ui,-apple-system,sans-serif;color:white}
  *{box-sizing:border-box}
- .turn{position:absolute;top:calc(env(safe-area-inset-top) + 8px);left:10px;right:10px;max-width:560px;margin:auto;background:#126343;border-radius:16px;box-shadow:0 3px 12px #172d3a40;padding:10px 14px;display:flex;align-items:center;gap:14px}
+ .turn{position:absolute;top:calc(max(env(safe-area-inset-top), 28px) + 12px);left:10px;right:10px;max-width:560px;margin:auto;background:#126343;border-radius:16px;box-shadow:0 3px 12px #172d3a40;padding:10px 14px;display:flex;align-items:center;gap:14px}
  .arrow{font-size:32px;font-weight:800;line-height:1;flex:0 0 auto}
  .instruction{min-width:0}
- .direction{overflow-wrap:anywhere;font-size:clamp(17px,4.8vw,24px);line-height:1.2;font-weight:750}
+ .direction{overflow-wrap:anywhere;font-size:clamp(17px,4.6vw,23px);line-height:1.2;font-weight:750;max-height:3.6em;overflow:hidden}
  .dest{font-size:11px;color:#dbf5e8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:4px}
- .tools{position:absolute;right:12px;bottom:calc(env(safe-area-inset-bottom) + 94px);display:grid;gap:8px;pointer-events:auto}
+ .tools{position:absolute;right:12px;bottom:calc(max(env(safe-area-inset-bottom), 10px) + 112px);display:grid;gap:8px;pointer-events:auto}
  .round,.close{width:44px;height:44px;border:0;border-radius:50%;background:#fff;color:#17344b;font-size:21px;box-shadow:0 2px 9px #172d3a30;cursor:pointer}
- .bottom{position:absolute;bottom:calc(env(safe-area-inset-bottom) + 8px);left:10px;right:10px;max-width:560px;margin:auto;background:#fff;color:#182d3b;border-radius:16px;padding:5px 8px 5px 14px;box-shadow:0 2px 12px #172d3a35}
+ .bottom{position:absolute;bottom:calc(max(env(safe-area-inset-bottom), 10px) + 16px);left:10px;right:10px;max-width:560px;margin:auto;background:#fff;color:#182d3b;border-radius:16px;padding:5px 8px 5px 14px;box-shadow:0 2px 12px #172d3a35}
  .stats{display:flex;align-items:center;gap:10px}
  .numbers{flex:1;min-width:0}
  .primary{display:flex;align-items:baseline;gap:8px;font-variant-numeric:tabular-nums;font-size:16px;font-weight:650}
