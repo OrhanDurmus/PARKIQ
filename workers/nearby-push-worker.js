@@ -1,10 +1,11 @@
-import {distanceMeters} from '../functions/lib/nearby-push-recipients.js';
+import {distanceMeters,isActiveNearbyReport} from '../functions/lib/nearby-push-recipients.js';
 import {reserveNearbyPushDelivery,releaseNearbyPushDelivery,deleteExpiredPushSubscription} from '../functions/lib/nearby-push-delivery.js';
 import {sendNearbyParkingPush} from '../functions/lib/web-push.js';
 
 const radius=1000;
 async function fanout(env,job){
- const {reportId,latitude,longitude,excludedEndpointHash,ownerId}=job;
+ const {reportId,latitude,longitude,excludedEndpointHash,ownerId,createdAt}=job;
+ if(!isActiveNearbyReport(createdAt))return;
  if(!/^[0-9a-f-]{36}$/i.test(reportId)||![latitude,longitude].every(Number.isFinite))throw Error('invalid_report');
  const latDelta=radius/110500,lonDelta=radius/(110500*Math.max(0.01,Math.cos(latitude*Math.PI/180)));
  const cursor=typeof job.cursor==='string'?job.cursor:'';
@@ -15,11 +16,12 @@ async function fanout(env,job){
  ORDER BY endpoint_hash LIMIT 100
  `).bind(cursor,latitude-latDelta,latitude+latDelta,longitude-lonDelta,longitude+lonDelta).all();
  const messages=results.filter(r=>r.owner_id&&r.owner_id!==ownerId&&r.endpoint_hash!==excludedEndpointHash&&distanceMeters(latitude,longitude,r.latitude,r.longitude)<=radius)
-   .map(r=>({body:{kind:'nearby-delivery',reportId,endpointHash:r.endpoint_hash,ownerId,distanceMeters:Math.round(distanceMeters(latitude,longitude,r.latitude,r.longitude))}}));
+   .map(r=>({body:{kind:'nearby-delivery',reportId,endpointHash:r.endpoint_hash,ownerId,createdAt,distanceMeters:Math.round(distanceMeters(latitude,longitude,r.latitude,r.longitude))}}));
  if(messages.length)await env.NEARBY_PUSH_QUEUE.sendBatch(messages);
- if(results.length===100)await env.NEARBY_PUSH_QUEUE.send({kind:'nearby-report',reportId,latitude,longitude,excludedEndpointHash,ownerId,cursor:results[results.length-1].endpoint_hash});
+ if(results.length===100)await env.NEARBY_PUSH_QUEUE.send({kind:'nearby-report',reportId,latitude,longitude,excludedEndpointHash,ownerId,createdAt,cursor:results[results.length-1].endpoint_hash});
 }
 async function deliver(env,job){
+ if(!isActiveNearbyReport(job.createdAt))return;
  if(!/^[0-9a-f-]{36}$/i.test(job.reportId)||!/^[a-f0-9]{64}$/.test(job.endpointHash))throw Error('invalid_delivery');
  const row=await env.DB.prepare('SELECT endpoint,p256dh,auth,owner_id FROM nearby_push_subscriptions WHERE endpoint_hash=?')
   .bind(job.endpointHash).first();
