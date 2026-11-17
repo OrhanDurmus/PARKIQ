@@ -40,7 +40,7 @@ async function attachOfficialIsparkNames(points,env){
  if(!env?.ISPARK_SNAPSHOTS?.get)return points;
  try{
   const snapshot=await env.ISPARK_SNAPSHOTS.get('latest','json');
-  const official=(Array.isArray(snapshot?.points)?snapshot.points:[]).filter(p=>p&&typeof p.name==='string'&&p.name.trim().length>4&&Number.isFinite(Number(p.lat))&&Number.isFinite(Number(p.lng)));
+  const official=(Array.isArray(snapshot?.points)?snapshot.points:[]).filter(p=>p&&typeof p.name==='string'&&p.name.trim().length>4&&p.lat!==null&&p.lat!==''&&p.lng!==null&&p.lng!==''&&Number.isFinite(Number(p.lat))&&Number.isFinite(Number(p.lng))&&Math.abs(Number(p.lat))<=90&&Math.abs(Number(p.lng))<=180);
   if(!official.length)return points;
   const generic=p=>/^(?:Otopark kaydı|Otopark|Parking)$/iu.test(String(p.name||'').trim());
   const meters=(a,b)=>Math.hypot((Number(a.lat)-Number(b.lat))*111195,(Number(a.lng)-Number(b.lng))*111195*Math.cos(Number(a.lat)*Math.PI/180));
