@@ -94,23 +94,24 @@ export async function onRequestGet({request,env}){
  const radiusRaw=Number(url.searchParams.get('radius')||10),radiusKm=[3,10,20,30].includes(radiusRaw)?radiusRaw:10,radiusSq=(radiusKm*1000)**2;
  if(!inTurkey(lat,lng))return Response.json({error:'Koordinatlar Türkiye sınırları dışında'},{status:400});
  const excluded=await approvedNonParkingIds(env);
+ // Fetch nationwide coverage for every city. The old broad Istanbul rectangle
+ // mistakenly treated nine neighboring provinces as Istanbul and hid their data.
+ const nationalResponse=await env.ASSETS.fetch(new URL('/data/parking-turkiye.json',url.origin).toString());
+ let national=null;
+ if(nationalResponse.ok){try{const parsed=await nationalResponse.json();if(Array.isArray(parsed.points))national=parsed}catch{}}
+ let istanbul=null;
+ // Istanbul's reviewed dataset remains authoritative where the two extracts overlap.
  if(inIstanbul(lat,lng)){
-  const asset=await env.ASSETS.fetch(new URL('/data/parking.json',url.origin).toString());
-  if(!asset.ok)return Response.json({error:'İstanbul otopark veri dosyası bulunamadı'},{status:503});
-  try{
-   const data=await asset.json();
-   if(!Array.isArray(data.points))throw Error('Invalid data');
-   const points=data.points.filter(p=>validPoint(p)&&publicParking(p)&&!excluded.has(parkingOsmKey(p))&&!confirmedNotParking.has(parkingOsmKey(p))&&!(p.geographicStatus==='confirmed_outside_istanbul'&&p.geographicReviewVerified===true)&&distanceSq(p,lat,lng)<=radiusSq).sort((a,b)=>distanceSq(a,lat,lng)-distanceSq(b,lat,lng));
-   return response((await attachOfficialIsparkNames(await attachApprovedEntrances(points,env,url.origin),env)).map(enrichName).map(labelParkingAccess),data.source,data.updatedAt);
-  }catch{return Response.json({error:'İstanbul otopark dosyası okunamadı'},{status:503})}
+  const istanbulResponse=await env.ASSETS.fetch(new URL('/data/parking.json',url.origin).toString());
+  if(istanbulResponse.ok){try{const parsed=await istanbulResponse.json();if(Array.isArray(parsed.points))istanbul=parsed}catch{}}
  }
- // Static nationwide dataset avoids public Overpass outages during user searches.
- const asset=await env.ASSETS.fetch(new URL('/data/parking-turkiye.json',url.origin).toString());
- if(!asset.ok)return Response.json({error:'Türkiye otopark veri dosyası henüz yayınlanmadı. GitHub Actions veri yenilemesi çalıştırılmalı.'},{status:503});
- try{
-  const data=await asset.json();
-  if(!Array.isArray(data.points))throw Error('Invalid data');
-  const points=data.points.filter(p=>validPoint(p)&&publicParking(p)&&!excluded.has(parkingOsmKey(p))&&!confirmedNotParking.has(parkingOsmKey(p))&&distanceSq(p,lat,lng)<=radiusSq).sort((a,b)=>distanceSq(a,lat,lng)-distanceSq(b,lat,lng));
-  return response((await attachApprovedEntrances(points,env,url.origin)).map(labelParkingAccess),data.source,data.updatedAt);
- }catch{return Response.json({error:'Türkiye otopark veri dosyası okunamadı'},{status:503})}
+ if(!national&&!istanbul)return Response.json({error:'Otopark veri dosyaları yüklenemedi'},{status:503});
+ const valid=p=>validPoint(p)&&publicParking(p)&&!excluded.has(parkingOsmKey(p))&&!confirmedNotParking.has(parkingOsmKey(p))&&distanceSq(p,lat,lng)<=radiusSq;
+ const combined=new Map();
+ // Nationwide first; Istanbul curated records override matching OSM identities.
+ for(const p of national?.points||[]){if(valid(p)){const key=parkingOsmKey(p)||'geo:'+Number(p.lat).toFixed(6)+','+Number(p.lng).toFixed(6);combined.set(key,p)}}
+ for(const p of istanbul?.points||[]){if(valid(p)&&!(p.geographicStatus==='confirmed_outside_istanbul'&&p.geographicReviewVerified===true)){const key=parkingOsmKey(p)||'geo:'+Number(p.lat).toFixed(6)+','+Number(p.lng).toFixed(6);combined.set(key,p)}}
+ const points=[...combined.values()].sort((a,b)=>distanceSq(a,lat,lng)-distanceSq(b,lat,lng));
+ const enriched=await attachApprovedEntrances(points,env,url.origin);
+ return response((await attachOfficialIsparkNames(enriched,env)).map(enrichName).map(labelParkingAccess),istanbul&&national?'İstanbul + Türkiye OSM':istanbul?.source||national?.source,Math.max(Date.parse(istanbul?.updatedAt||0)||0,Date.parse(national?.updatedAt||0)||0)?new Date(Math.max(Date.parse(istanbul?.updatedAt||0)||0,Date.parse(national?.updatedAt||0)||0)).toISOString():null);
 }
