@@ -46,7 +46,7 @@ export async function onRequestPost({request,env,context}){
   if(point.type==='space'&&env.NEARBY_PUSH_QUEUE?.send){
    // One lightweight enqueue per report. Queue consumer fans out with paginated D1 queries.
    try{
-    await env.NEARBY_PUSH_QUEUE.send({kind:'nearby-report',reportId:id,latitude:point.lat,longitude:point.lng,createdAt:now,excludedEndpointHash:ownPushEndpointHash});
+    await env.NEARBY_PUSH_QUEUE.send({kind:'nearby-report',reportId:id,latitude:point.lat,longitude:point.lng,createdAt:now,excludedEndpointHash:ownPushEndpointHash,ownerId:user.id});
    }catch(e){console.error('nearby_push_enqueue_failed',String(e?.message||e))}
   }
   return json({ok:true,point},201);

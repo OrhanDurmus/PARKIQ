@@ -23,9 +23,11 @@ export async function enableNearbyParkingPush({ latitude, longitude }) {
   const ready = await navigator.serviceWorker.ready;
   const subscription = await ready.pushManager.getSubscription() ||
     await ready.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: decodeKey(publicKey) });
+  const token=await window.rotaparkAuthToken?.();
+  if(!token)throw new Error('login_required');
   const response = await fetch('/api/nearby-push', {
     method: 'POST', credentials: 'same-origin',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', Authorization:'Bearer '+token },
     body: JSON.stringify({ subscription: subscription.toJSON(), latitude, longitude })
   });
   if (!response.ok) throw new Error('subscription_save_failed');
