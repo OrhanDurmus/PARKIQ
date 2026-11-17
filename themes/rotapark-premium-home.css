@@ -581,3 +581,16 @@ header #rpNotificationShortcut:focus-visible{outline:2px solid #ffe18c!important
   transform:none!important;
  }
 }
+
+/* Fixed against the account control's exact top/height, not a separate pixel guess. */
+@media(max-width:600px){
+ header #rpNotificationShortcut{
+  top:calc(54px + (100vw * 267 / 710) * .07)!important;
+  height:calc((100vw * 267 / 710) * .27)!important;
+  min-height:0!important;
+  width:8%!important;min-width:0!important;
+  right:25.5%!important;
+  border-radius:18px!important;
+  transform:none!important;
+ }
+}
