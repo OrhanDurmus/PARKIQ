@@ -556,12 +556,12 @@ body.rp-filters-open .sort-row{display:none!important}
  header #rotaparkAccountLink .rotapark-founder-badge{display:none!important}
  header #rpNotificationShortcut{
   display:flex!important;position:absolute!important;z-index:6!important;
-  top:calc(54px + (100vw * 267 / 710) * .20)!important;
-  left:15.5%!important;right:auto!important;width:8%!important;height:calc((100vw * 267 / 710) * .23)!important;
+  top:calc(54px + (100vw * 267 / 710) * .08)!important;
+  left:auto!important;right:25.5%!important;width:6.2%!important;height:calc((100vw * 267 / 710) * .18)!important;
   align-items:center!important;justify-content:center!important;
   padding:0!important;border:1px solid #e3b64f!important;border-radius:50%!important;
   background:#0c0a08!important;color:#ffe4a1!important;
-  font-size:clamp(15px,4.1vw,22px)!important;opacity:1!important;
+  font-size:clamp(12px,3.0vw,17px)!important;opacity:1!important;
   box-shadow:0 0 8px #e9ae4b55!important;
  }
 }
