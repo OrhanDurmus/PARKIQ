@@ -43,7 +43,14 @@ jobs:
       - name: Find OSM entrance candidates near priority-one parking
         run: python scripts/extract_national_entrance_candidates.py /tmp/turkey.osm.pbf /tmp/national-entrance-prioritized-priority-1.csv /tmp/national-entrance-osm-candidates.csv
       - name: Find nearby drivable road review candidates
-        run: python scripts/extract_national_road_candidates.py /tmp/turkey.osm.pbf /tmp/national-entrance-prioritized-priority-1.csv /tmp/national-road-candidates.csv
+        # Road review is advisory: never block fresh parking records and city audits.
+        run: |
+          if timeout 180s python scripts/extract_national_road_candidates.py /tmp/turkey.osm.pbf /tmp/national-entrance-prioritized-priority-1.csv /tmp/national-road-candidates.csv; then
+            echo 'Road review candidates generated'
+          else
+            echo 'Road review timed out or failed; continuing parking data refresh without unverified road candidates' >> "$GITHUB_STEP_SUMMARY"
+            rm -f /tmp/national-road-candidates.csv
+          fi
       - name: Create vehicle entrance evidence checklist
         run: python scripts/build_entrance_evidence_checklist.py /tmp/national-entrance-prioritized.csv /tmp/national-entrance-evidence-checklist.csv
       - name: Validate generated entrance review checklist
