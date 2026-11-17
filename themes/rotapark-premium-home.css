@@ -526,3 +526,15 @@ header::before,header::after{background-image:none!important}
   height:calc((100vw * 267 / 710) * .27)!important;
  }
 }
+
+/* ROTAPARK premium-only controls: retire the visible legacy blue filter panel.
+   Keep DOM elements available for the existing filtering/navigation handlers. */
+.tools #loc,
+.tools .filters,
+.tools .quick-filters,
+.tools .sort-row,
+.sort-row,
+body.rp-filters-open .tools .filters,
+body.rp-filters-open .tools .quick-filters,
+body.rp-filters-open .sort-row{display:none!important}
+#rpOperatorShortcuts button{touch-action:manipulation!important;cursor:pointer!important}
