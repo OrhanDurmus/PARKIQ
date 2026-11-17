@@ -617,13 +617,13 @@ header #rpNotificationShortcut:focus-visible{outline:2px solid #ffe18c!important
 @media (min-width:601px){
  header{
   display:block!important;position:relative!important;
-  width:100%!important;height:clamp(260px,37.6vw,420px)!important;
+  width:100%!important;height:min(37.6056vw,620px)!important;
   min-height:0!important;aspect-ratio:auto!important;
   padding:0!important;margin:0!important;
   background-color:#020202!important;
   background-image:url("/themes/rotapark-ilk-eskiz-ust-gorsel.jpg")!important;
   background-position:center center!important;
-  background-size:100% 100%!important;
+  background-size:contain!important;
   background-repeat:no-repeat!important;
   border-bottom:1px solid #d7a13c!important;
  }
