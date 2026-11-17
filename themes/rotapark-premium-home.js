@@ -8,8 +8,8 @@
   var logo=$('header .header-brand img');if(logo)logo.src='/themes/rotapark-gold-r-pin.svg';
   var subtitle=$('header>small');if(subtitle)subtitle.textContent='Türkiye’nin Akıllı Otopark Rehberi';
   var account=$('#rotaparkAccountLink');if(account){account.classList.add('rp-account-round');account.title='Hesabım';}
-  var bell=document.createElement('button');bell.type='button';bell.id='rpNotificationShortcut';bell.textContent='♧';bell.setAttribute('aria-label','Bildirimler');bell.title='Bildirimler';header.appendChild(bell);
-  bell.addEventListener('click',function(){var targets=[document.querySelector('[data-drawer-section*="notification"]'),document.querySelector('#notificationButton'),document.querySelector('#notificationsButton'),document.querySelector('#sideMenuOpen')];var t=targets.find(function(x){return x&&x!==bell});if(t)t.click()});
+  var bell=document.createElement('button');bell.type='button';bell.id='rpNotificationShortcut';bell.textContent='🔔';bell.setAttribute('aria-label','Bildirimler');bell.title='Bildirimler';header.appendChild(bell);
+  bell.addEventListener('click',function(){window.location.href='/notifications/'});
   var search=$('.tools .search');if(search){var filterBtn=document.createElement('button');filterBtn.type='button';filterBtn.id='rpFilterToggle';filterBtn.textContent='☷';filterBtn.setAttribute('aria-label','Filtreleri aç');search.appendChild(filterBtn);filterBtn.addEventListener('click',function(){document.body.classList.toggle('rp-filters-open')});}
   var quick=document.createElement('nav');quick.id='rpOperatorShortcuts';quick.setAttribute('aria-label','Otopark hızlı erişim');
   [['📍','En Yakın',''],['Ⓟ','İSPARK','İSPARK'],['◆','İZELMAN','İZELMAN'],['▰','ANPARK','ANPARK'],['⚡','EV Şarj','şarj'],['♿','Engelli','engelli']].forEach(function(a){
