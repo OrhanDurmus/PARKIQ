@@ -594,3 +594,20 @@ header #rpNotificationShortcut:focus-visible{outline:2px solid #ffe18c!important
   transform:none!important;
  }
 }
+
+/* Header: place bell entirely INSIDE the account chip, never over the logo. */
+@media(max-width:600px){
+ header #rotaparkAccountLink{padding-right:clamp(25px,6vw,34px)!important;justify-content:flex-start!important;box-sizing:border-box!important}
+ header #rotaparkAccountLink #rotaparkAccountLabel{font-size:clamp(8px,2.05vw,11px)!important}
+ header #rpNotificationShortcut{
+  position:absolute!important;display:flex!important;box-sizing:border-box!important;
+  top:calc(54px + (100vw * 267 / 710) * .07 + (100vw * 267 / 710) * .045)!important;
+  right:3.5%!important;left:auto!important;
+  width:clamp(20px,5vw,28px)!important;height:calc((100vw * 267 / 710) * .18)!important;
+  min-width:0!important;min-height:0!important;
+  border:0!important;border-left:1px solid #8b682e!important;border-radius:0!important;
+  background:transparent!important;box-shadow:none!important;
+  padding:0 0 0 3px!important;z-index:8!important;
+ }
+ header #rpNotificationShortcut svg{width:17px!important;height:17px!important}
+}
