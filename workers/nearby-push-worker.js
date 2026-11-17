@@ -4,7 +4,7 @@ import {sendNearbyParkingPush} from '../functions/lib/web-push.js';
 
 const radius=1000;
 async function fanout(env,job){
- const {reportId,latitude,longitude}=job;
+ const {reportId,latitude,longitude,excludedEndpointHash}=job;
  if(!/^[0-9a-f-]{36}$/i.test(reportId)||![latitude,longitude].every(Number.isFinite))throw Error('invalid_report');
  const latDelta=radius/110500,lonDelta=radius/(110500*Math.max(0.01,Math.cos(latitude*Math.PI/180)));
  const cursor=typeof job.cursor==='string'?job.cursor:'';
@@ -14,10 +14,10 @@ async function fanout(env,job){
  AND updated_at>=datetime('now','-30 days')
  ORDER BY endpoint_hash LIMIT 100
  `).bind(cursor,latitude-latDelta,latitude+latDelta,longitude-lonDelta,longitude+lonDelta).all();
- const messages=results.filter(r=>distanceMeters(latitude,longitude,r.latitude,r.longitude)<=radius)
+ const messages=results.filter(r=>r.endpoint_hash!==excludedEndpointHash&&distanceMeters(latitude,longitude,r.latitude,r.longitude)<=radius)
    .map(r=>({body:{kind:'nearby-delivery',reportId,endpointHash:r.endpoint_hash,distanceMeters:Math.round(distanceMeters(latitude,longitude,r.latitude,r.longitude))}}));
  if(messages.length)await env.NEARBY_PUSH_QUEUE.sendBatch(messages);
- if(results.length===100)await env.NEARBY_PUSH_QUEUE.send({kind:'nearby-report',reportId,latitude,longitude,cursor:results[results.length-1].endpoint_hash});
+ if(results.length===100)await env.NEARBY_PUSH_QUEUE.send({kind:'nearby-report',reportId,latitude,longitude,excludedEndpointHash,cursor:results[results.length-1].endpoint_hash});
 }
 async function deliver(env,job){
  if(!/^[0-9a-f-]{36}$/i.test(job.reportId)||!/^[a-f0-9]{64}$/.test(job.endpointHash))throw Error('invalid_delivery');
