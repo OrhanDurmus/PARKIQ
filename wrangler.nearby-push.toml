@@ -24,7 +24,7 @@ database_id = "76b60c11-371a-4c46-b826-187a01d611d1"
 # Use the same VAPID key pair as the ROTAPARK Pages project.
 
 # Must reference the same KV namespace as the Pages ISPARK_SNAPSHOTS binding.
-# Replace the placeholder with the existing namespace ID before deployment.
-# [[kv_namespaces]]
-# binding = "ISPARK_SNAPSHOTS"
-# id = "REPLACE_WITH_EXISTING_ISPARK_SNAPSHOTS_NAMESPACE_ID"
+# Uses the same production KV namespace as the Pages binding.
+[[kv_namespaces]]
+binding = "ISPARK_SNAPSHOTS"
+id = "b961f4d221e248719e76df2e9b61f31f"
