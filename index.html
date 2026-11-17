@@ -270,26 +270,34 @@ $('report').onclick=()=>{reportLocationRevision++;selected=null;if(selectedMarke
 $('quickStreetSpace').onclick=()=>{$('type').value='space';$('report').click()};
 $('quickStreetFull').onclick=async()=>{
  const btn=$('quickStreetFull');if(btn.disabled)return;
- if(!navigator.geolocation){status('📍 Yer yok bildirimi için GPS gerekli.');return}
- btn.disabled=true;btn.textContent='⏳ Konum kontrolü';
+ btn.disabled=true;btn.textContent='⏳ İşaret aranıyor';
+ const feedback=text=>{status(text);const panel=$('saved');if(panel){let node=$('quickStreetFeedback');if(!node){node=document.createElement('p');node.id='quickStreetFeedback';node.style.cssText='margin:10px 0;color:#ffd36d;font-size:13px';btn.parentElement?.insertAdjacentElement('afterend',node)}node.textContent=text}};
  try{
-  const position=await new Promise((resolve,reject)=>navigator.geolocation.getCurrentPosition(resolve,reject,{enableHighAccuracy:true,timeout:12000,maximumAge:0}));
-  const {latitude,longitude,accuracy}=position.coords;
-  if(!Number.isFinite(latitude)||!Number.isFinite(longitude)||!Number.isFinite(accuracy)||accuracy>100)throw Error('gps_accuracy');
-  const ownIds=read('rotapark_community_own_reports',[]);
   const accessToken=await window.rotaparkAuthToken?.();if(!accessToken)throw Error('login_required');
   const response=await fetch('/api/community-parking',{headers:{Authorization:'Bearer '+accessToken},cache:'no-store'});
-  const data=await response.json();if(!response.ok||!data.ok||!Array.isArray(data.points))throw Error('unavailable');
-  const distanceMeters=p=>{const rad=Math.PI/180,dLat=(p.lat-latitude)*rad,dLng=(p.lng-longitude)*rad,a=Math.sin(dLat/2)**2+Math.cos(latitude*rad)*Math.cos(p.lat*rad)*Math.sin(dLng/2)**2;return 6371000*2*Math.asin(Math.min(1,Math.sqrt(a)))};
-  const nearest=data.points.filter(p=>p.type==='space'&&(p.isMine===true||(Array.isArray(ownIds)&&ownIds.includes(p.id)))&&Number.isFinite(p.lat)&&Number.isFinite(p.lng)).map(p=>({point:p,distance:distanceMeters(p)})).sort((a,b)=>a.distance-b.distance)[0];
-  if(!nearest||nearest.distance>Math.max(90,accuracy*2+25))throw Error('no_nearby_report');
-  const remove=await fetch('/api/community-parking',{method:'DELETE',headers:{'Content-Type':'application/json',Authorization:'Bearer '+accessToken},body:JSON.stringify({id:nearest.point.id,ownerToken:communityOwnerToken()})});
-  const result=await remove.json();if(!remove.ok||!result.ok)throw Error(result.error||'unavailable');
-  write('rotapark_community_own_reports',ownIds.filter(id=>id!==nearest.point.id));
-  await reports();status('✓ Yer yok: Bu konumdaki park yeri işaretin haritadan kaldırıldı.');
+  const data=await response.json();if(!response.ok||!data.ok||!Array.isArray(data.points))throw Error(data.error||'unavailable');
+  const ownIds=read('rotapark_community_own_reports',[]);
+  const own=data.points.filter(p=>p.type==='space'&&(p.isMine===true||(Array.isArray(ownIds)&&ownIds.includes(p.id)))&&Number.isFinite(p.lat)&&Number.isFinite(p.lng));
+  if(!own.length)throw Error('no_own_report');
+  let position=null;
+  if(navigator.geolocation){try{position=await new Promise((resolve,reject)=>navigator.geolocation.getCurrentPosition(resolve,reject,{enableHighAccuracy:true,timeout:8000,maximumAge:10000}))}catch{}}
+  const distanceMeters=p=>{if(!position)return Infinity;const {latitude,longitude}=position.coords,rad=Math.PI/180,dLat=(p.lat-latitude)*rad,dLng=(p.lng-longitude)*rad,v=Math.sin(dLat/2)**2+Math.cos(latitude*rad)*Math.cos(p.lat*rad)*Math.sin(dLng/2)**2;return 6371000*2*Math.asin(Math.min(1,Math.sqrt(v)))};
+  const sorted=own.map(point=>({point,distance:distanceMeters(point)})).sort((x,y)=>x.distance-y.distance);
+  let selected=sorted[0];
+  const accuracy=position?.coords?.accuracy||0;
+  const near=position&&selected.distance<=Math.max(100,accuracy*2+25);
+  if(!near){
+   if(own.length>1)throw Error('multiple_own_reports');
+   if(!window.confirm('Yakınında aktif bildirimin bulunamadı. Sana ait tek aktif Yer Var işaretini kaldırmak istiyor musun?'))return;
+  }
+  const remove=await fetch('/api/community-parking',{method:'DELETE',headers:{'Content-Type':'application/json',Authorization:'Bearer '+accessToken},body:JSON.stringify({id:selected.point.id,ownerToken:communityOwnerToken()})});
+  const result=await remove.json().catch(()=>({}));if(!remove.ok||!result.ok)throw Error(result.error||'http_'+remove.status);
+  if(Array.isArray(ownIds))write('rotapark_community_own_reports',ownIds.filter(id=>id!==selected.point.id));
+  await reports();feedback('✓ Yer Yok: Sana ait park yeri bildirimi kaldırıldı.');
  }catch(error){
-  const reason=error.message==='gps_accuracy'?'GPS doğruluğu düşük. Açık alanda tekrar dene.':error.message==='no_own_report'||error.message==='no_nearby_report'?'Bu konumda kaldırabileceğin kendi aktif Yer Var bildirimin bulunamadı.':error.message==='login_required'?'Önce hesabına giriş yap.':'İşaret kaldırılamadı. Konum iznini ve bağlantıyı kontrol et.';
-  status('⚠️ '+reason);
+  const code=error?.message||'unavailable';
+  const reason=code==='no_own_report'?'Hesabına ait aktif Yer Var bildirimi bulunamadı.':code==='multiple_own_reports'?'Birden fazla bildirimin var; GPS konumuna yakın bir işaretin yanına git veya işaretin üstünden “Bildirimimi sil” seç.':code==='login_required'?'Önce hesabına giriş yap.':code==='forbidden'?'Bu işaret bu hesaba ait değil.':code==='not_found'?'İşaret zaten kaldırılmış.':code==='not_configured'?'Bildirim sunucusu yapılandırılmamış.':'Silme başarısız ('+code+').';
+  feedback('⚠️ '+reason);
  }finally{btn.disabled=false;btn.textContent='🔴 Yer Yok'}
 };
 $('submit').onclick=async()=>{
