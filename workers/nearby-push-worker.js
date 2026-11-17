@@ -29,7 +29,12 @@ async function deliver(env,job){
  const reserved=await reserveNearbyPushDelivery(env.DB,job.reportId,job.endpointHash);
  if(!reserved)return;
  try{
-  // Check again immediately before sending, after reserving delivery.\n  if(!await isStoredNearbyReportActive(env.ISPARK_SNAPSHOTS,job)){await releaseNearbyPushDelivery(env.DB,job.reportId,job.endpointHash);return}\n  const result=await sendNearbyParkingPush(env,row,{reportId:job.reportId,distanceMeters:job.distanceMeters});
+  // Check again immediately before sending, after reserving delivery.
+  if(!await isStoredNearbyReportActive(env.ISPARK_SNAPSHOTS,job)){
+   await releaseNearbyPushDelivery(env.DB,job.reportId,job.endpointHash);
+   return;
+  }
+  const result=await sendNearbyParkingPush(env,row,{reportId:job.reportId,distanceMeters:job.distanceMeters});
   if(result.expired){await deleteExpiredPushSubscription(env.DB,job.endpointHash);return}
   if(!result.ok)throw Error('push_provider_'+result.status);
  }catch(error){
