@@ -500,7 +500,7 @@ header::before,header::after{background-image:none!important}
 #rotaParkIntro{
  background:radial-gradient(circle at 50% 40%,#39260d 0%,#0c0905 53%,#020202 100%)!important;
  color:#f9e6b8!important;
- animation:rotaParkIntroGold 3.5s ease-out forwards!important;
+ animation:rotaParkIntroGold 2.5s ease-out forwards!important;
 }
 #rotaParkIntro strong{color:#fff2d4!important;text-shadow:0 0 12px #e5aa3c55!important}
 #rotaParkIntro strong span{color:#ffca52!important}
