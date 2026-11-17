@@ -1,6 +1,11 @@
 name: Refresh Istanbul parking dataset
 on:
   workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/refresh-parking.yml'
+      - 'scripts/audit_city_parking.py'
   schedule:
     - cron: '17 4 * * 0'
 permissions:
