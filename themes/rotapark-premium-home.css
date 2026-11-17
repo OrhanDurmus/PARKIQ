@@ -756,3 +756,40 @@ header #rpNotificationShortcut:focus-visible{outline:2px solid #ffe18c!important
 @media (min-width:601px) and (max-width:900px){
  .panel:has(> #nearestFive){width:calc(100% - 24px)!important}
 }
+
+/* 601px tablet viewport boundary: do not overlay a second brand on the
+   branded JPG. Keep real menu, account and notification controls usable. */
+@media (min-width:550px) and (max-width:700px){
+ header .header-brand,header > small{
+  display:none!important;visibility:hidden!important;
+ }
+ header #sideMenuOpen{
+  position:absolute!important;display:flex!important;
+  top:11%!important;left:3%!important;right:auto!important;
+  width:clamp(40px,7vw,54px)!important;
+  height:clamp(40px,7vw,54px)!important;
+  opacity:1!important;visibility:visible!important;
+  color:#f5c95f!important;background:#14100bdc!important;
+  border:1px solid #d5a13f!important;border-radius:12px!important;
+  align-items:center!important;justify-content:center!important;
+  z-index:10!important;
+ }
+ header #rotaparkAccountLink{
+  position:absolute!important;display:flex!important;
+  top:auto!important;bottom:8%!important;right:11%!important;left:auto!important;
+  width:clamp(105px,17vw,140px)!important;
+  height:42px!important;opacity:1!important;visibility:visible!important;
+  color:#f7e8c5!important;background:#14212c!important;
+  border:1px solid #cda04c!important;border-radius:12px!important;
+  align-items:center!important;justify-content:center!important;
+  font-size:13px!important;z-index:10!important;
+ }
+ header #rpNotificationShortcut{
+  position:absolute!important;display:flex!important;
+  top:auto!important;bottom:8%!important;right:3%!important;left:auto!important;
+  width:42px!important;height:42px!important;
+  opacity:1!important;visibility:visible!important;
+  align-items:center!important;justify-content:center!important;
+  z-index:11!important;
+ }
+}
