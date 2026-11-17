@@ -203,7 +203,7 @@ const animateNavPosition=(lat,lng,bearing,immediate=false)=>{
  };
  navMotionFrame=requestAnimationFrame(render);
 };
-let drivePose=null;
+
 const updateDriveCamera=(duration=0)=>{
  if(!drive3dReady||!followGps||!$('mapWrap').classList.contains('drive-3d'))return;
  const pose=drivePose||(lastGps&&{lng:lastGps.lng,lat:lastGps.lat,bearing:Number.isFinite(lastHeading)?lastHeading:0});
