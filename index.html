@@ -321,9 +321,21 @@ if(motionHeadingReliable){
  // When stationary, face along the next part of the route, not a nearby
  // parallel/opposite segment at a junction.
  const cumulative=routeCache.cumulative;
- const progress=Number.isFinite(displayedRouteProgress)?displayedRouteProgress:(Number.isFinite(lastMatchedProgress)?lastMatchedProgress:0);
- const target=Math.min(routeCache.total,Math.max(0,progress)+Math.max(12,Math.min(35,(routeCache.total-progress)*.2)));
- let k=1;
+ // Use the segment closest to the CURRENT snapped position. Cached progress
+ // can still be zero at the start of this GPS callback and point backwards.
+ const scale=Math.cos(lat*Math.PI/180);
+ let closest=0,closestDist=Infinity,closestT=0;
+ for(let i=0;i<path.length-1;i++){
+  const a=path[i],b=path[i+1];
+  const dx=(b[0]-a[0])*scale,dy=b[1]-a[1];
+  const len=dx*dx+dy*dy;if(len<1e-16)continue;
+  const t=Math.max(0,Math.min(1,((snappedLng-a[0])*scale*dx+(snappedLat-a[1])*dy)/len));
+  const d=((snappedLng-a[0])*scale-t*dx)**2+(snappedLat-a[1]-t*dy)**2;
+  if(d<closestDist){closestDist=d;closest=i;closestT=t}
+ }
+ const localProgress=cumulative[closest]+(cumulative[closest+1]-cumulative[closest])*closestT;
+ const target=Math.min(routeCache.total,localProgress+Math.max(12,Math.min(35,(routeCache.total-localProgress)*.2)));
+ let k=closest+1;
  while(k<cumulative.length-1&&cumulative[k]<target)k++;
  const from=path[Math.max(0,k-1)],to=path[k];
  const dx=(to[0]-from[0])*Math.cos(lat*Math.PI/180),dy=to[1]-from[1];
