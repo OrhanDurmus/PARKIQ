@@ -1,11 +1,11 @@
-import {distanceMeters,isActiveNearbyReport} from '../functions/lib/nearby-push-recipients.js';
+import {distanceMeters,isStoredNearbyReportActive} from '../functions/lib/nearby-push-recipients.js';
 import {reserveNearbyPushDelivery,releaseNearbyPushDelivery,deleteExpiredPushSubscription} from '../functions/lib/nearby-push-delivery.js';
 import {sendNearbyParkingPush} from '../functions/lib/web-push.js';
 
 const radius=1000;
 async function fanout(env,job){
  const {reportId,latitude,longitude,excludedEndpointHash,ownerId,createdAt}=job;
- if(!isActiveNearbyReport(createdAt))return;
+ if(!await isStoredNearbyReportActive(env.ISPARK_SNAPSHOTS,job))return;
  if(!/^[0-9a-f-]{36}$/i.test(reportId)||![latitude,longitude].every(Number.isFinite))throw Error('invalid_report');
  const latDelta=radius/110500,lonDelta=radius/(110500*Math.max(0.01,Math.cos(latitude*Math.PI/180)));
  const cursor=typeof job.cursor==='string'?job.cursor:'';
@@ -21,7 +21,7 @@ async function fanout(env,job){
  if(results.length===100)await env.NEARBY_PUSH_QUEUE.send({kind:'nearby-report',reportId,latitude,longitude,excludedEndpointHash,ownerId,createdAt,cursor:results[results.length-1].endpoint_hash});
 }
 async function deliver(env,job){
- if(!isActiveNearbyReport(job.createdAt))return;
+ if(!await isStoredNearbyReportActive(env.ISPARK_SNAPSHOTS,job))return;
  if(!/^[0-9a-f-]{36}$/i.test(job.reportId)||!/^[a-f0-9]{64}$/.test(job.endpointHash))throw Error('invalid_delivery');
  const row=await env.DB.prepare('SELECT endpoint,p256dh,auth,owner_id FROM nearby_push_subscriptions WHERE endpoint_hash=?')
   .bind(job.endpointHash).first();
@@ -29,7 +29,7 @@ async function deliver(env,job){
  const reserved=await reserveNearbyPushDelivery(env.DB,job.reportId,job.endpointHash);
  if(!reserved)return;
  try{
-  const result=await sendNearbyParkingPush(env,row,{reportId:job.reportId,distanceMeters:job.distanceMeters});
+  // Check again immediately before sending, after reserving delivery.\n  if(!await isStoredNearbyReportActive(env.ISPARK_SNAPSHOTS,job)){await releaseNearbyPushDelivery(env.DB,job.reportId,job.endpointHash);return}\n  const result=await sendNearbyParkingPush(env,row,{reportId:job.reportId,distanceMeters:job.distanceMeters});
   if(result.expired){await deleteExpiredPushSubscription(env.DB,job.endpointHash);return}
   if(!result.ok)throw Error('push_provider_'+result.status);
  }catch(error){
