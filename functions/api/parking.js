@@ -109,8 +109,8 @@ export async function onRequestGet({request,env}){
  const valid=p=>validPoint(p)&&publicParking(p)&&!excluded.has(parkingOsmKey(p))&&!confirmedNotParking.has(parkingOsmKey(p))&&distanceSq(p,lat,lng)<=radiusSq;
  const combined=new Map();
  // Nationwide first; Istanbul curated records override matching OSM identities.
- for(const p of national?.points||[]){if(valid(p)){const key=parkingOsmKey(p)||'geo:'+Number(p.lat).toFixed(6)+','+Number(p.lng).toFixed(6);combined.set(key,p)}}
- for(const p of istanbul?.points||[]){if(valid(p)&&!(p.geographicStatus==='confirmed_outside_istanbul'&&p.geographicReviewVerified===true)){const key=parkingOsmKey(p)||'geo:'+Number(p.lat).toFixed(6)+','+Number(p.lng).toFixed(6);combined.set(key,p)}}
+ for(const [i,p] of (national?.points||[]).entries()){if(valid(p)){const key=parkingOsmKey(p)||'national-unidentified:'+i;combined.set(key,p)}}
+ for(const [i,p] of (istanbul?.points||[]).entries()){if(valid(p)&&!(p.geographicStatus==='confirmed_outside_istanbul'&&p.geographicReviewVerified===true)){const key=parkingOsmKey(p)||'istanbul-unidentified:'+i;combined.set(key,p)}}
  const points=[...combined.values()].sort((a,b)=>distanceSq(a,lat,lng)-distanceSq(b,lat,lng));
  const enriched=await attachApprovedEntrances(points,env,url.origin);
  return response((await attachOfficialIsparkNames(enriched,env)).map(enrichName).map(labelParkingAccess),istanbul&&national?'İstanbul + Türkiye OSM':istanbul?.source||national?.source,Math.max(Date.parse(istanbul?.updatedAt||0)||0,Date.parse(national?.updatedAt||0)||0)?new Date(Math.max(Date.parse(istanbul?.updatedAt||0)||0,Date.parse(national?.updatedAt||0)||0)).toISOString():null);
