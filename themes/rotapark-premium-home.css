@@ -1,7 +1,7 @@
 /* ROTAPARK screenshot-reference home: preview only, real live map and cards. */
 :root{--rp-gold:#f7c44e}
 body{background:#050609!important;color:#f7f4e9!important}
-header{background:linear-gradient(180deg,#04102430,#02030655),url("/themes/rotapark-turkiye-gold-hero.svg") center/cover,#070b13!important;position:relative!important;box-sizing:border-box!important;border-bottom:1px solid #e4a93d!important}
+header{background:linear-gradient(180deg,#04102430,#02030655),url("/themes/rotapark-ilk-eskiz-ust-gorsel.jpg?v=20261117-no-legacy341") center/cover,#070b13!important;position:relative!important;box-sizing:border-box!important;border-bottom:1px solid #e4a93d!important}
 header .header-brand img{border-radius:0!important;box-shadow:none!important;object-fit:contain!important}
 header .header-brand h1{font-style:italic!important;white-space:nowrap!important;color:#fff!important}
 header .header-brand h1 span{color:#f6bd4c!important}
@@ -399,7 +399,7 @@ body,main,.app-shell{background-color:#050506!important;color:#f7f3e8!important}
 }
 
 /* Nationwide brand header: Istanbul panorama is intentionally removed. */
-header{background-image:linear-gradient(180deg,#03040733,#03040722 60%,#03040777),url("/themes/rotapark-turkiye-gold-hero.svg")!important;background-size:cover,cover!important;background-position:center,center 45%!important;background-repeat:no-repeat!important}
+header{background-image:linear-gradient(180deg,#03040733,#03040722 60%,#03040777),url("/themes/rotapark-ilk-eskiz-ust-gorsel.jpg?v=20261117-no-legacy341")!important;background-size:cover,cover!important;background-position:center,center 45%!important;background-repeat:no-repeat!important}
 header::before,header::after{background-image:none!important}
 
 /* Original first concept: separate luxury wordmark from the nationwide route hero.
@@ -412,7 +412,7 @@ header::before,header::after{background-image:none!important}
   grid-template-rows:61px 25px 1fr!important;
   align-items:center!important;
   background-color:#030405!important;
-  background-image:linear-gradient(180deg,#030405 0%,#030405 22%,#03040555 52%,#03040515 100%),url("/themes/rotapark-turkiye-gold-hero.svg")!important;
+  background-image:linear-gradient(180deg,#030405 0%,#030405 22%,#03040555 52%,#03040515 100%),url("/themes/rotapark-ilk-eskiz-ust-gorsel.jpg?v=20261117-no-legacy341")!important;
   background-size:100% 100%,auto 176px!important;
   background-position:center,center bottom!important;
   background-repeat:no-repeat!important;
