@@ -12,6 +12,13 @@ with open(priority_csv,encoding='utf-8-sig',newline='') as f:
 if not parks:sys.exit('No priority-one parking rows')
 for p in parks:
     p['_lat']=float(p['Latitude']);p['_lng']=float(p['Longitude'])
+# Spatial grid avoids comparing every entrance node with every priority parking.
+# 0.002 degrees is ~220m latitude; inspect adjacent cells for the 80m radius.
+cell_size=0.002
+cells={}
+for p in parks:
+    key=(math.floor(p['_lat']/cell_size),math.floor(p['_lng']/cell_size))
+    cells.setdefault(key,[]).append(p)
 candidates=[]
 class EntranceHandler(osmium.SimpleHandler):
     def node(self,node):
@@ -22,7 +29,11 @@ class EntranceHandler(osmium.SimpleHandler):
         if entrance not in ('yes','main','service','garage','vehicle','entrance') and barrier not in ('gate','lift_gate','swing_gate'):
             return
         lat,lng=node.location.lat,node.location.lon
-        for p in parks:
+        cell_lat=math.floor(lat/cell_size)
+        cell_lng=math.floor(lng/cell_size)
+        nearby=(p for dy_cell in (-1,0,1) for dx_cell in (-1,0,1)
+                for p in cells.get((cell_lat+dy_cell,cell_lng+dx_cell),()))
+        for p in nearby:
             dy=(lat-p['_lat'])*111195
             dx=(lng-p['_lng'])*111195*math.cos(math.radians(p['_lat']))
             distance=math.hypot(dx,dy)
