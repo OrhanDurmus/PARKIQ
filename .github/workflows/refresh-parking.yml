@@ -53,6 +53,18 @@ jobs:
             /tmp/national-road-candidates.csv
             /tmp/national-entrance-summary.md
           retention-days: 30
+      - name: Audit parking coverage for all 81 provinces
+        run: python scripts/audit_city_parking.py /tmp/turkey.osm.pbf data/parking-turkiye.json /tmp/parking-city-audit.csv /tmp/parking-city-audit.md
+      - name: Upload 81-province parking audit
+        uses: actions/upload-artifact@v4
+        with:
+          name: turkiye-81-il-otopark-denetimi
+          path: |
+            /tmp/parking-city-audit.csv
+            /tmp/parking-city-audit.md
+          retention-days: 30
+      - name: Append city audit to run summary
+        run: cat /tmp/parking-city-audit.md >> "$GITHUB_STEP_SUMMARY"
       - name: Validate nationwide dataset
         run: |
           python - <<'PY'
