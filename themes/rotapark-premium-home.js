@@ -1,7 +1,7 @@
 /* Screenshot-inspired mobile home. Visual-only shell; reuse existing data, filters, map and actions. */
 (function(){
  /* Production: enabled by default. */
- document.addEventListener('DOMContentLoaded',function(){
+ var initialize=function(){
   var $=function(s){return document.querySelector(s)};
   var header=$('header'),tools=$('.tools'),summary=$('#parkingSummary'),map=$('#mapWrap');
   if(!header||!tools||!summary||!map)return;
@@ -24,5 +24,5 @@
   var title=document.createElement('div');title.id='rpResultsHeading';title.innerHTML='<strong>📍 Yakındaki otoparklar</strong><span id="rpResultsCount"></span>';
   map.insertAdjacentElement('afterend',title);
   var count=$('#summaryTotal');if(count){var update=function(){var el=$('#rpResultsCount');if(el)el.textContent=(count.textContent||'').trim()+' kayıt';};update();new MutationObserver(update).observe(count,{childList:true,subtree:true,characterData:true});}
- });
+ };if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',initialize,{once:true});else initialize();
 })();
