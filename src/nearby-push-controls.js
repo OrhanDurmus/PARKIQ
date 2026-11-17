@@ -14,7 +14,7 @@ if ('serviceWorker' in navigator && 'PushManager' in window && 'Notification' in
     const registration=await navigator.serviceWorker.getRegistration('/');
     const subscription=await registration?.pushManager.getSubscription();
     button.firstChild.textContent=subscription?'Yakın bildirimleri kapat':'Yakın bildirimleri aç';
-    status.textContent=subscription?'Açık · 1 km':'İsteğe bağlı';
+    status.textContent=Notification.permission==='denied'?'Bildirim izni kapalı':subscription?'Cihaz aboneliği açık · 1 km':'Bu cihazda bildirim kapalı';
   };
   button.addEventListener('click',async()=>{
     button.disabled=true;status.textContent='İşleniyor…';
@@ -30,7 +30,7 @@ if ('serviceWorker' in navigator && 'PushManager' in window && 'Notification' in
       }
       await update();
     }catch(e){
-      const messages={push_not_supported:'Ana ekrana eklenmiş uygulamada açın',permission_denied:'Bildirim izni ayarlardan kapalı',permission_not_granted:'Bildirim izni verilmedi',push_not_configured:'Bildirim sunucusu henüz hazır değil',subscription_save_failed:'Abonelik kaydedilemedi',subscription_delete_failed:'Abonelik silinemedi'};
+      const messages={push_not_supported:'Ana ekrana eklenmiş uygulamada açın',permission_denied:'Bildirim izni ayarlardan kapalı',permission_not_granted:'Bildirim izni verilmedi',push_not_configured:'Bildirim sunucusu henüz hazır değil',subscription_save_failed:'Abonelik kaydedilemedi',subscription_delete_failed:'Abonelik silinemedi',login_required:'Önce hesabınıza giriş yapın',location_required:'Konum alınamadı'};
       status.textContent=messages[e?.message]||'İşlem başarısız, tekrar deneyin';
     }finally{button.disabled=false}
   });

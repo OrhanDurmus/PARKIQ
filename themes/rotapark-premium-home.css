@@ -611,3 +611,55 @@ header #rpNotificationShortcut:focus-visible{outline:2px solid #ffe18c!important
  }
  header #rpNotificationShortcut svg{width:17px!important;height:17px!important}
 }
+
+/* Tablet / desktop parity: keep the same premium nationwide hero and merged
+   account + notification controls as the approved phone design. */
+@media (min-width:601px){
+ header{
+  display:grid!important;
+  grid-template-columns:58px minmax(0,1fr) minmax(180px,240px)!important;
+  grid-template-rows:78px minmax(180px,20vw)!important;
+  gap:6px 14px!important;
+  min-height:300px!important;
+  padding:14px clamp(16px,3vw,36px) 0!important;
+  align-items:start!important;
+  background-color:#030405!important;
+  background-image:linear-gradient(180deg,#030405 0%,#030405 15%,#03040544 55%,#03040511 100%),url("/themes/rotapark-turkiye-gold-hero.svg")!important;
+  background-size:100% 100%,auto 78%!important;
+  background-position:center,center bottom!important;
+  background-repeat:no-repeat!important;
+ }
+ header #sideMenuOpen{grid-column:1!important;grid-row:1!important;position:relative!important;top:auto!important;left:auto!important;align-self:center!important;z-index:5!important}
+ header .header-brand{grid-column:2!important;grid-row:1!important;justify-self:center!important;align-self:start!important;min-width:0!important;z-index:3!important}
+ header .header-brand img{width:58px!important;height:64px!important;object-fit:contain!important}
+ header .header-brand h1{font-size:clamp(24px,3.2vw,38px)!important;line-height:1.2!important}
+ header>small{grid-column:2!important;grid-row:1!important;align-self:end!important;justify-self:center!important;text-align:center!important;flex-basis:auto!important;font-size:clamp(11px,1.2vw,14px)!important;margin-bottom:0!important;color:#f8e5bd!important;z-index:3!important}
+ header #rotaparkAccountLink{
+  grid-column:3!important;grid-row:1!important;position:relative!important;
+  align-self:center!important;justify-self:end!important;top:auto!important;right:auto!important;
+  width:100%!important;max-width:240px!important;height:50px!important;min-width:0!important;
+  padding:8px 46px 8px 13px!important;margin:0!important;
+  background:#0c0a08ed!important;border:1px solid #e3b64f!important;
+  border-radius:28px!important;box-shadow:0 0 9px #e9ae4b55!important;
+  color:#ffe4a1!important;font-size:13px!important;
+  display:flex!important;align-items:center!important;justify-content:flex-start!important;
+  overflow:hidden!important;white-space:nowrap!important;z-index:5!important;
+ }
+ header #rotaparkAccountLink>span[aria-hidden="true"]{display:none!important}
+ header #rotaparkAccountLink #rotaparkAccountLabel{display:block!important;overflow:hidden!important;text-overflow:ellipsis!important;white-space:nowrap!important}
+ header #rpNotificationShortcut{
+  position:absolute!important;top:22px!important;right:calc(clamp(16px,3vw,36px) + 8px)!important;
+  left:auto!important;width:37px!important;height:34px!important;
+  min-width:0!important;min-height:0!important;
+  border:0!important;border-left:1px solid #8b682e!important;border-radius:0!important;
+  background:transparent!important;box-shadow:none!important;color:#f4cb70!important;
+  padding:0 0 0 5px!important;z-index:8!important;
+ }
+ header #rpNotificationShortcut svg{width:20px!important;height:20px!important}
+}
+@media (min-width:601px) and (max-width:800px){
+ header{grid-template-columns:50px minmax(0,1fr) minmax(155px,210px)!important;gap:4px 8px!important}
+ header .header-brand img{width:43px!important;height:54px!important}
+ header .header-brand h1{font-size:clamp(20px,3vw,28px)!important}
+ header #rotaparkAccountLink{font-size:11px!important}
+}
