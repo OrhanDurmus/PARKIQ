@@ -3,7 +3,7 @@ const json=(data,status=200)=>Response.json(data,{status,headers:{'Cache-Control
 const keyPrefix='community:street:';
 const authenticatedUser=async(request,env)=>{const auth=request.headers.get('Authorization')||'';const match=/^Bearer (\S+)$/.exec(auth);if(!match)return null;const url=String(env.SUPABASE_URL||'').replace(/\/$/,'');const key=String(env.SUPABASE_ANON_KEY||'');if(!/^https:\/\/[a-z0-9-]+\.supabase\.co$/i.test(url)||!key)return null;try{const res=await fetch(url+'/auth/v1/user',{headers:{apikey:key,Authorization:'Bearer '+match[1]},signal:AbortSignal.timeout(6000)});if(!res.ok)return null;const user=await res.json();return typeof user.id==='string'&&user.id.length>0?user:null}catch{return null}};
 
-const validCoord=(lat,lng)=>Number.isFinite(lat)&&Number.isFinite(lng)&&lat>=40&&lat<=42.5&&lng>=26&&lng<=31;
+const validCoord=(lat,lng)=>Number.isFinite(lat)&&Number.isFinite(lng)&&lat>=35.5&&lat<=42.5&&lng>=25.5&&lng<=45.0;
 const store=env=>env?.ISPARK_SNAPSHOTS;
 const tokenValid=t=>typeof t==='string'&&/^[a-f0-9]{64}$/.test(t);
 const tokenHash=async token=>Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(token)))).map(b=>b.toString(16).padStart(2,'0')).join('');
