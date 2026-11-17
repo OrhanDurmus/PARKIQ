@@ -22,3 +22,9 @@ database_id = "76b60c11-371a-4c46-b826-187a01d611d1"
 # Configure WEB_PUSH_PUBLIC_KEY, WEB_PUSH_PRIVATE_KEY and
 # WEB_PUSH_CONTACT_EMAIL in the Worker dashboard.
 # Use the same VAPID key pair as the ROTAPARK Pages project.
+
+# Must reference the same KV namespace as the Pages ISPARK_SNAPSHOTS binding.
+# Replace the placeholder with the existing namespace ID before deployment.
+# [[kv_namespaces]]
+# binding = "ISPARK_SNAPSHOTS"
+# id = "REPLACE_WITH_EXISTING_ISPARK_SNAPSHOTS_NAMESPACE_ID"
