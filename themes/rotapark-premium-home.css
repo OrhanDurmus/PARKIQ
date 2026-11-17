@@ -572,3 +572,12 @@ header #rpNotificationShortcut svg{display:block!important;width:19px!important;
 header #rpNotificationShortcut:focus-visible{outline:2px solid #ffe18c!important;outline-offset:3px!important}
 @media(hover:hover){header #rpNotificationShortcut:hover{background:#33240f!important;border-color:#f0c568!important}}
 @media(max-width:600px){header #rpNotificationShortcut{top:calc(54px + (100vw * 267 / 710) * .06)!important;right:25.5%!important;width:clamp(29px,7vw,36px)!important;height:clamp(29px,7vw,36px)!important;min-width:0!important;min-height:0!important;border-radius:10px!important;box-shadow:0 2px 8px #0009!important}}
+
+/* Keep notification control vertically aligned with account chip inside hero. */
+@media(max-width:600px){
+ header #rpNotificationShortcut{
+  top:calc(54px + (100vw * 267 / 710) * .07 + ((100vw * 267 / 710) * .27 - clamp(29px,7vw,36px)) / 2)!important;
+  right:25.5%!important;
+  transform:none!important;
+ }
+}
