@@ -7,8 +7,11 @@ on:
       - '.github/workflows/refresh-parking.yml'
       - 'scripts/audit_city_parking.py'
       - 'scripts/import_national_parking.py'
-      - 'functions/api/parking.js'
-      - 'tests/parking-api.test.mjs'
+      - 'scripts/import_parking.py'
+      - 'scripts/extract_national_entrance_candidates.py'
+      - 'scripts/extract_national_road_candidates.py'
+      - 'scripts/export_national_entrance_review.py'
+      - 'scripts/prioritize_national_entrances.py'
   schedule:
     - cron: '17 4 * * 0'
 permissions:
