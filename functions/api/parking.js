@@ -119,6 +119,21 @@ async function approvedNonParkingIds(env){
 // Confirmed by local administrator: this OSM way is not a parking facility.
 const confirmedNotParking=new Set(['way/882355136','way/1414411432']);
 const parkingOsmKey=p=>{const id=String(p.osmId||'');return /^(node|way|relation)\/\d+$/.test(id)?id:(p.osmType&&/^\d+$/.test(id)?String(p.osmType)+'/'+id:'')};
+// Cache parsed static OSM assets for a short time within a warm Worker isolate.
+// Failed reads are not cached, and every minute the current deployed asset is rechecked.
+const parkingAssetCache=new Map();
+async function readParkingAsset(env,origin,path){
+ const now=Date.now(),cached=parkingAssetCache.get(path);
+ if(cached&&cached.expires>now)return cached.data;
+ const asset=await env.ASSETS.fetch(new URL(path,origin).toString());
+ if(!asset.ok)return cached?.data||null;
+ try{
+  const parsed=await asset.json();
+  if(!Array.isArray(parsed?.points))return cached?.data||null;
+  parkingAssetCache.set(path,{data:parsed,expires:Date.now()+60000});
+  return parsed;
+ }catch{return cached?.data||null}
+}
 export async function onRequestGet({request,env}){
  const url=new URL(request.url),lat=Number(url.searchParams.get('lat')),lng=Number(url.searchParams.get('lng'));
  const radiusRaw=Number(url.searchParams.get('radius')||10),radiusKm=[3,10,20,30].includes(radiusRaw)?radiusRaw:10,radiusSq=(radiusKm*1000)**2;
@@ -126,15 +141,9 @@ export async function onRequestGet({request,env}){
  const excluded=await approvedNonParkingIds(env);
  // Fetch nationwide coverage for every city. The old broad Istanbul rectangle
  // mistakenly treated nine neighboring provinces as Istanbul and hid their data.
- const nationalResponse=await env.ASSETS.fetch(new URL('/data/parking-turkiye.json',url.origin).toString());
- let national=null;
- if(nationalResponse.ok){try{const parsed=await nationalResponse.json();if(Array.isArray(parsed.points))national=parsed}catch{}}
- let istanbul=null;
+ const national=await readParkingAsset(env,url.origin,'/data/parking-turkiye.json');
  // Istanbul's reviewed dataset remains authoritative where the two extracts overlap.
- if(inIstanbul(lat,lng)){
-  const istanbulResponse=await env.ASSETS.fetch(new URL('/data/parking.json',url.origin).toString());
-  if(istanbulResponse.ok){try{const parsed=await istanbulResponse.json();if(Array.isArray(parsed.points))istanbul=parsed}catch{}}
- }
+ const istanbul=inIstanbul(lat,lng)?await readParkingAsset(env,url.origin,'/data/parking.json'):null;
  if(!national&&!istanbul)return Response.json({error:'Otopark veri dosyaları yüklenemedi'},{status:503});
  const valid=p=>validPoint(p)&&publicParking(p)&&!excluded.has(parkingOsmKey(p))&&!confirmedNotParking.has(parkingOsmKey(p))&&distanceSq(p,lat,lng)<=radiusSq;
  const combined=new Map();
