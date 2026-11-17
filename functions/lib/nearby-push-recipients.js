@@ -43,3 +43,14 @@ export async function findNearbyPushRecipients(db, {latitude, longitude, reportI
 export function isActiveNearbyReport(createdAt,now=Date.now()){
   return Number.isSafeInteger(createdAt)&&createdAt>0&&createdAt<=now&&now-createdAt<2*60*60*1000;
 }
+
+// Fail closed if the KV binding is missing, the report was removed, or the stored
+// record does not match the queued job. KV reads may be eventually consistent.
+export async function isStoredNearbyReportActive(kv,job,now=Date.now()){
+  if(!kv?.get||!job||!/^[0-9a-f-]{36}$/i.test(job.reportId)||!isActiveNearbyReport(job.createdAt,now))return false;
+  const report=await kv.get('community:street:'+job.reportId,'json');
+  return !!report&&report.id===job.reportId&&report.type==='space'&&
+    report.createdAt===job.createdAt&&Number.isSafeInteger(report.expiresAt)&&
+    report.expiresAt>now&&report.expiresAt<=report.createdAt+2*60*60*1000&&
+    (!job.ownerId||report.ownerId===job.ownerId);
+}
