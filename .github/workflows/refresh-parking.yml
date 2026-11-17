@@ -6,6 +6,9 @@ on:
     paths:
       - '.github/workflows/refresh-parking.yml'
       - 'scripts/audit_city_parking.py'
+      - 'scripts/import_national_parking.py'
+      - 'functions/api/parking.js'
+      - 'tests/parking-api.test.mjs'
   schedule:
     - cron: '17 4 * * 0'
 permissions:

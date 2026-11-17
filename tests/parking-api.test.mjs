@@ -12,6 +12,24 @@ async function query(points,radius){
   assert.equal(response.status,200);
   return (await response.json()).points.map(p=>p.name);
 }
+test('Marmara national parking is included even within broad Istanbul rectangle',async()=>{
+ const request=new Request(origin+'/api/parking?lat=40.65&lng=29.25&radius=10');
+ const national={points:[{name:'Yalova OSM',lat:40.65,lng:29.25,osmType:'way',osmId:'120'}],source:'national'};
+ const istanbul={points:[],source:'istanbul'};
+ const env={ASSETS:{fetch:async input=>Response.json(String(input).includes('parking-turkiye.json')?national:istanbul)}};
+ const response=await onRequestGet({request,env});
+ assert.equal(response.status,200);
+ assert.deepEqual((await response.json()).points.map(p=>p.name),['Yalova OSM']);
+});
+test('Istanbul curated parking takes precedence over nationwide duplicate',async()=>{
+ const request=new Request(origin+'/api/parking?lat=40.9&lng=29.2');
+ const national={points:[point('national',{osmType:'way',osmId:'123'})],source:'national'};
+ const istanbul={points:[point('curated',{osmType:'way',osmId:'123'})],source:'istanbul'};
+ const env={ASSETS:{fetch:async input=>Response.json(String(input).includes('parking-turkiye.json')?national:istanbul)}};
+ const response=await onRequestGet({request,env});
+ assert.equal(response.status,200);
+ assert.deepEqual((await response.json()).points.map(p=>p.name),['curated']);
+});
 test('confirmed and verified outside-Istanbul records are excluded',async()=>{
   assert.deepEqual(await query([
     point('excluded',{geographicStatus:'confirmed_outside_istanbul',geographicReviewVerified:true}),
