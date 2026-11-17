@@ -712,3 +712,31 @@ header #rpNotificationShortcut:focus-visible{outline:2px solid #ffe18c!important
  #rpOperatorShortcuts{grid-template-columns:repeat(3,minmax(0,1fr))!important}
  #savedParkingSection,.tools,#parkingSummary,#mapWrap{width:calc(100% - 24px)!important}
 }
+
+/* Desktop results follow the same content rail as the map above. */
+@media (min-width:601px){
+ #mapWrap + .panel,
+ .parking-legend,
+ #status,
+ #parkingDataFreshness,
+ #emptyNotice,
+ #updateNotice,
+ div:has(> #refreshNow) {
+  box-sizing:border-box!important;
+  width:min(calc(100% - 32px),1280px)!important;
+  max-width:1280px!important;
+  margin-left:auto!important;
+  margin-right:auto!important;
+ }
+ #mapWrap + .panel{padding:16px!important}
+ #mapWrap + .panel h2{font-size:19px!important}
+ #mapWrap + .panel #listCount{font-size:12px!important}
+ div:has(> #refreshNow){padding-left:0!important;padding-right:0!important}
+ .parking-legend{padding:12px!important}
+}
+@media (min-width:601px) and (max-width:900px){
+ #mapWrap + .panel,.parking-legend,#status,#parkingDataFreshness,
+ #emptyNotice,#updateNotice,div:has(> #refreshNow){
+  width:calc(100% - 24px)!important;
+ }
+}
