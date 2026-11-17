@@ -79,3 +79,38 @@ test('returns all eligible records beyond the former 250-record limit',async()=>
  const points=Array.from({length:275},(_,i)=>point('parking-'+i,{lat:center.lat+(i%20)*0.0001,lng:center.lng+Math.floor(i/20)*0.0001}));
  assert.equal((await query(points,10)).length,275);
 });
+
+test('unique ISPARK snapshot matches a generic OSM parking across spatial cell boundaries',async()=>{
+ const generic=point('Otopark kaydı',{lat:40.900099,lng:29.200099,osmType:'node',osmId:'92001'});
+ const official={id:8123,name:'İSPARK Doğrulanmış Test Otoparkı',lat:40.900101,lng:29.200101};
+ const env={
+  ASSETS:{fetch:async()=>Response.json({points:[generic],source:'test'})},
+  ISPARK_SNAPSHOTS:{get:async()=>({points:[official]})},
+ };
+ const response=await onRequestGet({request:new Request(origin+'/api/parking?lat=40.9&lng=29.2'),env});
+ assert.equal(response.status,200);
+ const [p]=(await response.json()).points;
+ assert.equal(p.name,official.name);
+ assert.equal(p.isparkParkID,official.id);
+ assert.equal(p.nameSource,'ibb-ispark-coordinate-match');
+});
+test('ISPARK snapshot matching refuses ambiguous nearby OSM facilities',async()=>{
+ const first=point('Otopark kaydı',{lat:40.900099,lng:29.200099,osmType:'node',osmId:'92002'});
+ const second=point('Otopark kaydı',{lat:40.900101,lng:29.200101,osmType:'node',osmId:'92003'});
+ const env={
+  ASSETS:{fetch:async()=>Response.json({points:[first,second],source:'test'})},
+  ISPARK_SNAPSHOTS:{get:async()=>({points:[{id:8124,name:'İSPARK Belirsiz Test Otoparkı',lat:40.9001,lng:29.2001}]})},
+ };
+ const response=await onRequestGet({request:new Request(origin+'/api/parking?lat=40.9&lng=29.2'),env});
+ assert.equal(response.status,200);
+ assert.deepEqual((await response.json()).points.map(p=>p.name),['Otopark kaydı','Otopark kaydı']);
+});
+test('ISPARK snapshot matching never assigns a distant official facility',async()=>{
+ const env={
+  ASSETS:{fetch:async()=>Response.json({points:[point('Otopark kaydı',{osmType:'node',osmId:'92004'})],source:'test'})},
+  ISPARK_SNAPSHOTS:{get:async()=>({points:[{id:8125,name:'İSPARK Uzak Test Otoparkı',lat:40.9002,lng:29.2}]})},
+ };
+ const response=await onRequestGet({request:new Request(origin+'/api/parking?lat=40.9&lng=29.2'),env});
+ assert.equal(response.status,200);
+ assert.equal((await response.json()).points[0].name,'Otopark kaydı');
+});
