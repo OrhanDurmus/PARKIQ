@@ -35,6 +35,9 @@ export async function onRequestPost({request,env,context}){
   const id=crypto.randomUUID(),now=Date.now();
   const point={id,lat:Math.round(lat*1e5)/1e5,lng:Math.round(lng*1e5)/1e5,type:data.type,note,address,displayName:displayName||String(user.user_metadata?.full_name||user.user_metadata?.name||user.email?.split('@')[0]||'ROTAPARK kullanıcısı').slice(0,32),verifiedAccount:true,createdAt:now,expiresAt:now+2*60*60*1000};
   const stored={...point,ownerId:user.id,ownerTokenHash:await tokenHash(ownerToken)};
+  // Exclude the reporting device from its own nearby push notification.
+  const ownPushEndpoint=typeof data.ownPushEndpoint==='string'?data.ownPushEndpoint:'';
+  const ownPushEndpointHash=ownPushEndpoint&&ownPushEndpoint.length<2048&&/^https:\/\//i.test(ownPushEndpoint)?await tokenHash(ownPushEndpoint):null;
   await kv.put(keyPrefix+id,JSON.stringify(stored),{expirationTtl:7200});
   await kv.put('community:user:history:'+user.id+':'+id,JSON.stringify({id,createdAt:now,address:point.address,type:point.type,lat:point.lat,lng:point.lng,status:'active'}),{expirationTtl:60*60*24*90});
   await kv.put('community:user:seen:'+user.id,JSON.stringify({id:user.id,email:String(user.email||''),displayName:point.displayName,lastReportAt:now}),{expirationTtl:60*60*24*90});
@@ -43,7 +46,7 @@ export async function onRequestPost({request,env,context}){
   if(point.type==='space'&&env.NEARBY_PUSH_QUEUE?.send){
    // One lightweight enqueue per report. Queue consumer fans out with paginated D1 queries.
    try{
-    await env.NEARBY_PUSH_QUEUE.send({kind:'nearby-report',reportId:id,latitude:point.lat,longitude:point.lng,createdAt:now});
+    await env.NEARBY_PUSH_QUEUE.send({kind:'nearby-report',reportId:id,latitude:point.lat,longitude:point.lng,createdAt:now,excludedEndpointHash:ownPushEndpointHash});
    }catch(e){console.error('nearby_push_enqueue_failed',String(e?.message||e))}
   }
   return json({ok:true,point},201);
