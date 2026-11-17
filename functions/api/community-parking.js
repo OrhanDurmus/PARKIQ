@@ -12,7 +12,8 @@ export async function onRequestGet({env}){
  try{
   const keys=await kv.list({prefix:keyPrefix,limit:200});
   const items=(await Promise.all(keys.keys.map(x=>kv.get(x.name,'json')))).filter(x=>x&&x.expiresAt>Date.now()&&validCoord(x.lat,x.lng)).sort((a,b)=>b.createdAt-a.createdAt).slice(0,150);
-  return json({ok:true,points:items.map(({ownerTokenHash,ownerId,...point})=>point)});
+  const user=request.headers.get('Authorization')?await authenticatedUser(request,env):null;
+  return json({ok:true,points:items.map(({ownerTokenHash,ownerId,...point})=>({...point,...(user&&ownerId===user.id?{isMine:true}:{})}))});
  }catch(e){return json({ok:false,error:'storage_unavailable'},503)}
 }
 export async function onRequestPost({request,env,context}){
