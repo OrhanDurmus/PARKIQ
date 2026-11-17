@@ -35,3 +35,12 @@ test('delivery reservation accepts valid report IDs and deduplicates', async () 
   assert.equal(await delivery.reserveNearbyPushDelivery(db,'report-1',id),false);
   await assert.rejects(delivery.reserveNearbyPushDelivery(db,'report/id',id),/invalid_push_delivery_reservation/);
 });
+
+test('nearby push queue rejects expired jobs at fanout and delivery', async () => {
+  const worker=await readFile(new URL('../workers/nearby-push-worker.js',import.meta.url),'utf8');
+  assert.match(worker,/const REPORT_TTL_MS=2\*60\*60\*1000/);
+  assert.match(worker,/async function fanout\(env,job\)\{\s*if\(reportJobExpired\(job\.createdAt\)\)return/);
+  assert.match(worker,/async function deliver\(env,job\)\{\s*if\(reportJobExpired\(job\.createdAt\)\)return/);
+  assert.match(worker,/ownerId,createdAt:job\.createdAt,distanceMeters/);
+  assert.match(worker,/ownerId,createdAt:job\.createdAt,cursor/);
+});
