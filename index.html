@@ -241,7 +241,32 @@ $('reportAddress').addEventListener('input',()=>{reportAddressRevision++;selecte
 $('reportUseGps').onclick=()=>{if(!navigator.geolocation)return status('Bu cihaz GPS konumunu desteklemiyor. Adres girebilirsin.');const btn=$('reportUseGps'),rev=++reportLocationRevision;btn.disabled=true;btn.textContent='⏳ GPS alınıyor';navigator.geolocation.getCurrentPosition(p=>{btn.disabled=false;btn.textContent='📍 GPS konumum';if(rev!==reportLocationRevision||$('reportBox').style.display!=='block')return;const c=p.coords;if(!Number.isFinite(c.latitude)||!Number.isFinite(c.longitude)||!Number.isFinite(c.accuracy)||c.accuracy>250){status('GPS doğruluğu düşük. Tekrar dene veya adres gir.');return}const addressRev=++reportAddressRevision;$('reportAddress').value='';choose(L.latLng(c.latitude,c.longitude));map.setView([c.latitude,c.longitude],16);reportReverse(c.latitude,c.longitude,addressRev);status('GPS konumu seçildi. Adresi istersen değiştirebilirsin.');},()=>{btn.disabled=false;btn.textContent='📍 GPS konumum';status('GPS alınamadı. Adresi manuel girebilirsin.')},{enableHighAccuracy:true,timeout:12000,maximumAge:0})};
 $('reportFindAddress').onclick=async()=>{const query=$('reportAddress').value.trim();if(query.length<5)return status('Mahalle, sokak veya açık adres gir.');const rev=++reportLocationRevision;const btn=$('reportFindAddress');btn.disabled=true;btn.textContent='⏳ Aranıyor';try{const point=await reportGeocode(query);if(rev!==reportLocationRevision)return;if(!Number.isFinite(point.lat)||!Number.isFinite(point.lng))throw Error('Geçersiz adres');choose(L.latLng(point.lat,point.lng));map.setView([point.lat,point.lng],16);status('Adres bulundu. Konum seçildi: '+point.name)}catch(e){status('Adres bulunamadı. Daha ayrıntılı adres yaz veya haritadan seç.')}finally{btn.disabled=false;btn.textContent='🔎 Adresi bul'}};
 $('report').onclick=()=>{reportLocationRevision++;selected=null;if(selectedMarker){map.removeLayer(selectedMarker);selectedMarker=null}$('reportAddress').value='';reportAddressRevision++;$('chosen').textContent='GPS konumun otomatik alınır; istersen adresi değiştir.';$('reportBox').style.display='block';$('reportBox').scrollIntoView({behavior:'smooth',block:'center'});$('reportUseGps').click()};
-for(const [buttonId,reportType] of [['quickStreetSpace','space'],['quickStreetFull','no_space']]){$(buttonId).onclick=()=>{$('type').value=reportType;$('report').click();};}
+$('quickStreetSpace').onclick=()=>{$('type').value='space';$('report').click()};
+$('quickStreetFull').onclick=async()=>{
+ const btn=$('quickStreetFull');if(btn.disabled)return;
+ if(!navigator.geolocation){status('📍 Yer yok bildirimi için GPS gerekli.');return}
+ btn.disabled=true;btn.textContent='⏳ Konum kontrolü';
+ try{
+  const position=await new Promise((resolve,reject)=>navigator.geolocation.getCurrentPosition(resolve,reject,{enableHighAccuracy:true,timeout:12000,maximumAge:0}));
+  const {latitude,longitude,accuracy}=position.coords;
+  if(!Number.isFinite(latitude)||!Number.isFinite(longitude)||!Number.isFinite(accuracy)||accuracy>100)throw Error('gps_accuracy');
+  const ownIds=read('rotapark_community_own_reports',[]);
+  if(!Array.isArray(ownIds)||!ownIds.length)throw Error('no_own_report');
+  const response=await fetch('/api/community-parking',{cache:'no-store'});
+  const data=await response.json();if(!response.ok||!data.ok||!Array.isArray(data.points))throw Error('unavailable');
+  const distanceMeters=p=>{const rad=Math.PI/180,dLat=(p.lat-latitude)*rad,dLng=(p.lng-longitude)*rad,a=Math.sin(dLat/2)**2+Math.cos(latitude*rad)*Math.cos(p.lat*rad)*Math.sin(dLng/2)**2;return 6371000*2*Math.asin(Math.min(1,Math.sqrt(a)))};
+  const nearest=data.points.filter(p=>p.type==='space'&&ownIds.includes(p.id)&&Number.isFinite(p.lat)&&Number.isFinite(p.lng)).map(p=>({point:p,distance:distanceMeters(p)})).sort((a,b)=>a.distance-b.distance)[0];
+  if(!nearest||nearest.distance>Math.max(35,accuracy+15))throw Error('no_nearby_report');
+  const accessToken=await window.rotaparkAuthToken?.();if(!accessToken)throw Error('login_required');
+  const remove=await fetch('/api/community-parking',{method:'DELETE',headers:{'Content-Type':'application/json',Authorization:'Bearer '+accessToken},body:JSON.stringify({id:nearest.point.id,ownerToken:communityOwnerToken()})});
+  const result=await remove.json();if(!remove.ok||!result.ok)throw Error(result.error||'unavailable');
+  write('rotapark_community_own_reports',ownIds.filter(id=>id!==nearest.point.id));
+  await reports();status('✓ Yer yok: Bu konumdaki park yeri işaretin haritadan kaldırıldı.');
+ }catch(error){
+  const reason=error.message==='gps_accuracy'?'GPS doğruluğu düşük. Açık alanda tekrar dene.':error.message==='no_own_report'||error.message==='no_nearby_report'?'Bu konumda kaldırabileceğin kendi aktif Yer Var bildirimin bulunamadı.':error.message==='login_required'?'Önce hesabına giriş yap.':'İşaret kaldırılamadı. Konum iznini ve bağlantıyı kontrol et.';
+  status('⚠️ '+reason);
+ }finally{btn.disabled=false;btn.textContent='🔴 Yer Yok'}
+};
 $('submit').onclick=async()=>{
  const btn=$('submit'),feedback=$('reportSubmitStatus');
  const message=(text)=>{feedback.textContent=text;status(text)};
