@@ -538,3 +538,30 @@ body.rp-filters-open .tools .filters,
 body.rp-filters-open .tools .quick-filters,
 body.rp-filters-open .sort-row{display:none!important}
 #rpOperatorShortcuts button{touch-action:manipulation!important;cursor:pointer!important}
+
+/* Premium hero: visible live account state and adjacent notification bell.
+   The hero image is retained; a compact dark overlay masks its static login lettering. */
+@media(max-width:600px){
+ header #rotaparkAccountLink{
+  top:calc(54px + (100vw * 267 / 710) * .07)!important;
+  right:2.5%!important;width:22%!important;height:calc((100vw * 267 / 710) * .27)!important;
+  display:flex!important;align-items:center!important;justify-content:center!important;
+  padding:3px 5px!important;border:1px solid #e3b64f!important;border-radius:30px!important;
+  background:#0c0a08!important;box-shadow:0 0 8px #e9ae4b55!important;
+  color:#ffe4a1!important;font-size:clamp(9px,2.5vw,12px)!important;
+  opacity:1!important;overflow:hidden!important;white-space:nowrap!important;
+ }
+ header #rotaparkAccountLink #rotaparkAccountLabel{display:block!important;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+ header #rotaparkAccountLink>span[aria-hidden="true"]{display:none!important}
+ header #rotaparkAccountLink .rotapark-founder-badge{display:none!important}
+ header #rpNotificationShortcut{
+  display:flex!important;position:absolute!important;z-index:6!important;
+  top:calc(54px + (100vw * 267 / 710) * .07)!important;
+  right:25.5%!important;width:9%!important;height:calc((100vw * 267 / 710) * .27)!important;
+  align-items:center!important;justify-content:center!important;
+  padding:0!important;border:1px solid #e3b64f!important;border-radius:50%!important;
+  background:#0c0a08!important;color:#ffe4a1!important;
+  font-size:clamp(15px,4.1vw,22px)!important;opacity:1!important;
+  box-shadow:0 0 8px #e9ae4b55!important;
+ }
+}
