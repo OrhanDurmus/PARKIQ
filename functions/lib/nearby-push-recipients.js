@@ -37,3 +37,9 @@ export async function findNearbyPushRecipients(db, {latitude, longitude, reportI
 }
 // Delivery deduplication must be reserved atomically before each send, with retry handling.
 // Do not expose subscription endpoints or encryption keys in any public response.
+
+// A queued alert must not outlive its two-hour street parking report.
+// Missing timestamps from legacy queue jobs are rejected rather than notifying late.
+export function isActiveNearbyReport(createdAt,now=Date.now()){
+  return Number.isSafeInteger(createdAt)&&createdAt>0&&createdAt<=now&&now-createdAt<2*60*60*1000;
+}
