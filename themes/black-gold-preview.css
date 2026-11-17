@@ -1,0 +1,1660 @@
+/* ROTAPARK Black & Gold — opt-in preview theme.
+   Load after existing styles only in Preview. Do not recolor map markers,
+   availability states, GPS arrow, or route geometry. */
+:root {
+  --rp-bg:#0b0b0f; --rp-surface:#17171c; --rp-surface-2:#232329;
+  --rp-gold:#d4af37; --rp-gold-light:#f1d47b;
+  --rp-text:#f5f1e8; --rp-muted:#c4c0b7; --rp-line:#65532b;
+}
+body{background:var(--rp-bg);color:var(--rp-text)}
+header{background:linear-gradient(145deg,#242016,var(--rp-bg) 78%)}
+header h1 span,#rotaParkIntro strong span{color:var(--rp-gold-light)}
+.tools,.panel,.parking-legend,.sort-row,#parkingSummary{background:var(--rp-bg);color:var(--rp-text)}
+.search,input,textarea,select,.filters select,#parkingNameSearch,.sort-row select{
+ background:var(--rp-surface)!important;color:var(--rp-text)!important;border-color:var(--rp-line)!important
+}
+.search,.item,#parkingList .item,#favoritesList .item,.business,#reportBox,#routePlanner,
+#nearestFive,#detailSheet,#emptyNotice,.empty-results,#parkingSummary div{
+ background:var(--rp-surface);border-color:var(--rp-line);color:var(--rp-text)
+}
+button,.search button,.quick-filters button.active,.item button,#parkingList button{
+ background:var(--rp-gold);color:#17130a
+}
+.actions button,.quick-filters button,.bottom-nav button,.sort-row button{
+ background:var(--rp-surface-2);color:var(--rp-text);border-color:var(--rp-line)
+}
+.bottom-nav{background:#0b0b0ff2;border-top-color:var(--rp-line)}
+button:focus-visible,input:focus-visible,select:focus-visible{
+ outline:2px solid var(--rp-gold-light);outline-offset:2px
+}
+small,.hint,.business p,#status,.sort-row{color:var(--rp-muted)}
+#parkingSummary strong{color:var(--rp-gold-light)}
+#rotaParkIntro{background:linear-gradient(145deg,#0b0b0f,#282113)}
+/* Safety: preserve red/green availability and blue GPS/nav semantics. */
+.park-pin.green{background:#20c997}.park-pin.red{background:#f05b66}
+.park-pin.gray{background:#8292a6}
+#parkiqGpsArrow{background:#287cf5}
+.park-pin.verified,.park-pin.ispark-official,.item.ispark-official{
+ outline-color:#e7c567;border-color:#e7c567
+}
+@media(prefers-reduced-motion:reduce){*{scroll-behavior:auto}}
+
+/* Signature pass 2: unify legacy teal cards and controls, without altering app behavior. */
+#savedParkingSection{
+ background:linear-gradient(155deg,#252015,#141416 58%,#0f0f12);
+ border:1px solid #b38b32;box-shadow:inset 0 1px 0 #f2d78922,0 6px 22px #0005;
+ color:var(--rp-text)
+}
+#savedParkingSection h2{color:var(--rp-text)}
+#savedParkingSection #saved{color:var(--rp-muted)}
+#savedParkingSection #saveParkingLocation{
+ background:linear-gradient(135deg,#f4d76b,#d4af37 62%,#b88c24)!important;
+ color:#18140a!important;border:1px solid #e4c65a!important;
+ box-shadow:0 3px 12px #b88c2433;font-weight:750
+}
+header a:has(#rotaparkAccountLabel){
+ background:#1c1a15!important;border:1px solid #cda642!important;
+ color:#f5e4b3!important;box-shadow:0 0 0 1px #d4af3718
+}
+.quick-filters button.active{
+ background:var(--rp-gold)!important;border-color:var(--rp-gold)!important;
+ color:#17130a!important;box-shadow:none!important
+}
+.quick-filters button:not(.active){border-color:var(--rp-line)!important}
+.bottom-nav button{
+ border:1px solid #7b622c!important;
+ background:linear-gradient(165deg,#29251e,#17171c)!important;
+ color:var(--rp-text)!important;box-shadow:inset 0 1px 0 #d4af3722
+}
+.bottom-nav button:focus-visible{outline:2px solid var(--rp-gold-light)}
+#parkingList .item,#favoritesList .item{box-shadow:0 4px 14px #0004}
+@media(max-width:600px){.bottom-nav button{box-shadow:none}}
+
+/* Signature pass 3 — restrained skyline-inspired header, CSS-only; no external assets. */
+header{
+ position:relative;isolation:isolate;overflow:hidden;
+ background:radial-gradient(ellipse at 82% 0%,#6c4b1938,transparent 62%),
+ linear-gradient(160deg,#242016,#0b0b0f 75%)!important;
+ border-bottom:1px solid #94712d66;
+}
+header::before{
+ content:"";position:absolute;inset:auto 0 0;height:38px;z-index:-1;
+ opacity:.35;pointer-events:none;
+ background:linear-gradient(0deg,#b98a2c44,transparent 75%),
+ repeating-linear-gradient(90deg,transparent 0 18px,#9c772b55 19px 21px,transparent 22px 38px);
+ -webkit-mask-image:linear-gradient(to top,#000,transparent);
+ mask-image:linear-gradient(to top,#000,transparent)
+}
+header .header-brand h1{color:#f5f1e8;text-shadow:0 1px 8px #0008}
+header .header-brand h1 span{color:#f1d47b}
+header .header-brand img{
+ border:1px solid #cda642;border-radius:12px;
+ box-shadow:0 0 0 2px #d4af3722,0 4px 15px #0008
+}
+header #sideMenuOpen{
+ background:#1b1a19!important;color:#f5e8c7!important;
+ border:1px solid #b68e34!important;box-shadow:inset 0 1px 0 #fff1
+}
+header small{color:#d0c4aa}
+@media(prefers-reduced-motion:reduce){header *{transition:none!important}}
+
+/* Signature pass 4: prevent the fixed bottom bar obscuring install help.
+   Scoped to opt-in theme; preserve existing navigation and event handlers. */
+body{padding-bottom:calc(116px + env(safe-area-inset-bottom))!important}
+#installHint{
+ position:relative;z-index:1;
+ margin:10px 14px 20px!important;padding:14px 16px!important;
+ background:linear-gradient(145deg,#292216,#151517)!important;
+ border:1px solid #b28b35!important;color:#f5f1e8!important;
+ border-radius:15px;box-shadow:0 5px 18px #0005;
+ scroll-margin-bottom:calc(130px + env(safe-area-inset-bottom))
+}
+#installHint strong{color:#f1d47b}
+#installHint #dismissInstall{
+ background:#2c261b!important;color:#f5f1e8!important;
+ border:1px solid #9c7b36!important;min-width:32px;min-height:32px
+}
+.bottom-nav{box-shadow:0 -8px 22px #0008}
+
+/* Signature pass 5 — legibility and touch polish on iPhone. */
+:root{color-scheme:dark}
+.tools select,.sort-row select,#parkingNameSearch,.search input{
+ color-scheme:dark!important;color:#f5f1e8!important;
+ -webkit-text-fill-color:#f5f1e8;
+}
+.tools select option,.sort-row select option{background:#17171c;color:#f5f1e8}
+.tools input::placeholder,.search input::placeholder,#parkingNameSearch::placeholder{
+ color:#bcb7ad!important;opacity:1
+}
+.tools button,.quick-filters button,.bottom-nav button,#saveParkingLocation{
+ -webkit-tap-highlight-color:transparent;touch-action:manipulation
+}
+#savedParkingSection #saveParkingLocation:active,.search button:active{
+ filter:brightness(.92)
+}
+header .header-brand{position:relative}
+header .header-brand::after{
+ content:"";position:absolute;left:54px;right:0;bottom:-9px;height:1px;
+ background:linear-gradient(90deg,#d4af37aa,transparent);pointer-events:none
+}
+@media(max-width:390px){
+ .bottom-nav{gap:6px;padding-left:8px;padding-right:8px}
+ .bottom-nav button{min-width:0;font-size:12px}
+}
+
+/* Signature pass 6: Istanbul skyline, ornamental only and never interactive. */
+header{padding-bottom:58px!important}
+header::before{
+ content:"";position:absolute;inset:auto 0 0;height:88px;
+ z-index:-1;opacity:.82;pointer-events:none;
+ background:url('/themes/istanbul-skyline.svg') center bottom / auto 88px repeat-x!important;
+ -webkit-mask-image:linear-gradient(to top,#000 20%,#000 75%,transparent);
+ mask-image:linear-gradient(to top,#000 20%,#000 75%,transparent)
+}
+header::after{
+ content:"";position:absolute;left:0;right:0;bottom:0;height:1px;
+ background:linear-gradient(90deg,transparent,#d4af37bb,transparent);
+ pointer-events:none
+}
+@media(max-width:600px){header{padding-bottom:52px!important}header::before{height:74px;background-size:auto 74px!important}}
+
+/* Signature pass 7 — reference-inspired golden waterfront, with restrained glow.
+   This is illustrative CSS, not a photographic Istanbul asset. */
+header{
+ background:
+ radial-gradient(ellipse 100% 38% at 50% 100%,#e9a72b33,transparent 80%),
+ radial-gradient(ellipse 65% 70% at 12% 65%,#9b5e152b,transparent 75%),
+ linear-gradient(165deg,#090909 0%,#17120d 70%,#090909 100%)!important;
+}
+header::before{
+ height:114px!important;opacity:1!important;
+ background-image:url('/themes/istanbul-skyline.svg')!important;
+ background-repeat:repeat-x!important;background-position:center bottom 6px!important;
+ background-size:auto 114px!important;
+ filter:drop-shadow(0 0 5px #e3ad3a88) drop-shadow(0 0 13px #d7972755);
+ -webkit-mask-image:linear-gradient(to top,#000 15%,#000 90%,transparent 100%)!important;
+ mask-image:linear-gradient(to top,#000 15%,#000 90%,transparent 100%)!important
+}
+header::after{
+ height:5px!important;bottom:0!important;
+ background:linear-gradient(90deg,transparent,#e5b33d88 22%,#ffe69d 50%,#e5b33d88 78%,transparent)!important;
+ box-shadow:0 0 13px #dca63188;opacity:.8
+}
+#savedParkingSection{
+ box-shadow:inset 0 1px 0 #fff1,0 6px 24px #0008,0 0 13px #b78b2426!important;
+}
+#savedParkingSection #saveParkingLocation{
+ box-shadow:inset 0 1px 0 #fff8,0 4px 14px #d4af3740!important
+}
+.search{box-shadow:0 0 10px #b38b2d20}
+.bottom-nav button{
+ box-shadow:inset 0 1px 0 #eac65b22,0 0 9px #d4af371c!important
+}
+#installHint{margin-bottom:calc(24px + env(safe-area-inset-bottom))!important}
+@media(max-width:600px){
+ header{padding-bottom:86px!important}
+ header::before{height:100px!important;background-size:auto 100px!important}
+}
+
+/* Signature pass 8 — practical mobile refinement: no extra fixed overlay. */
+#installHint{box-sizing:border-box;min-height:100px;overflow:visible}
+#installHint div{padding-right:4px;line-height:1.6}
+#installHint[hidden]{display:none!important}
+.bottom-nav{
+ padding-top:8px!important;
+ padding-bottom:calc(8px + env(safe-area-inset-bottom))!important;
+ background:linear-gradient(180deg,#15120fee,#0a0a0df7)!important;
+ border-top:1px solid #b58a3688!important;
+}
+.bottom-nav button{min-height:48px;line-height:1.2}
+#savedParkingSection #saveParkingLocation:focus-visible,
+#installHint button:focus-visible{outline:2px solid #ffe69d;outline-offset:3px}
+@media(max-width:600px){
+ header .header-brand img{object-fit:contain}
+ #installHint{margin-left:12px!important;margin-right:12px!important}
+}
+
+/* Signature pass 9 — premium finish without altering map/navigation colors. */
+header .header-brand h1{
+ letter-spacing:-.035em;
+ text-shadow:0 2px 12px #000a,0 0 16px #d9a73718;
+}
+#savedParkingSection,.search,#installHint{
+ backdrop-filter:none;
+}
+#savedParkingSection #saveParkingLocation,
+.search button,.quick-filters button.active{
+ background-image:linear-gradient(120deg,#f9de80,#d5a82c 70%,#b88620)!important;
+ border-color:#e3c46c!important;
+ box-shadow:inset 0 1px 0 #fff7,0 3px 12px #c59b3233!important;
+}
+#savedParkingSection #saveParkingLocation:focus-visible,
+.search button:focus-visible{
+ outline:2px solid #fff0b4!important;outline-offset:3px!important;
+}
+@media(hover:hover){
+ #savedParkingSection #saveParkingLocation:hover,.search button:hover{
+ filter:brightness(1.06);
+ }
+}
+@media(prefers-reduced-motion:reduce){
+ #savedParkingSection #saveParkingLocation,.search button{transition:none!important}
+}
+
+/* Signature pass 10: atmospheric Istanbul waterfront illustration. */
+header{
+ min-height:218px;
+ padding-bottom:104px!important;
+ background:
+ linear-gradient(180deg,#08090dcc 0%,#0b090bb3 43%,#0b090b18 100%),
+ url('/themes/istanbul-night-premium.svg') center bottom / cover no-repeat!important;
+}
+header::before{display:none!important}
+header::after{height:2px!important;opacity:.65}
+header .header-brand,header small,header #rotaparkAccountLink,header #sideMenuOpen{
+ position:relative;z-index:1
+}
+@media(max-width:600px){
+ header{
+ min-height:214px;
+ padding-bottom:102px!important;
+ background-position:center bottom!important;
+ background-size:auto 220px!important
+ }
+}
+
+/* Signature pass 11 — adjustments based on actual iPhone Safari screenshot. */
+@media(max-width:600px){
+ header{
+  min-height:0!important;
+  padding:14px 14px 64px!important;
+  background-size:auto 170px!important;
+  background-position:center bottom!important;
+ }
+ header .header-brand h1{font-size:clamp(25px,7.4vw,32px)!important}
+ .tools{padding-left:12px!important;padding-right:12px!important}
+ .filters{
+  display:grid!important;
+  grid-template-columns:minmax(0,1fr) minmax(0,1fr);
+  gap:8px!important;
+ }
+ .filters select{
+  box-sizing:border-box!important;
+  width:100%!important;min-width:0!important;max-width:100%!important;
+  font-size:13px!important;
+  padding:12px 25px 12px 10px!important;
+  text-overflow:ellipsis;
+ }
+ .filters select:nth-child(3){
+  grid-column:1/-1;
+ }
+ .quick-filters{
+  display:grid!important;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:8px!important;
+  overflow:visible!important;
+  padding:8px 0 10px!important;
+ }
+ .quick-filters button{
+  width:100%;min-width:0!important;white-space:normal;
+  min-height:44px;padding:10px 8px!important;
+  line-height:1.25;font-size:12px!important;
+ }
+ .sort-row{
+  display:grid!important;
+  grid-template-columns:minmax(0,1fr) minmax(0,1fr);
+  gap:8px!important;
+  padding:8px 12px!important;
+ }
+ .sort-row select{width:100%!important;max-width:none!important;min-width:0!important}
+ .sort-row #resetFilters{min-width:0!important;padding:9px 7px!important;font-size:12px!important}
+ .sort-row span{align-self:center}
+}
+
+/* Signature pass 12 — screenshot-driven navigation clearance.
+   Keep bottom navigation fixed but ensure the last controls can scroll above it. */
+@media(max-width:600px){
+ body{padding-bottom:calc(170px + env(safe-area-inset-bottom))!important}
+ .tools{padding-bottom:calc(95px + env(safe-area-inset-bottom))!important}
+ .bottom-nav{
+  position:fixed!important;left:0!important;right:0!important;bottom:0!important;
+  z-index:700!important;
+ }
+ header{
+  min-height:0!important;
+  padding-bottom:42px!important;
+  background-size:auto 150px!important;
+ }
+ .quick-filters button{min-height:46px}
+}
+
+/* Signature pass 13 — prevent nav overlay at any scroll position.
+   Flow-based footer replaces the fixed bar in mobile Preview. */
+@media(max-width:600px){
+ .bottom-nav{
+  position:relative!important;
+  inset:auto!important;
+  bottom:auto!important;
+  z-index:2!important;
+  width:100%!important;
+  box-sizing:border-box!important;
+  margin:0!important;
+ }
+ body{padding-bottom:env(safe-area-inset-bottom)!important}
+ .tools{padding-bottom:16px!important}
+ .quick-filters{padding-bottom:12px!important}
+ .sort-row{padding-bottom:16px!important}
+}
+
+/* Signature pass 14 — user-selected premium reference: richer gold trim and layout.
+   Preserve navigation, map route, occupancy colors and existing JS behavior. */
+:root{--rp-gold:#efb92e;--rp-gold-light:#ffe07a;--rp-line:#9f7625}
+header{
+ border-bottom:1px solid #d8a735!important;
+ box-shadow:0 3px 18px #d39d232b!important;
+}
+header .header-brand h1{
+ font-weight:850!important;
+ letter-spacing:-.045em!important;
+}
+header .header-brand h1 span{
+ background:linear-gradient(115deg,#fff2ac,#f0ba31 68%,#c68d16);
+ -webkit-background-clip:text;background-clip:text;
+ -webkit-text-fill-color:transparent;
+}
+#savedParkingSection{
+ position:relative;overflow:hidden;
+ border:1px solid #e1b33b!important;
+ background:radial-gradient(ellipse at 78% 0%,#8d601b24,transparent 55%),linear-gradient(145deg,#221c13,#111114 67%)!important;
+ box-shadow:0 0 0 1px #f8cf5c12,inset 0 1px 0 #ffe4a422,0 8px 28px #0009,0 0 20px #d9a42d20!important;
+}
+#savedParkingSection::after{
+ content:"";position:absolute;left:18%;right:18%;bottom:0;height:2px;pointer-events:none;
+ background:linear-gradient(90deg,transparent,#fff0a0,transparent);
+ box-shadow:0 0 12px #f3b73f;
+}
+#savedParkingSection h2{font-weight:800;letter-spacing:-.025em}
+#savedParkingSection #saveParkingLocation{
+ border-radius:16px!important;
+ background:linear-gradient(120deg,#ffe88d,#f4c443 55%,#d99b0f)!important;
+ border:1px solid #ffe6a0!important;
+ box-shadow:inset 0 1px 0 #fff9,0 6px 20px #d6a22544!important;
+}
+.search,#installHint,.actions #loc{
+ border:1px solid #b78b2e!important;
+ box-shadow:inset 0 1px 0 #ffe19d1c,0 0 12px #d6a22520!important;
+}
+.search{border-radius:17px!important}
+.search #search{border-radius:14px!important}
+.actions #loc{background:linear-gradient(150deg,#25201a,#161619)!important;color:#f6e8bf!important}
+#installHint{
+ border:1px solid #e4b341!important;
+ background:radial-gradient(ellipse at 15% 100%,#8d621c36,transparent 58%),#141215!important;
+ box-shadow:inset 0 1px 0 #ffe5a122,0 0 20px #e3a83233!important;
+}
+#installHint strong{font-size:15px;color:#ffe185!important}
+.bottom-nav{
+ border-top-color:#a77b2f!important;
+ box-shadow:0 -4px 18px #b483231c!important;
+}
+.bottom-nav button{
+ background:linear-gradient(155deg,#29231b,#121214)!important;
+ border:1px solid #bd8d32!important;
+ border-radius:16px!important;
+}
+@media(max-width:600px){
+ header{padding-bottom:44px!important}
+ #savedParkingSection{margin-bottom:18px}
+ .quick-filters button{border-radius:14px!important}
+ .bottom-nav{padding:12px!important;gap:9px!important}
+ .bottom-nav button{min-height:52px!important}
+}
+
+/* Signature pass 15 — reference-inspired layout, legible sort and installation prompt. */
+@media(max-width:600px){
+ .sort-row{
+  display:grid!important;
+  grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important;
+  align-items:center!important;
+  gap:9px!important;
+  padding:12px 14px 18px!important;
+  overflow:visible!important;
+ }
+ .sort-row>span{grid-column:1/-1;color:#f2e2b9!important}
+ .sort-row #resetFilters,.sort-row #sortParking{
+  width:100%!important;max-width:none!important;min-width:0!important;
+  box-sizing:border-box!important;min-height:48px!important;
+  font-size:13px!important;
+ }
+ .sort-row #resetFilters{
+  background:linear-gradient(135deg,#352812,#1b1714)!important;
+  color:#ffe18a!important;border:1px solid #d4a73d!important;
+ }
+ #installHint:not([hidden]){display:block!important}
+ #installHint{margin:12px 14px 18px!important;padding:16px 48px 16px 16px!important}
+ .bottom-nav{
+  position:relative!important;inset:auto!important;bottom:auto!important;
+  margin:12px 12px calc(22px + env(safe-area-inset-bottom))!important;
+  width:calc(100% - 24px)!important;
+  border:1px solid #d9a52d!important;border-radius:22px!important;
+  background:linear-gradient(150deg,#19140e,#080809)!important;
+  box-shadow:0 0 16px #e7a82944,inset 0 1px 0 #ffe9a03d!important;
+ }
+ .bottom-nav button{font-size:14px!important;min-width:0!important}
+}
+
+/* Signature pass 16 — remove remaining legacy blue from parking discovery.
+   Scope to UI cards, not map route, GPS, availability or Leaflet controls. */
+#nearestFive{
+ background:linear-gradient(145deg,#191612,#101014)!important;
+ border:1px solid #b98d34!important;
+ color:#f6f0e5!important;
+ box-shadow:0 0 15px #d5a02a1c!important;
+}
+#nearestFive h3{color:#f8db85!important}
+#nearestFive .near-item{
+ background:linear-gradient(130deg,#242019,#141317 80%)!important;
+ border:1px solid #b18a37!important;
+ border-radius:15px!important;
+ padding:12px!important;
+ margin:10px 0!important;
+ box-shadow:inset 0 1px 0 #ffe4a01a,0 4px 14px #0007!important;
+ color:#f5f1e8!important;
+}
+#nearestFive .near-item .near-name{color:#fff4d2!important}
+#nearestFive .near-item .near-meta{color:#d6cec0!important}
+#nearestFive .near-item .near-price{color:#f1cd73!important}
+#nearestFive .near-item button{
+ background:linear-gradient(120deg,#ffe184,#e6b22e 75%,#c88e13)!important;
+ color:#17120b!important;border:1px solid #ffe08b!important;
+ border-radius:12px!important;font-weight:750!important;
+}
+#refreshNow{
+ background:linear-gradient(125deg,#312616,#17151a)!important;
+ color:#ffe39a!important;border:1px solid #d4a337!important;
+ border-radius:13px!important;
+ box-shadow:inset 0 1px 0 #ffe19d22,0 0 14px #d5a12c22!important;
+}
+#parkingList .item,#favoritesList .item{
+ background:linear-gradient(135deg,#242019,#121216)!important;
+ border:1px solid #a77e2c!important;color:#f7f0e6!important;
+}
+#parkingList .item button,#favoritesList .item button{
+ background:linear-gradient(120deg,#ffe184,#e6b22e)!important;
+ color:#17120b!important;border-color:#f5d374!important;
+}
+
+/* Signature pass 17 — cohesive non-navigation surfaces for full premium rollout.
+   Do not affect Leaflet map tiles, route layers, or status-color semantics. */
+#sideMenu,.side-menu-top,.side-menu-links,
+#detailSheet,#detailContent,#reportBox,#favoritesList,
+#updateNotice,#emptyNotice,.empty-results{
+ color:#f5efe4!important;
+ border-color:#9e792c!important;
+}
+#sideMenu{
+ background:linear-gradient(165deg,#242019,#0d0d10 65%)!important;
+ box-shadow:8px 0 35px #000b,1px 0 0 #d1a03955!important;
+}
+.side-menu-top{
+ background:linear-gradient(100deg,#302516,#171419)!important;
+ border-bottom:1px solid #b78b30!important;
+}
+.side-menu-links a{
+ background:#211c17!important;color:#f8e9c7!important;
+ border:1px solid #715824!important;border-radius:12px!important;
+}
+.side-menu-links a:focus-visible,#sideMenu button:focus-visible{
+ outline:2px solid #ffe187!important;outline-offset:2px!important;
+}
+#detailSheet{
+ background:linear-gradient(145deg,#262017,#111114)!important;
+ border:1px solid #d5a435!important;
+ box-shadow:0 -6px 28px #000a,0 0 18px #d7a72d24!important;
+}
+#detailContent{color:#f7efe0!important}
+#detailSheet button:not(.leaflet-control button),
+#reportBox button,#updateNotice button{
+ border:1px solid #d9aa3e!important;border-radius:12px!important;
+}
+#reportBox,#updateNotice,.empty-results,#emptyNotice{
+ background:linear-gradient(145deg,#242019,#111114)!important;
+ border:1px solid #9f7a30!important;
+ border-radius:14px!important;
+}
+#reportBox label,#detailSheet label{color:#f3d891!important}
+#reportBox input,#reportBox textarea,#reportBox select{
+ background:#171519!important;color:#fff2d3!important;
+ border:1px solid #97732e!important;
+}
+#favoritesList .item{box-shadow:inset 0 1px 0 #f8da9022,0 5px 15px #0005!important}
+#parkingDataFreshness{color:#d3c9b4!important}
+@media(max-width:600px){
+ #sideMenu{max-width:min(88vw,370px)!important}
+ #detailSheet{max-height:85dvh!important;overflow-y:auto!important}
+}
+
+/* Signature pass 18 — complete visible parking discovery theme. */
+#parkingSummary{background:#0c0b0e!important}
+#parkingSummary>div{
+ background:linear-gradient(145deg,#242019,#111115)!important;
+ border:1px solid #b58a32!important;
+ border-radius:14px!important;
+ box-shadow:inset 0 1px 0 #ffe4a025!important;
+}
+#parkingSummary strong{color:#f9d46c!important}
+#parkingSummary span{color:#d4c8b5!important}
+#status,#parkingDataFreshness,.note,.hint{color:#cfc3ae!important}
+#emptyNotice,.empty-results{
+ box-shadow:0 0 15px #c6932a16!important;
+}
+#emptyReset,#installUpdate,#report,#dismissInstall{
+ background:linear-gradient(125deg,#f8db76,#d9a42a)!important;
+ color:#17130a!important;
+ border:1px solid #ffe18c!important;
+ border-radius:12px!important;
+}
+#favoritesTitle,#nearestFive h3{color:#f5d47b!important}
+#legacyParkingCards .note{color:#d4c7ae!important}
+#legacyParkingCards .note a{color:#e6bd55!important}
+#sideMenuClose,#closeDetails{
+ background:#2a2219!important;color:#f9d981!important;
+ border:1px solid #b98e35!important;
+}
+#sideMenuBackdrop{background:#000b!important}
+#reportBox button:focus-visible,#detailSheet button:focus-visible{
+ outline:2px solid #ffe18c!important;outline-offset:2px!important;
+}
+@media(max-width:600px){
+ #parkingSummary{gap:8px!important}
+ #parkingSummary>div{min-width:0!important;padding:10px 6px!important}
+ #parkingSummary span{font-size:11px!important}
+ #nearestFive .near-item button{min-width:0!important;white-space:normal}
+ #installHint:not([hidden]){position:relative!important;z-index:1!important}
+}
+
+/* Signature pass 19 — usability/accessibility polish across premium screens. */
+#nearestFive .near-item,
+#parkingList .item,#favoritesList .item{
+ overflow-wrap:anywhere;
+}
+#nearestFive .near-item button,
+#parkingList .item button,#favoritesList .item button,
+.bottom-nav button{
+ touch-action:manipulation;
+}
+#sideMenu a,#sideMenu button,#detailSheet button,
+#reportBox button,#refreshNow,#installUpdate{
+ min-height:44px;
+}
+#sideMenu a:focus-visible,#detailSheet button:focus-visible,
+#refreshNow:focus-visible,#installUpdate:focus-visible,
+.bottom-nav button:focus-visible{
+ outline:2px solid #ffe69b!important;
+ outline-offset:3px!important;
+}
+@media(max-width:600px){
+ #nearestFive .near-item{gap:8px!important}
+ #nearestFive .near-item button{
+  flex:1 1 100px!important;
+  padding:10px 6px!important;
+  font-size:12px!important;
+ }
+ #parkingList .item button,#favoritesList .item button{
+  min-height:44px!important;
+ }
+ #detailSheet{
+  padding-bottom:calc(18px + env(safe-area-inset-bottom))!important;
+  overscroll-behavior:contain;
+ }
+ #sideMenu{
+  padding-bottom:env(safe-area-inset-bottom)!important;
+  overflow-y:auto!important;
+ }
+}
+@media(prefers-reduced-motion:reduce){
+ #sideMenu,#detailSheet,.bottom-nav button{
+  animation:none!important;transition:none!important;
+ }
+}
+
+/* Signature pass 20 — real Istanbul night photography, replacing SVG skyline.
+   Photo: "Galata Tower night photo.jpg", Kübradereli1, CC0 (Wikimedia Commons).
+   Network fallback: dark gold gradient. The Bosphorus bridge in the previous
+   concept was a composite; this is a genuine Galata Tower photograph. */
+header{
+ background-image:
+  linear-gradient(180deg,#08090dd9 0%,#08090da6 40%,#110c0a70 100%),
+  url("https://commons.wikimedia.org/wiki/Special:Redirect/file/Galata_Tower_night_photo.jpg?width=1280")!important;
+ background-position:center,center 56%!important;
+ background-size:cover,cover!important;
+ background-repeat:no-repeat!important;
+}
+header::before{display:none!important}
+@media(max-width:600px){
+ header{
+  min-height:0!important;
+  padding-bottom:46px!important;
+  background-position:center,center 57%!important;
+  background-size:cover,cover!important;
+ }
+}
+
+/* Signature pass 21 — premium map details and external navigation controls.
+   Satellite tiles, GPS indicator, blue route and availability pins stay intact. */
+#detailSheet .external-navigation-options,
+#detailContent .external-navigation-options{
+ display:flex!important;flex-wrap:wrap!important;gap:8px!important;
+}
+#detailSheet .external-nav-link,
+#detailContent .external-nav-link{
+ display:inline-flex!important;align-items:center!important;justify-content:center!important;
+ min-height:44px!important;padding:10px 13px!important;
+ background:linear-gradient(135deg,#322613,#151418)!important;
+ border:1px solid #c6993c!important;border-radius:13px!important;
+ color:#ffe49b!important;text-decoration:none!important;font-weight:700!important;
+ box-shadow:inset 0 1px 0 #ffe8a022!important;
+}
+#detailSheet .external-nav-link:focus-visible,
+#detailContent .external-nav-link:focus-visible{
+ outline:2px solid #ffe69b!important;outline-offset:2px!important;
+}
+#detailContent button[style*="background:#384b61"]{
+ background:linear-gradient(135deg,#493519,#211b16)!important;
+ color:#ffe6a5!important;border:1px solid #c6993c!important;
+}
+#detailContent a[href*="openstreetmap.org"]{color:#f4ce71!important}
+#detailContent a[href*="openstreetmap.org"]:focus-visible{
+ outline:2px solid #ffe69b!important;outline-offset:2px!important;
+}
+#detailContent button:not(.leaflet-control button){touch-action:manipulation}
+.leaflet-control-zoom a{
+ background:#17151a!important;color:#f4d477!important;
+ border-color:#ac842f!important;
+}
+.leaflet-control-zoom{border:1px solid #c49a3e!important;border-radius:9px!important}
+.leaflet-control-attribution{
+ background:#111217d9!important;color:#d4c5a4!important;
+}
+.leaflet-control-attribution a{color:#f2cb6b!important}
+@media(max-width:600px){
+ #detailSheet .external-nav-link,#detailContent .external-nav-link{
+  flex:1 1 120px!important;font-size:13px!important;
+ }
+}
+
+/* Signature pass 22 — map quick actions and accordion menu (screenshots). */
+#mapQuickTools{
+ width:calc(100% - 22px)!important;
+ max-width:560px!important;
+ gap:8px!important;
+ bottom:calc(16px + env(safe-area-inset-bottom))!important;
+}
+#mapQuickTools button{
+ background:linear-gradient(140deg,#2a2118,#121317)!important;
+ color:#ffe3a0!important;
+ border:1px solid #d1a13e!important;
+ box-shadow:0 5px 18px #000a,inset 0 1px 0 #ffe7a025!important;
+ border-radius:16px!important;
+ min-height:46px!important;
+ font-size:12px!important;
+}
+#mapQuickTools button:focus-visible{
+ outline:2px solid #ffe59a!important;outline-offset:3px!important;
+}
+#sideMenu .side-menu-links button,
+#sideMenu .side-menu-links a{
+ background:linear-gradient(135deg,#2b241b,#151417)!important;
+ color:#f6e7c5!important;
+ border:1px solid #a98234!important;
+ border-radius:13px!important;
+ box-shadow:inset 0 1px 0 #ffe4a01a!important;
+}
+#sideMenu .side-menu-links button[aria-expanded="true"]{
+ background:linear-gradient(135deg,#44321a,#201b16)!important;
+ border-color:#e2b64d!important;
+}
+#sideMenu #communityReportSection,
+#sideMenu .business,
+#sideMenu section{
+ background:linear-gradient(145deg,#262019,#121215)!important;
+ color:#f7ecdb!important;
+ border:1px solid #95712d!important;
+}
+#sideMenu .business input,#sideMenu .business textarea,
+#sideMenu .business select{
+ background:#19161a!important;color:#fff1d6!important;
+ border:1px solid #aa8235!important;
+}
+@media(max-width:600px){
+ #mapQuickTools{flex-wrap:nowrap!important}
+ #mapQuickTools button{
+  flex:1 1 0!important;min-width:0!important;
+  padding:9px 4px!important;font-size:11px!important;
+  white-space:normal!important;line-height:1.25!important;
+ }
+ #sideMenu .side-menu-links button{min-height:52px!important}
+}
+
+/* Signature pass 23 — reference-inspired visual-only finishing layer.
+   No markup, business logic, data, map imagery, navigation or event handlers changed. */
+:root{--rp-gold:#f2bf3f;--rp-gold-light:#ffe69b;--rp-line:#b88a31}
+header{
+ border-bottom:1px solid #e4ad39!important;
+ box-shadow:0 8px 28px #0008,0 2px 15px #e7a72a30!important;
+}
+header h1{
+ color:#f6c64b!important;
+ font-weight:900!important;
+ letter-spacing:.035em!important;
+ text-shadow:0 2px 8px #000b,0 0 16px #ffca463d!important;
+}
+#sideMenuOpen,.quick-filters button,.filters button,
+#mapQuickTools button,#refreshNow{
+ box-shadow:inset 0 1px 0 #fff0bb33,0 4px 12px #0008,0 0 10px #e8b13a26!important;
+}
+#mapWrap{
+ border-radius:22px!important;
+ overflow:hidden!important;
+ border:1px solid #b78a34!important;
+ box-shadow:0 9px 28px #0008,0 0 16px #dfaa3026!important;
+}
+#nearestFive .near-item,#parkingList .item,#favoritesList .item{
+ background:linear-gradient(135deg,#29231c 0%,#151416 56%,#0e0e11 100%)!important;
+ border:1px solid #d5a43b!important;
+ border-radius:20px!important;
+ box-shadow:inset 0 1px 0 #ffe9a02a,0 7px 20px #0008!important;
+}
+#nearestFive .near-item button,#parkingList .item button,#favoritesList .item button{
+ background:linear-gradient(180deg,#ffe27b 0%,#e9b633 58%,#d69b1d 100%)!important;
+ color:#17120b!important;
+ border:1px solid #ffdc72!important;
+ border-radius:14px!important;
+ box-shadow:inset 0 1px 0 #fff4b988,0 4px 10px #0006!important;
+}
+#parkingSummary>div{
+ background:linear-gradient(145deg,#30251b,#151417 78%)!important;
+ border:1px solid #d7a53d!important;
+ border-radius:17px!important;
+ box-shadow:inset 0 1px 0 #ffe3a039,0 5px 18px #0006!important;
+}
+#parkingSummary strong{
+ color:#ffda65!important;
+ font-weight:900!important;
+ text-shadow:0 0 12px #eeb53733!important;
+}
+#sideMenu .side-menu-links button,#sideMenu .side-menu-links a{
+ border-color:#c99b3e!important;
+ box-shadow:inset 0 1px 0 #ffe9a02a,0 4px 12px #0006!important;
+}
+#sideMenu .side-menu-top strong{color:#ffe5a1!important}
+#detailSheet{border-radius:22px 22px 0 0!important}
+#detailContent .external-nav-link{
+ border-color:#d7aa49!important;
+ background:linear-gradient(135deg,#30251a,#141316)!important;
+}
+@media(max-width:600px){
+ #mapWrap{border-radius:18px!important}
+ #nearestFive .near-item{border-radius:16px!important}
+ #parkingSummary>div{border-radius:13px!important}
+}
+
+/* Signature pass 24 — visual layout aligned to the chosen compact reference.
+   All original controls remain visible and operational; CSS-only Preview. */
+header{
+ min-height:230px!important;
+ padding:24px 20px 65px!important;
+ align-content:flex-start!important;
+ gap:10px!important;
+}
+.header-brand{flex:1 1 auto!important}
+.header-brand img{width:56px!important;height:56px!important;object-fit:contain!important}
+.header-brand h1{font-size:clamp(28px,6vw,43px)!important;line-height:1.05!important}
+header>small{color:#f5e6c7!important;text-shadow:0 2px 8px #000!important}
+#savedParkingSection{
+ margin:10px 14px!important;padding:10px 14px!important;
+ display:flex!important;flex-wrap:wrap!important;
+ align-items:center!important;gap:8px 14px!important;
+ background:linear-gradient(120deg,#282019,#121215)!important;
+ border:1px solid #c69b3e!important;border-radius:16px!important;
+}
+#savedParkingSection h2{font-size:15px!important;margin:0!important}
+#savedParkingSection #saved{font-size:12px!important;margin:0!important;flex:1 1 90px!important}
+#saveParkingLocation{
+ flex:0 1 auto!important;width:auto!important;min-height:42px!important;
+ padding:9px 12px!important;font-size:12px!important;
+ border-radius:12px!important;line-height:1.3!important;
+}
+.tools{margin-top:4px!important}
+.tools .search{
+ border:1px solid #dbad43!important;border-radius:25px!important;
+ background:linear-gradient(120deg,#211b16,#121216)!important;
+ box-shadow:0 0 12px #e8b13c2b!important;
+}
+.tools .search input{background:transparent!important;border:0!important;min-width:0!important}
+.tools .search button{border-radius:20px!important}
+.quick-filters button{border-radius:15px!important}
+@media(max-width:600px){
+ header{min-height:200px!important;padding:18px 16px 38px!important}
+ .header-brand img{width:48px!important;height:48px!important}
+ .header-brand h1{font-size:30px!important}
+ #savedParkingSection{margin:8px 12px!important;padding:10px 12px!important}
+ #saveParkingLocation{font-size:11px!important}
+ .tools .search{border-radius:18px!important}
+}
+
+/* Signature pass 25 — match premium reference's glass-and-gold controls.
+   Presentation-only; no controls removed, hidden, or reordered. */
+.tools,.panel,.sort-row{
+ background:linear-gradient(145deg,#171418,#0b0b0e)!important;
+}
+#sideMenuOpen,.bottom-nav button{
+ background:linear-gradient(155deg,#332719,#141317)!important;
+ color:#ffe49a!important;border:1px solid #e1ae3c!important;
+ border-radius:17px!important;
+}
+.tools .search:focus-within{
+ border-color:#ffe39b!important;
+ box-shadow:0 0 0 2px #f1c55d44,0 0 18px #f1c55d3b!important;
+}
+#savedParkingSection{
+ box-shadow:inset 0 1px 0 #ffe7a035,0 5px 16px #0007!important;
+}
+#savedParkingSection h2{color:#ffe49a!important}
+#saveParkingLocation{
+ background:linear-gradient(180deg,#ffe68d,#e8b83b 68%,#cf971d)!important;
+ border:1px solid #ffe39a!important;color:#17120a!important;
+}
+#mapQuickTools button{
+ background:linear-gradient(180deg,#30251a,#121316)!important;
+ border:1px solid #e3ae40!important;
+ color:#ffdf8e!important;
+}
+#parkingSummary>div,#nearestFive .near-item,
+#parkingList .item,#favoritesList .item{
+ backdrop-filter:blur(7px);
+ -webkit-backdrop-filter:blur(7px);
+}
+@media(max-width:600px){
+ header{gap:8px!important}
+ .tools,.panel{max-width:100%!important}
+ #savedParkingSection{gap:6px 10px!important}
+ #savedParkingSection h2{font-size:14px!important}
+ #savedParkingSection #saved{font-size:12px!important}
+ #mapQuickTools{gap:5px!important}
+ #mapQuickTools button{font-size:10px!important;letter-spacing:-.02em!important}
+}
+
+/* Signature pass 26 — replace incorrect street/restaurant hero with verified
+   Bosphorus Bridge night photo. Source: Wikimedia Commons,
+   "Bosphorus-Bridge-night-view-Istanbul.jpg", SeablueTravelOfficial,
+   CC BY-SA 4.0: https://creativecommons.org/licenses/by-sa/4.0/
+   Image is used unmodified; CSS overlays do not modify the source file.
+   Credit shown directly on the hero. */
+header{
+ background-image:
+  linear-gradient(180deg,#060710dc 0%,#07081188 48%,#110d0e91 100%),
+  url("https://commons.wikimedia.org/wiki/Special:Redirect/file/Bosphorus-Bridge-night-view-Istanbul.jpg?width=1280")!important;
+ background-position:center,center 55%!important;
+ background-size:cover,cover!important;
+ background-repeat:no-repeat!important;
+ position:relative!important;
+}
+header::after{
+ content:"Fotoğraf: SeablueTravelOfficial · CC BY-SA 4.0";
+ position:absolute;right:9px;bottom:5px;
+ color:#f4dfb8!important;background:#09090b99!important;
+ font-size:9px;line-height:1.3;padding:3px 5px;border-radius:4px;
+ pointer-events:none;
+}
+@media(max-width:600px){
+ header{background-position:center,center 50%!important;background-size:cover,cover!important}
+ header::after{font-size:8px!important}
+}
+
+/* Signature pass 27 — compact, reference-like mobile layout.
+   Existing inputs, filters, save location and buttons all remain operable. */
+@media(max-width:600px){
+ header{
+  display:grid!important;
+  grid-template-columns:52px minmax(0,1fr) 92px!important;
+  align-items:center!important;
+  column-gap:8px!important;
+  row-gap:7px!important;
+  min-height:200px!important;
+  padding:16px 12px 34px!important;
+ }
+ header #sideMenuOpen{grid-column:1!important;grid-row:1!important;min-width:48px!important}
+ header .header-brand{grid-column:2/4!important;grid-row:1!important;min-width:0!important}
+ header .header-brand h1{font-size:clamp(24px,6.5vw,34px)!important;white-space:nowrap!important}
+ header .header-brand img{width:45px!important;height:45px!important}
+ header>small{grid-column:1/3!important;grid-row:2!important;font-size:11px!important;min-width:0!important}
+ header #rotaparkAccountLink{
+  grid-column:3!important;grid-row:2!important;
+  justify-self:end!important;margin:0!important;
+  padding:8px!important;font-size:11px!important;
+ }
+ #savedParkingSection{
+  display:grid!important;grid-template-columns:auto minmax(0,1fr)!important;
+  column-gap:10px!important;row-gap:7px!important;
+  padding:9px 12px!important;
+ }
+ #savedParkingSection h2{grid-column:1!important;font-size:13px!important}
+ #savedParkingSection #saved{grid-column:2!important;min-width:0!important;font-size:11px!important}
+ #savedParkingSection #saveParkingLocation{
+  grid-column:1/3!important;width:100%!important;
+  padding:9px!important;min-height:40px!important;font-size:11px!important;
+ }
+ .tools{padding-top:5px!important;padding-bottom:10px!important}
+ .tools .search{min-height:48px!important}
+ .tools .search input{font-size:14px!important}
+ .tools .search button{min-height:42px!important;padding:9px 14px!important}
+ .tools .actions{margin:6px 0!important}
+ .tools #loc{min-height:42px!important;padding:8px 10px!important}
+ .tools .filters{gap:7px!important}
+ .tools .filters select{min-height:42px!important;padding:8px!important;font-size:12px!important}
+ .quick-filters{gap:7px!important}
+ .quick-filters button{min-height:43px!important;padding:9px 7px!important;font-size:12px!important}
+ .sort-row{gap:7px!important}
+}
+
+/* Signature pass 28 — safer iPhone layout and reference-like golden hierarchy.
+   No functional controls hidden or event handlers altered. */
+@media(max-width:600px){
+ header .header-brand{
+  display:flex!important;align-items:center!important;gap:7px!important;
+  max-width:100%!important;overflow:visible!important;
+ }
+ header .header-brand h1{
+  min-width:0!important;overflow:hidden!important;
+  text-overflow:ellipsis!important;font-size:clamp(23px,6vw,31px)!important;
+ }
+ header #rotaparkAccountLink{max-width:92px!important;white-space:nowrap!important}
+ .tools .search{display:flex!important;align-items:center!important;gap:4px!important}
+ .tools .search input{flex:1 1 0!important;width:0!important}
+ .tools .search button{flex:0 0 auto!important}
+ .tools .filters{
+  display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;
+ }
+ .tools .filters #kindFilter{grid-column:1/-1!important}
+ .tools .filters select{width:100%!important;min-width:0!important}
+ .quick-filters{
+  display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;
+ }
+ .quick-filters button{min-width:0!important;white-space:normal!important}
+ #mapQuickTools{max-width:calc(100% - 20px)!important}
+ #mapQuickTools button{overflow-wrap:normal!important}
+ #parkingSummary{grid-template-columns:repeat(3,minmax(0,1fr))!important}
+}
+@media(max-width:380px){
+ header{grid-template-columns:46px minmax(0,1fr) 80px!important;padding-inline:9px!important}
+ header .header-brand img{width:39px!important;height:39px!important}
+ header .header-brand h1{font-size:23px!important}
+ header #rotaparkAccountLink{max-width:80px!important;font-size:10px!important}
+ #parkingSummary strong{font-size:20px!important}
+}
+
+/* Signature pass 29 — mobile-first discovery density.
+   Keep every filter/action accessible; no DOM or map changes. */
+@media(max-width:600px){
+ .quick-filters{
+  display:flex!important;
+  flex-wrap:nowrap!important;
+  gap:8px!important;
+  overflow-x:auto!important;
+  overflow-y:hidden!important;
+  -webkit-overflow-scrolling:touch;
+  scroll-snap-type:x proximity;
+  scrollbar-width:thin;
+  padding:4px 2px 10px!important;
+ }
+ .quick-filters button{
+  flex:0 0 auto!important;
+  width:auto!important;
+  min-width:116px!important;
+  max-width:190px!important;
+  min-height:44px!important;
+  padding:9px 12px!important;
+  white-space:nowrap!important;
+  scroll-snap-align:start;
+ }
+ .tools .filters{
+  display:flex!important;
+  flex-wrap:nowrap!important;
+  overflow-x:auto!important;
+  gap:8px!important;
+  -webkit-overflow-scrolling:touch;
+  padding-bottom:5px!important;
+ }
+ .tools .filters select,
+ .tools .filters #kindFilter{
+  flex:0 0 160px!important;
+  width:160px!important;
+  min-width:160px!important;
+  grid-column:auto!important;
+  min-height:44px!important;
+ }
+ .sort-row{
+  display:grid!important;
+  grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important;
+  align-items:center!important;
+  padding:7px 12px!important;
+ }
+ .sort-row>span{grid-column:1/-1!important;font-size:12px!important}
+ .sort-row #resetFilters,.sort-row #sortParking{
+  min-width:0!important;
+  width:100%!important;
+  min-height:43px!important;
+  font-size:12px!important;
+ }
+ #savedParkingSection{margin-block:6px!important}
+ .tools{margin-block:0!important}
+}
+
+/* Signature pass 30 — accessible horizontal premium filter chips.
+   No application logic or map layers changed. */
+@media(max-width:600px){
+ .quick-filters,.tools .filters{
+  overscroll-behavior-x:contain;
+  scroll-padding-inline:8px;
+  scrollbar-color:#bc8d34 #171418;
+ }
+ .quick-filters button{
+  border:1px solid #b98e3a!important;
+  background:linear-gradient(155deg,#29221b,#121317)!important;
+  color:#f5e6c8!important;
+  box-shadow:inset 0 1px 0 #ffe6a020!important;
+ }
+ .quick-filters button.active,
+ .quick-filters button[aria-pressed="true"]{
+  border-color:#ffe28a!important;
+  background:linear-gradient(180deg,#ffe48a,#e8b73a)!important;
+  color:#1a140a!important;
+  box-shadow:0 0 13px #f0b63b3c!important;
+ }
+ .quick-filters button:focus-visible,
+ .tools .filters select:focus-visible{
+  outline:2px solid #ffe49a!important;
+  outline-offset:2px!important;
+ }
+ .tools .filters select{
+  background-color:#1b181c!important;
+  color:#f7e9ca!important;
+  border:1px solid #b78a35!important;
+  border-radius:12px!important;
+ }
+ #mapWrap{isolation:isolate}
+ #mapQuickTools{z-index:700!important}
+}
+
+/* Signature pass 31 — final compact spacing of discovery controls.
+   Visual-only, preserving all filters, parking data and map behavior. */
+@media(max-width:600px){
+ .tools .search{margin-bottom:5px!important}
+ .tools .actions{margin-block:4px!important}
+ .tools .filters{margin-block:3px!important}
+ .quick-filters{margin-block:2px!important}
+ .sort-row{margin-block:3px!important}
+ #savedParkingSection{margin-block:5px!important}
+ #savedParkingSection #saveParkingLocation{
+  box-shadow:inset 0 1px 0 #fff3c799,0 4px 12px #0006!important;
+ }
+ #mapWrap{margin-top:8px!important}
+ #mapQuickTools button{
+  border-radius:18px!important;
+  box-shadow:0 5px 18px #000b,0 0 10px #e2ab3926!important;
+ }
+}
+
+/* PREMIUM COMPOSITION v1 — cohesive page redesign, not isolated touch-ups.
+   Scoped to opt-in gold Preview. All functional controls remain available. */
+@media(max-width:600px){
+ body:has(link[href*="black-gold-preview.css"]){
+  background:radial-gradient(ellipse at 50% 0%,#392716 0%,#0b0b0f 37%,#08080b 100%)!important;
+ }
+ header{
+  min-height:260px!important;
+  grid-template-columns:52px minmax(0,1fr) 96px!important;
+  padding:20px 15px 36px!important;
+  background-image:linear-gradient(180deg,#08090dcc 0%,#08090d65 32%,#0a090b33 65%,#0a090bdc 100%),
+   url("https://commons.wikimedia.org/wiki/Special:Redirect/file/Bosphorus-Bridge-night-view-Istanbul.jpg?width=1280")!important;
+  background-position:center,center 56%!important;
+  background-size:cover,cover!important;
+  border-bottom:2px solid #e0ac3b!important;
+ }
+ header .header-brand{align-self:start!important}
+ header .header-brand h1{
+  color:#ffd36b!important;
+  font-size:clamp(25px,6.6vw,34px)!important;
+  text-shadow:0 3px 7px #000,0 0 15px #c38c3150!important;
+ }
+ header>small{align-self:start!important;color:#ffe4ae!important}
+ header #rotaparkAccountLink{
+  background:linear-gradient(145deg,#2c2118,#111114)!important;
+  border:1px solid #dfac44!important;color:#ffe8b1!important;
+ }
+ #savedParkingSection{
+  display:grid!important;grid-template-columns:1fr auto!important;
+  margin:0 12px 8px!important;
+  padding:8px 12px!important;
+  border-radius:0 0 15px 15px!important;
+  border-top:0!important;
+  background:linear-gradient(110deg,#211a16,#111114)!important;
+ }
+ #savedParkingSection h2{grid-column:1!important;font-size:13px!important}
+ #savedParkingSection #saved{grid-column:2!important;font-size:11px!important}
+ #savedParkingSection #saveParkingLocation{
+  grid-column:1/-1!important;min-height:38px!important;
+  padding:8px 10px!important;font-size:11px!important;
+ }
+ .tools{
+  padding:7px 12px 8px!important;
+  margin:0!important;
+  border:0!important;
+  background:linear-gradient(180deg,#121014,#09090c)!important;
+ }
+ .tools .search{
+  min-height:54px!important;
+  border-radius:19px!important;
+  box-shadow:0 0 0 1px #ffe2a02a,0 0 20px #e6a92c30!important;
+ }
+ .tools .search input{font-size:14px!important}
+ .tools .search button{
+  background:linear-gradient(180deg,#ffe48b,#e6af2e)!important;
+  border-radius:14px!important;
+ }
+ .tools .actions{margin:4px 0!important}
+ .tools #loc{
+  background:linear-gradient(135deg,#272016,#121216)!important;
+  border:1px solid #b98a34!important;
+  border-radius:13px!important;
+ }
+ .tools .filters{margin:4px 0!important;padding:3px 0!important}
+ .quick-filters{
+  margin:5px 0 0!important;padding:5px 1px 8px!important;
+ }
+ .quick-filters button{
+  min-height:52px!important;
+  min-width:124px!important;
+  padding:10px 14px!important;
+  border-radius:15px!important;
+  font-weight:750!important;
+  background:linear-gradient(145deg,#2b241a,#111114)!important;
+  box-shadow:inset 0 1px 0 #ffe6a026,0 5px 14px #0007!important;
+ }
+ .quick-filters button.active{
+  background:linear-gradient(180deg,#ffe38b,#e5ad2b)!important;
+ }
+ .sort-row{
+  padding:6px 12px!important;margin:0!important;
+  background:#0b0b0e!important;
+ }
+ #mapWrap{
+  margin:6px 10px 12px!important;
+  width:calc(100% - 20px)!important;
+  border-radius:25px!important;
+  border:1px solid #d9a83c!important;
+  box-shadow:0 0 24px #e4aa2b25,0 12px 26px #000a!important;
+ }
+ #parkingSummary>div{
+  border-radius:16px!important;
+  background:linear-gradient(145deg,#31251b,#111115)!important;
+ }
+ #nearestFive .near-item,#parkingList .item,#favoritesList .item{
+  border-radius:19px!important;
+  border-color:#dfad41!important;
+  background:linear-gradient(125deg,#292219,#0d0e12)!important;
+ }
+}
+
+/* Premium composition v2: one-screen mobile hierarchy.
+   Preserve the original controls, selectors and event handlers. */
+@media(max-width:600px){
+ header{
+  min-height:178px!important;
+  height:178px!important;
+  padding:14px 14px 14px!important;
+  grid-template-columns:48px minmax(0,1fr) 100px!important;
+  align-content:start!important;
+  gap:6px!important;
+  background-position:center,center 58%!important;
+ }
+ header .header-brand{min-width:0!important}
+ header .header-brand h1{font-size:clamp(24px,6.1vw,31px)!important}
+ header>small{font-size:11px!important;line-height:1.2!important}
+ header #rotaparkAccountLink{padding:8px!important;font-size:11px!important}
+ #savedParkingSection{
+  display:flex!important;
+  flex-wrap:wrap!important;
+  align-items:center!important;
+  gap:4px 10px!important;
+  padding:7px 11px!important;
+  margin:0 10px 6px!important;
+  border-radius:0 0 14px 14px!important;
+ }
+ #savedParkingSection h2{
+  flex:0 0 auto!important;
+  margin:0!important;
+  font-size:12px!important;
+ }
+ #savedParkingSection #saved{
+  flex:1 1 auto!important;
+  text-align:right!important;
+  margin:0!important;
+  font-size:11px!important;
+ }
+ #savedParkingSection #saveParkingLocation{
+  flex:1 0 100%!important;
+  min-height:34px!important;
+  margin:2px 0 0!important;
+  padding:6px 9px!important;
+  font-size:11px!important;
+ }
+ .tools{padding:5px 10px!important}
+ .tools .search{min-height:48px!important;margin:0!important}
+ .tools .search input{min-height:44px!important}
+ .tools .search button{min-height:40px!important}
+ .tools .actions{margin:3px 0!important}
+ .tools #loc{min-height:37px!important;padding:6px!important}
+ .tools .filters select,.tools .filters #kindFilter{
+  min-height:37px!important;
+  flex-basis:146px!important;
+  width:146px!important;
+  min-width:146px!important;
+  font-size:12px!important;
+ }
+ .quick-filters{gap:6px!important;padding:2px 1px 5px!important}
+ .quick-filters button{
+  min-height:43px!important;
+  min-width:108px!important;
+  padding:7px 10px!important;
+  font-size:12px!important;
+ }
+ .sort-row{padding:4px 10px!important;gap:5px!important}
+ .sort-row>span{font-size:11px!important}
+ .sort-row #resetFilters,.sort-row #sortParking{min-height:36px!important}
+ #parkingSummary{
+  display:grid!important;
+  grid-template-columns:repeat(3,minmax(0,1fr))!important;
+  gap:6px!important;
+  padding:5px 10px!important;
+ }
+ #parkingSummary>div{min-width:0!important;padding:8px 5px!important}
+ #parkingSummary strong{font-size:20px!important}
+ #parkingSummary span{font-size:10px!important}
+ #mapWrap{margin:5px 10px 10px!important}
+}
+
+/* Gold premium mobile hierarchy: discovery first, details on demand. */
+.gold-advanced-filters{
+ margin:5px 0 1px!important;
+ border:1px solid #b58b3c!important;
+ border-radius:14px!important;
+ background:#171418!important;
+ color:#f4dfb2!important;
+ overflow:hidden!important;
+}
+.gold-advanced-filters>summary{
+ cursor:pointer;
+ list-style:none;
+ padding:11px 14px!important;
+ font-size:13px!important;
+ font-weight:700!important;
+}
+.gold-advanced-filters>summary::-webkit-details-marker{display:none}
+.gold-advanced-filters>summary:after{content:"⌄";float:right;color:#f5ca68}
+.gold-advanced-filters[open]>summary:after{content:"⌃"}
+.gold-advanced-filters .filters{padding:8px!important}
+.gold-advanced-filters .sort-row{padding:8px!important}
+@media(max-width:600px){
+ #savedParkingSection{margin:8px 10px!important;border-radius:16px!important}
+ .gold-advanced-filters{margin:5px 0!important}
+ #mapWrap{margin-top:7px!important}
+}
+
+/* Branded Istanbul skyline: self-hosted, no third-party image dependency. */
+header{
+ background-image:linear-gradient(180deg,#03050b9c 0%,#08090b18 40%,#08090bd1 100%),url("/themes/rotapark-istanbul-night.svg")!important;
+ background-size:cover!important;
+ background-position:center,center 48%!important;
+}
+header::after{content:""!important;display:none!important}
+@media(max-width:600px){
+ header{
+  background-image:linear-gradient(180deg,#03050b9c 0%,#08090b16 45%,#08090bd9 100%),url("/themes/rotapark-istanbul-night.svg")!important;
+  background-position:center,center 48%!important;
+ }
+}
+
+/* Photographic Istanbul hero, replacing the rejected flat illustration.
+   Two real Commons photos composited with a soft fade, no app logic changed.
+   Galata: Jood.almas (CC0); Bosphorus: Andrey Filippov (CC BY 2.0). */
+header{
+ position:relative!important;
+ isolation:isolate!important;
+ background-image:
+  linear-gradient(180deg,#050810b8 0%,#05081030 44%,#07080bdb 100%),
+  url("https://commons.wikimedia.org/wiki/Special:Redirect/file/Bosphorus%20Bridge%20at%20night.jpg?width=1280")!important;
+ background-position:center,center 49%!important;
+ background-size:cover,cover!important;
+}
+header::before{
+ content:""!important;
+ display:block!important;
+ position:absolute!important;
+ inset:0 auto 0 0!important;
+ width:46%!important;
+ height:100%!important;
+ pointer-events:none!important;
+ z-index:0!important;
+ background-image:
+  linear-gradient(180deg,#06091477,#06091422 55%,#08090bc2),
+  url("https://commons.wikimedia.org/wiki/Special:Redirect/file/Galata%20tower%20at%20night.jpg?width=640")!important;
+ background-size:cover,cover!important;
+ background-position:center,center 41%!important;
+ -webkit-mask-image:linear-gradient(90deg,#000 0%,#000 58%,transparent 100%)!important;
+ mask-image:linear-gradient(90deg,#000 0%,#000 58%,transparent 100%)!important;
+ border:0!important;
+}
+header>*{position:relative!important;z-index:1!important}
+header::after{
+ content:"Fotoğraflar: Jood.almas (CC0) · Andrey Filippov (CC BY 2.0)"!important;
+ display:block!important;
+ position:absolute!important;
+ z-index:1!important;
+ bottom:3px!important;
+ left:12px!important;
+ width:auto!important;
+ font-size:8px!important;
+ line-height:1!important;
+ color:#fff9!important;
+ background:transparent!important;
+ pointer-events:none!important;
+}
+@media(max-width:600px){
+ header{
+  background-image:
+   linear-gradient(180deg,#050810a8 0%,#0508101e 45%,#07080bdb 100%),
+   url("https://commons.wikimedia.org/wiki/Special:Redirect/file/Bosphorus%20Bridge%20at%20night.jpg?width=1280")!important;
+  background-position:center,center 49%!important;
+ }
+ header::before{width:43%!important;background-position:center,center 41%!important}
+}
+
+/* REFERENCE-MATCH PASS — uploaded ROTAPARK black/gold mobile mockup.
+   Restore full filter hierarchy and Park Yerim hero card; preserve functionality. */
+header{background-image:linear-gradient(180deg,#0008,#0002 54%,#000b),url("https://commons.wikimedia.org/wiki/Special:Redirect/file/Bosphorus%20Bridge%20at%20night.jpg?width=1280")!important}
+header::before{background-image:linear-gradient(180deg,#0005,#0002 65%,#0009),url("https://commons.wikimedia.org/wiki/Special:Redirect/file/Galata%20tower%20at%20night.jpg?width=640")!important}
+header .header-brand h1{font-style:italic!important;letter-spacing:-.6px!important}
+header #rotaparkAccountLink{color:#fff!important;border-radius:22px!important}
+#goldMainNav{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:18px 14px 28px}
+#goldMainNav button{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;min-height:98px;border:1.5px solid #dfae46;border-radius:20px;background:linear-gradient(155deg,#30251b,#0a0b0e 75%);color:#fff;box-shadow:0 0 12px #ffc5483d,inset 0 1px 0 #ffedac4d;font-size:17px}
+#goldMainNav button span{font-size:32px;line-height:1;color:#ffd451;text-shadow:0 0 12px #fbbd40}
+#goldMainNav button strong{font-size:15px}
+@media(max-width:600px){
+ header{height:210px!important;min-height:210px!important;padding:18px 14px 16px!important;background-position:center,center 50%!important}
+ header::before{width:46%!important}
+ header .header-brand h1{font-size:clamp(26px,7vw,35px)!important}
+ header>small{font-size:12px!important}
+ #savedParkingSection{
+  display:grid!important;grid-template-columns:1fr auto!important;
+  gap:8px!important;padding:15px!important;margin:0 12px 16px!important;
+  border:1.5px solid #e6b649!important;border-radius:24px!important;
+  background:radial-gradient(ellipse at 85% 50%,#42301955,transparent 52%),linear-gradient(140deg,#231d19,#08090c)!important;
+  box-shadow:0 0 15px #f9bd4330!important;
+ }
+ #savedParkingSection h2{grid-column:1!important;font-size:23px!important;font-weight:800!important;line-height:1.4!important}
+ #savedParkingSection #saved{grid-column:1/-1!important;text-align:left!important;font-size:16px!important;color:#eee!important}
+ #savedParkingSection #saveParkingLocation{
+  grid-column:1/-1!important;min-height:62px!important;padding:12px 16px!important;
+  font-size:15px!important;font-weight:800!important;border-radius:18px!important;
+  color:#1a1105!important;background:linear-gradient(180deg,#ffe784,#ffc42b 76%,#d9990c)!important;
+  box-shadow:0 0 13px #ffcb4c65!important;
+ }
+ .tools{padding:6px 12px 8px!important;background:transparent!important}
+ .tools .search{min-height:62px!important;margin-bottom:12px!important;border-radius:22px!important}
+ .tools .search input{min-height:60px!important;font-size:15px!important}
+ .tools .search button{min-height:52px!important;padding:8px 17px!important;font-size:18px!important}
+ .tools .actions{margin:0 0 12px!important}
+ .tools #loc{min-height:58px!important;border-radius:18px!important;font-size:17px!important;font-weight:750!important}
+ .tools .filters{
+  display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;
+  gap:7px!important;overflow:visible!important;margin:0 0 12px!important;padding:0!important;
+ }
+ .tools .filters select,.tools .filters #kindFilter{
+  min-width:0!important;width:100%!important;max-width:100%!important;
+  min-height:49px!important;flex:auto!important;padding:5px!important;
+  font-size:11px!important;border-radius:16px!important;
+ }
+ .quick-filters{gap:8px!important;margin:0 0 6px!important;padding:4px 0 8px!important}
+ .quick-filters button{min-height:53px!important;min-width:142px!important;padding:10px 13px!important;font-size:13px!important}
+ .sort-row{display:grid!important;grid-template-columns:auto 1fr 1fr!important;gap:6px!important;margin:4px 12px 12px!important;padding:0!important}
+ .sort-row>span{grid-column:auto!important;align-self:center!important;font-size:11px!important}
+ .sort-row #resetFilters,.sort-row #sortParking{min-height:46px!important;font-size:12px!important}
+ #installHint:not([hidden]){margin:10px 12px 12px!important;padding:14px!important;border:1.5px solid #ffd25b!important;border-radius:18px!important;background:linear-gradient(135deg,#3d2917,#0c0c0f)!important;box-shadow:0 0 18px #ffbe4b66!important}
+ #goldMainNav{margin:12px 12px 20px!important;gap:8px!important}
+ #goldMainNav button{min-height:95px!important}
+ #mapWrap{margin-top:10px!important}
+}
+
+/* Reference fidelity: logo and photographic gold-night hero. */
+header{
+ background-color:#050505!important;
+ border-bottom:2px solid #f2c357!important;
+ box-shadow:0 8px 18px #000a!important;
+}
+header .header-brand{
+ display:flex!important;align-items:center!important;gap:7px!important;
+ overflow:visible!important;
+}
+header .header-brand img{
+ width:64px!important;height:64px!important;object-fit:contain!important;
+ filter:drop-shadow(0 0 6px #ffc83b7c)!important;
+}
+header .header-brand h1{
+ font-style:italic!important;
+ font-weight:900!important;
+ white-space:nowrap!important;
+ color:#fff!important;
+ text-shadow:0 2px 7px #000b!important;
+}
+header .header-brand h1 span{
+ color:#f8c647!important;
+}
+header>small{
+ color:#fff!important;
+ text-shadow:0 2px 5px #000!important;
+}
+header #sideMenuOpen{
+ background:#080809!important;
+ border:1.5px solid #e6b448!important;
+ border-radius:16px!important;
+ color:#fff!important;
+ box-shadow:0 0 8px #f1c45844!important;
+}
+header #rotaparkAccountLink{
+ border-radius:999px!important;
+ border:1.5px solid #eac153!important;
+ background:linear-gradient(120deg,#171410,#080809)!important;
+ color:#fff!important;
+ box-shadow:0 0 8px #ffcb584d!important;
+}
+#savedParkingSection{position:relative!important}
+#savedParkingSection:after{
+ content:"Ⓟ"!important;
+ display:grid!important;place-items:center!important;
+ position:absolute!important;right:21px!important;top:17px!important;
+ width:43px!important;height:43px!important;border-radius:50%!important;
+ color:#111!important;background:linear-gradient(#ffe984,#e6a91b)!important;
+ border:2px solid #fce79d!important;
+ font-size:29px!important;font-weight:900!important;
+ box-shadow:0 0 15px #ffc74499!important;
+ pointer-events:none!important;
+}
+#savedParkingSection h2{padding-right:55px!important}
+#savedParkingSection #saveParkingLocation:after{
+ content:"›"!important;float:right;font-size:29px;line-height:18px;
+}
+.tools .search{position:relative!important}
+.tools .search:before{
+ content:"⌕";position:absolute;left:14px;top:50%;transform:translateY(-50%);
+ font-size:28px;color:#f9c54e;pointer-events:none;z-index:1;
+}
+.tools .search input{padding-left:46px!important}
+@media(max-width:600px){
+ header{height:212px!important;min-height:212px!important;
+  grid-template-columns:65px minmax(0,1fr) 120px!important;
+  padding:18px 13px 16px!important;column-gap:8px!important;
+ }
+ header .header-brand img{width:58px!important;height:58px!important}
+ header .header-brand h1{font-size:clamp(23px,5.6vw,31px)!important}
+ header #rotaparkAccountLink{font-size:12px!important;padding:8px 10px!important}
+ header>small{font-size:12px!important}
+ #savedParkingSection{margin-top:0!important}
+ #savedParkingSection #saved{margin-top:6px!important}
+ #savedParkingSection #saveParkingLocation{margin-top:8px!important}
+ .tools .filters select{font-size:11px!important;text-overflow:ellipsis!important}
+ #goldMainNav button{border-radius:19px!important}
+ #goldMainNav button:focus-visible{outline:2px solid #ffe389;outline-offset:3px}
+}
+
+/* ROTAPARK nationwide premium concept v1: no city-specific imagery.
+   Subtle typography, restrained highlights, real controls retained. */
+header{
+ background-image:linear-gradient(180deg,#030407b8 0%,#03040718 39%,#03040788 100%),url("/themes/rotapark-turkiye-gold-hero.svg")!important;
+ background-color:#050609!important;
+ background-size:cover,cover!important;
+ background-position:center,center center!important;
+}
+header::before,header::after{display:none!important;content:none!important}
+header .header-brand h1{
+ font-style:italic!important;
+ font-weight:800!important;
+ letter-spacing:-.8px!important;
+ text-shadow:0 1px 5px #0009!important;
+}
+header .header-brand h1 span{color:#f0be52!important}
+#savedParkingSection,#installHint:not([hidden]),.tools .search,.tools #loc,
+.tools .filters select,.quick-filters button,.sort-row button,.sort-row select,#goldMainNav button{
+ box-shadow:0 2px 9px #c58b2725!important;
+}
+#savedParkingSection,#installHint:not([hidden]){border-width:1px!important}
+#goldMainNav button{border-width:1px!important}
+#goldMainNav button span{font-size:26px!important;text-shadow:0 0 7px #d4a23a55!important}
+#goldMainNav button strong{font-size:15px!important;font-weight:650!important}
+#savedParkingSection #saveParkingLocation{font-weight:700!important}
+@media(max-width:600px){
+ header{min-height:205px!important;height:205px!important;background-position:center,center 50%!important}
+ header .header-brand h1{font-size:clamp(25px,6vw,31px)!important}
+ header>small{font-size:12px!important;font-weight:450!important}
+ #savedParkingSection h2{font-size:21px!important}
+ #savedParkingSection #saved{font-size:15px!important}
+ #savedParkingSection #saveParkingLocation{font-size:15px!important;min-height:57px!important}
+ .tools .search input{font-size:15px!important}
+ .tools .search button{font-size:16px!important}
+ .tools #loc{font-size:16px!important}
+ .tools .filters select{font-size:12px!important}
+ .quick-filters button{font-size:13px!important;font-weight:650!important}
+ .sort-row>span{font-size:12px!important}
+ #goldMainNav button{min-height:84px!important}
+}
+
+/* iPhone visual QA: remove collisions, restore clean readable hierarchy. */
+@media(max-width:600px){
+ header{
+  display:grid!important;
+  grid-template-columns:54px minmax(0,1fr) 104px!important;
+  grid-template-rows:65px auto 1fr!important;
+  align-items:center!important;
+  align-content:start!important;
+  gap:3px 8px!important;
+  padding:14px 12px 12px!important;
+  height:210px!important;min-height:210px!important;
+  overflow:hidden!important;
+ }
+ header #sideMenuOpen{grid-column:1!important;grid-row:1!important;width:53px!important;height:54px!important;align-self:center!important}
+ header .header-brand{
+  grid-column:2!important;grid-row:1!important;
+  min-width:0!important;gap:5px!important;
+  align-self:center!important;justify-self:start!important;
+ }
+ header .header-brand img{width:46px!important;height:46px!important;flex-shrink:0!important}
+ header .header-brand h1{font-size:clamp(20px,5.2vw,27px)!important;line-height:1.1!important;letter-spacing:-.7px!important}
+ header #rotaparkAccountLink{
+  grid-column:3!important;grid-row:1!important;
+  justify-self:end!important;align-self:center!important;
+  min-width:0!important;padding:8px 7px!important;font-size:11px!important;
+  white-space:nowrap!important;
+ }
+ header>small{
+  grid-column:1/-1!important;grid-row:2!important;
+  align-self:start!important;justify-self:center!important;
+  text-align:center!important;max-width:100%!important;
+  margin:0!important;padding:0 4px!important;
+  font-size:12px!important;line-height:1.3!important;
+  color:#f4e9ce!important;text-shadow:0 2px 4px #000!important;
+ }
+ #savedParkingSection{
+  display:grid!important;
+  grid-template-columns:minmax(0,1fr) 48px!important;
+  grid-template-rows:auto auto auto!important;
+  padding:14px 15px!important;
+  gap:7px!important;
+  overflow:hidden!important;
+  margin:0 12px 12px!important;
+ }
+ #savedParkingSection h2{
+  grid-column:1!important;grid-row:1!important;
+  padding:0!important;margin:0!important;
+  font-size:21px!important;line-height:1.35!important;
+  min-width:0!important;
+ }
+ #savedParkingSection::after{
+  grid-column:2!important;grid-row:1/3!important;
+  position:static!important;
+  width:38px!important;height:38px!important;
+  justify-self:end!important;align-self:center!important;
+  font-size:25px!important;
+ }
+ #savedParkingSection #saved{
+  grid-column:1!important;grid-row:2!important;
+  font-size:15px!important;text-align:left!important;
+  margin:0!important;
+ }
+ #savedParkingSection #saveParkingLocation{
+  grid-column:1/-1!important;grid-row:3!important;
+  margin:4px 0 0!important;
+  font-size:14px!important;line-height:1.25!important;
+  padding:10px 22px 10px 12px!important;
+  min-height:58px!important;
+  position:relative!important;
+ }
+ #savedParkingSection #saveParkingLocation::after{
+  position:absolute!important;right:10px!important;top:50%!important;
+  transform:translateY(-50%)!important;float:none!important;
+ }
+ .tools{min-width:0!important;max-width:100%!important}
+ .tools .search{min-width:0!important}
+ .tools .search input{min-width:0!important;font-size:14px!important}
+ .tools .filters{
+  grid-template-columns:repeat(3,minmax(0,1fr))!important;
+  gap:6px!important;min-width:0!important;
+ }
+ .tools .filters select{font-size:11px!important;padding:5px 3px!important;min-width:0!important}
+ .quick-filters{
+  display:grid!important;
+  grid-template-columns:repeat(3,minmax(0,1fr))!important;
+  overflow:visible!important;gap:6px!important;
+  width:100%!important;max-width:100%!important;
+ }
+ .quick-filters button{
+  min-width:0!important;width:100%!important;
+  min-height:49px!important;
+  padding:8px 4px!important;
+  white-space:normal!important;
+  font-size:11px!important;line-height:1.2!important;
+ }
+ .sort-row{grid-template-columns:1fr 1.3fr 1fr!important;gap:5px!important}
+ .sort-row>span{font-size:11px!important}
+ .sort-row #resetFilters,.sort-row #sortParking{min-width:0!important;padding:6px!important;font-size:11px!important}
+}

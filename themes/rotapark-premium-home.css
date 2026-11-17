@@ -1,0 +1,509 @@
+/* ROTAPARK screenshot-reference home: preview only, real live map and cards. */
+:root{--rp-gold:#f7c44e}
+body{background:#050609!important;color:#f7f4e9!important}
+header{background:linear-gradient(180deg,#04102430,#02030655),url("/themes/rotapark-turkiye-gold-hero.svg") center/cover,#070b13!important;position:relative!important;box-sizing:border-box!important;border-bottom:1px solid #e4a93d!important}
+header .header-brand img{border-radius:0!important;box-shadow:none!important;object-fit:contain!important}
+header .header-brand h1{font-style:italic!important;white-space:nowrap!important;color:#fff!important}
+header .header-brand h1 span{color:#f6bd4c!important}
+#rpNotificationShortcut{background:#080b10d9!important;border:1px solid #e8b13d!important;border-radius:50%!important;color:#fbd56e!important;font-size:23px!important;box-shadow:0 0 9px #edb53e44!important}
+#rpFilterToggle{background:#070a10!important;color:#ffd15e!important;border:1px solid #e9b540!important;font-size:27px!important;flex:0 0 49px!important}
+.tools{background:#050609!important}
+.tools .search{display:flex!important;align-items:stretch!important;gap:7px!important}
+.tools .search input{border:1px solid #dba33a!important;border-radius:30px!important;background:#0c0c10ed!important;color:#fff!important;box-shadow:0 0 10px #d99b3c44!important}
+.tools .search #search{display:none!important}
+#rpOperatorShortcuts{display:grid!important;grid-template-columns:repeat(6,minmax(0,1fr))!important;gap:7px!important;margin:12px 0!important}
+#rpOperatorShortcuts button{min-width:0!important;min-height:69px!important;border:1px solid #e6ac3c!important;border-radius:14px!important;padding:6px 2px!important;background:linear-gradient(145deg,#282016,#080a0e 65%)!important;color:#f7f4e9!important;box-shadow:0 2px 7px #d49a3933!important;display:flex!important;flex-direction:column!important;align-items:center!important;justify-content:center!important;gap:3px!important}
+#rpOperatorShortcuts button span{font-size:23px!important;color:#ffd262!important;line-height:1!important}
+#rpOperatorShortcuts button small{font-size:10px!important;color:#fff!important;white-space:nowrap!important;letter-spacing:-.2px!important}
+#parkingSummary{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:8px!important;background:#050609!important;padding:6px 12px 12px!important;margin:0!important}
+#parkingSummary>div{background:linear-gradient(140deg,#251e13,#08090c)!important;border:1px solid #e6ae41!important;border-radius:15px!important;padding:9px 3px!important;box-shadow:0 1px 7px #dca5442c!important}
+#parkingSummary strong{font-size:23px!important;color:#ffd45f!important;font-weight:800!important}
+#parkingSummary span{font-size:10px!important;color:#eee3cd!important}
+#mapWrap{margin:0 8px!important;border:1px solid #bb913b!important;border-radius:23px!important;overflow:hidden!important;box-shadow:0 0 11px #cf9e4033!important}
+#mapQuickTools{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:5px!important}
+#mapQuickTools button{font-size:11px!important;border:1px solid #e8b13d!important;border-radius:30px!important;background:#0b0d11eb!important;color:#fff!important;box-shadow:0 0 7px #f1b74844!important;min-width:0!important;padding:9px 3px!important;white-space:normal!important}
+#rpResultsHeading{display:flex!important;align-items:baseline!important;gap:8px!important;justify-content:space-between!important;margin:14px 13px 9px!important}
+#rpResultsHeading strong{font-size:19px!important;color:#fff!important}
+#rpResultsHeading span{font-size:12px!important;color:#d8d1c7!important}
+.rp-saved-secondary{margin-top:18px!important}
+@media(max-width:600px){
+ header{height:178px!important;min-height:178px!important;padding:10px 12px!important;display:grid!important;grid-template-columns:45px minmax(0,1fr) 38px 38px!important;grid-template-rows:70px auto!important;gap:5px!important;align-items:start!important}
+ header #sideMenuOpen{grid-column:1!important;grid-row:1!important;width:43px!important;height:48px!important;align-self:center!important;font-size:22px!important}
+ header .header-brand{grid-column:2!important;grid-row:1!important;justify-self:center!important;align-self:center!important;display:flex!important;gap:4px!important;min-width:0!important}
+ header .header-brand img{width:40px!important;height:49px!important}
+ header .header-brand h1{font-size:clamp(18px,5.4vw,27px)!important;letter-spacing:-.7px!important}
+ header>small{grid-column:1/-1!important;grid-row:2!important;text-align:center!important;justify-self:center!important;font-size:11px!important;margin:0!important;color:#fff1d6!important;text-shadow:0 1px 4px #000!important}
+ header #rotaparkAccountLink{grid-column:4!important;grid-row:1!important;align-self:center!important;justify-self:end!important;width:37px!important;height:40px!important;min-width:37px!important;max-width:37px!important;overflow:hidden!important;border-radius:50%!important;padding:5px!important;display:flex!important;align-items:center!important;justify-content:center!important;background:#0a0b0de8!important;border:1px solid #e5aa3e!important;font-size:0!important}
+ header #rotaparkAccountLink span:first-child{font-size:20px!important}
+ header #rotaparkAccountLabel{display:none!important}
+ #rpNotificationShortcut{grid-column:3!important;grid-row:1!important;align-self:center!important;width:37px!important;height:40px!important;padding:4px!important}
+ .tools{padding:10px 10px 0!important}
+ .tools .search input{font-size:14px!important;min-height:47px!important;padding:11px 14px!important}
+ #rpFilterToggle{min-height:47px!important;padding:3px!important}
+ .tools .actions,.tools .filters,.tools .quick-filters,.sort-row{display:none!important}
+ body.rp-filters-open .tools .actions{display:flex!important}
+ body.rp-filters-open .tools .filters{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:5px!important}
+ body.rp-filters-open .tools .quick-filters{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:5px!important}
+ body.rp-filters-open .sort-row{display:flex!important}
+ #rpOperatorShortcuts{gap:5px!important}
+ #rpOperatorShortcuts button{min-height:65px!important;border-radius:12px!important}
+ #rpOperatorShortcuts button span{font-size:20px!important}
+ #rpOperatorShortcuts button small{font-size:9px!important}
+ #parkingSummary{gap:6px!important;padding:5px 10px 12px!important}
+ #parkingSummary>div{padding:8px 2px!important}
+ #parkingSummary strong{font-size:21px!important}
+ #parkingSummary span{font-size:9px!important}
+ #mapWrap{margin:0 7px!important}
+ #mapQuickTools button{font-size:10px!important}
+ #savedParkingSection{margin:18px 12px!important}
+}
+
+/* Black & Gold color correction — preserve existing layout and functional elements. */
+:root{--rp-ink:#080809;--rp-surface:#14110f;--rp-gold:#f4bd48;--rp-gold-light:#ffe18a}
+body,main,.app-shell{background-color:#050506!important;color:#f7f3e8!important}
+#savedParkingSection{
+ background:linear-gradient(135deg,#211a12 0%,#11100e 45%,#08090b 100%)!important;
+ border:1px solid #e5b34d!important;
+ box-shadow:0 0 13px #d49d3938,inset 0 1px 0 #ffe6a522!important;
+ color:#fff5df!important;
+}
+#savedParkingSection h2{color:#fff3d8!important}
+#savedParkingSection #saved,#savedParkingSection .hint{color:#e2d6c3!important}
+#savedParkingSection #saveParkingLocation{
+ background:linear-gradient(180deg,#ffe38d 0%,#ffd35c 35%,#e9a919 100%)!important;
+ color:#1c1304!important;
+ border:1px solid #fff0aa!important;
+ box-shadow:0 3px 11px #efb13d4a!important;
+ font-weight:750!important;
+}
+#savedParkingSection #saveParkingLocation:hover{filter:brightness(1.04)!important}
+#sideMenuOpen{
+ background:linear-gradient(145deg,#272015,#090a0d)!important;
+ color:#ffcf60!important;border:1px solid #e5b341!important;
+ box-shadow:0 0 10px #e6a93b3d!important;
+}
+.tools .search{
+ background:#15110e!important;
+ border:1px solid #d7a23c!important;
+ border-radius:24px!important;
+ box-shadow:0 0 9px #c8963540!important;
+ padding:5px!important;
+}
+.tools .search input{background:#09090b!important;border:1px solid #e8b848!important}
+#rpFilterToggle{
+ background:linear-gradient(135deg,#2b2112,#09090a)!important;
+ border:1px solid #f0bd50!important;
+ color:#ffd15d!important;
+ box-shadow:0 0 7px #df9f384d!important;
+}
+#rpOperatorShortcuts button{
+ background:linear-gradient(150deg,#312516,#12100e 46%,#060608)!important;
+ border:1px solid #edb747!important;
+ color:#fff4d9!important;
+ box-shadow:0 0 8px #e9a93d44,inset 0 1px 0 #ffeb9d22!important;
+}
+#rpOperatorShortcuts button:active{background:#493115!important}
+#parkingSummary{background:#050506!important}
+#parkingSummary>div{
+ background:linear-gradient(145deg,#2c2114,#0a0a0c 75%)!important;
+ border:1px solid #efb744!important;
+ box-shadow:0 0 8px #e3a63a3b!important;
+}
+#parkingSummary strong{color:#ffd464!important}
+#parkingSummary span{color:#f3e9d5!important}
+.bottom-nav,#goldMainNav{
+ background:linear-gradient(180deg,#16110c,#050506)!important;
+ border-color:#d6a13d!important;
+ box-shadow:0 -3px 13px #b987332b!important;
+}
+.bottom-nav button,#goldMainNav button{
+ background:linear-gradient(145deg,#2c2215,#08090b)!important;
+ border:1px solid #e7b346!important;
+ color:#fff3dc!important;
+ box-shadow:0 0 8px #e7ae4040!important;
+}
+.bottom-nav button.active,#goldMainNav button.active{
+ background:linear-gradient(180deg,#ffe08a,#edb637)!important;
+ color:#1b1307!important;
+}
+#mapWrap{border-color:#e0af49!important}
+#mapQuickTools button{background:#100e0bee!important;color:#fff5df!important}
+#rpResultsHeading strong{color:#fff5e6!important}
+.park-card,.parking-card,.park-item{
+ background:linear-gradient(145deg,#201911,#090a0d 75%)!important;
+ border-color:#d8a53f!important;
+}
+.park-card button,.parking-card button,.park-item button{border-color:#d6a23e!important}
+@media(max-width:600px){
+ #savedParkingSection{margin:14px 12px!important}
+ #savedParkingSection #saveParkingLocation{min-height:55px!important;font-size:14px!important}
+ .bottom-nav button{color:#fce9bd!important}
+}
+
+/* Gold Preview: finish lower-page palette; keep status/legend meaning intact. */
+#installHint:not([hidden]){
+ background:linear-gradient(145deg,#241b11,#0c0b0b 75%)!important;
+ color:#f6eddd!important;
+ border:1px solid #e7b449!important;
+ border-radius:18px!important;
+ box-shadow:0 0 9px #e0a53736!important;
+}
+#installHint strong{color:#ffe0a0!important}
+#installHint div{color:#efe6d8!important}
+#dismissInstall{
+ background:#2c2112!important;
+ color:#ffd76e!important;
+ border:1px solid #dca940!important;
+}
+#refreshNow{
+ background:linear-gradient(180deg,#ffdf85,#efb72e)!important;
+ color:#201604!important;
+ border:1px solid #ffe6a2!important;
+ border-radius:17px!important;
+ box-shadow:0 0 12px #e6a83d5b!important;
+}
+#status,#parkingDataFreshness{background:#050506!important;color:#ddd4c5!important}
+.parking-legend{
+ background:linear-gradient(145deg,#21190f,#0b0a0a)!important;
+ border:1px solid #d7a43e!important;
+ border-radius:17px!important;
+ color:#f3e7d2!important;
+ box-shadow:0 0 8px #d4a23d2d!important;
+ padding:13px!important;
+ margin:9px 12px!important;
+}
+.parking-legend span{color:#f2e6d1!important}
+#emptyNotice,#updateNotice{
+ background:#17120c!important;
+ border:1px solid #d8a73d!important;
+ color:#f4e9d5!important;
+}
+#emptyNotice button,#installUpdate{
+ background:linear-gradient(180deg,#ffe189,#f1b934)!important;
+ color:#241705!important;
+}
+#rpResultsHeading{border-top:1px solid #c6933655!important;padding-top:13px!important}
+#rpResultsHeading strong{font-size:19px!important}
+#rpResultsCount{color:#efcc81!important}
+#mapWrap+#rpResultsHeading~section,
+#mapWrap+#rpResultsHeading~div{border-color:#cba03c}
+#nearbyParking,#nearbyParkingSection,#nearestParking,#parkingResults,#results,#parkingList{
+ background:#0a0908!important;color:#f6f0e5!important;
+}
+#nearbyParking button,#nearbyParkingSection button,#nearestParking button,
+#parkingResults button,#results button,#parkingList button{
+ border:1px solid #dbab43!important;
+ box-shadow:0 0 6px #d49d392b!important;
+}
+#nearbyParking input,#nearbyParkingSection input,#nearestParking input,
+#parkingResults input,#results input,#parkingList input{
+ background:#100e0c!important;color:#f7f0e3!important;
+ border:1px solid #d6a63f!important;
+}
+.bottom-nav,.bottom-nav-wrap,.bottom-navigation{
+ background:#090807!important;border-top:1px solid #c79b3b!important;
+}
+.bottom-nav button{
+ background:linear-gradient(145deg,#261c10,#090909)!important;
+ color:#f7e8c9!important;
+ border:1px solid #e1ad40!important;
+ box-shadow:0 0 8px #d99f3c4d!important;
+}
+#sideMenuOpen{
+ position:relative!important;top:auto!important;left:auto!important;
+ transform:none!important;z-index:4!important;
+}
+@media(max-width:600px){
+ #installHint:not([hidden]){margin:10px 12px!important;padding:14px!important}
+ #refreshNow{min-height:48px!important;font-size:14px!important}
+ .parking-legend{font-size:12px!important;line-height:1.55!important}
+ #sideMenuOpen{position:relative!important;top:auto!important;left:auto!important}
+}
+
+/* Parking discovery and live cards — screenshot QA pass. */
+.panel:has(.parking-discovery){
+ background:#080808!important;
+ border-color:#bd8e37!important;
+ color:#f5ecdc!important;
+ box-shadow:none!important;
+}
+.panel:has(.parking-discovery)>h2{color:#fff2dc!important}
+.panel:has(.parking-discovery)>h2 small{color:#d4c2a0!important}
+.parking-discovery input,#parkingNameSearch{
+ background:#100d0a!important;
+ color:#fff5e7!important;
+ border:1px solid #e2ae43!important;
+ border-radius:16px!important;
+ box-shadow:0 0 7px #d8a33d3d!important;
+}
+.parking-discovery input::placeholder,#parkingNameSearch::placeholder{color:#cbbda8!important;opacity:1!important}
+.parking-discovery-actions button,#showAllParking,#focusNearbyParking{
+ background:linear-gradient(145deg,#241a0d,#090909)!important;
+ color:#fff0d5!important;
+ border:1px solid #e4ad40!important;
+ border-radius:15px!important;
+ box-shadow:0 0 8px #dba23c40!important;
+ font-weight:650!important;
+}
+#focusNearbyParking{
+ background:linear-gradient(180deg,#ffe18a,#eeb52d)!important;
+ color:#211606!important;
+ border-color:#ffe9a9!important;
+}
+#nearestFive{
+ background:linear-gradient(145deg,#1e160e,#0b0a09 65%)!important;
+ border:1px solid #e0ab41!important;
+ border-radius:18px!important;
+ color:#f6eedf!important;
+ box-shadow:0 0 10px #d7a03830!important;
+}
+#nearestFive h3{color:#ffe1a0!important;font-size:17px!important}
+#nearestFive .near-item{
+ background:linear-gradient(145deg,#241b12,#100d0b 65%)!important;
+ border:1px solid #bb8c37!important;
+ border-radius:15px!important;
+ padding:12px!important;
+ margin:9px 0!important;
+ display:flex!important;
+ flex-wrap:wrap!important;
+ gap:8px!important;
+ align-items:center!important;
+}
+#nearestFive .near-name{
+ color:#fff6e7!important;
+ font-size:17px!important;
+ font-weight:750!important;
+ flex:0 0 100%!important;
+ overflow-wrap:anywhere!important;
+}
+#nearestFive .near-meta{
+ color:#cfc3b0!important;
+ flex:0 0 100%!important;
+ font-size:13px!important;
+}
+#nearestFive .near-price{color:#f5cc73!important;font-weight:650!important}
+#nearestFive .near-closed{color:#ffbd88!important}
+#nearestFive .near-item button{
+ flex:1 1 0!important;
+ min-width:0!important;
+ min-height:42px!important;
+ border-radius:12px!important;
+ padding:9px 4px!important;
+ font-size:12px!important;
+ font-weight:700!important;
+ background:linear-gradient(145deg,#281e11,#0b0b0c)!important;
+ color:#f7e8ca!important;
+ border:1px solid #e0ae46!important;
+ box-shadow:0 0 6px #d69e3830!important;
+}
+#nearestFive .near-item button:nth-of-type(2){
+ background:linear-gradient(180deg,#ffe28c,#efb52e)!important;
+ color:#211504!important;
+ border-color:#ffebb3!important;
+}
+#legacyParkingCards,#parkingList{background:#080808!important}
+#parkingList .item{
+ background:linear-gradient(145deg,#21190f,#0b0b0b)!important;
+ border:1px solid #d9a442!important;
+ color:#fff1db!important;
+}
+#parkingList .item button{
+ background:#17120c!important;
+ color:#ffe1a0!important;
+ border:1px solid #d9a442!important;
+}
+#parkingList .item button:focus-visible,
+#nearestFive .near-item button:focus-visible{
+ outline:2px solid #ffe18a!important;outline-offset:2px!important;
+}
+#parkingList .note{color:#d4c5ac!important}
+@media(max-width:600px){
+ .panel:has(.parking-discovery){padding:12px!important}
+ #nearestFive{padding:10px!important}
+ #nearestFive .near-item{padding:10px!important}
+ #nearestFive .near-item button{font-size:11px!important;white-space:normal!important;line-height:1.2!important}
+ .parking-discovery-actions button{font-size:12px!important;line-height:1.25!important;min-height:51px!important;padding:8px!important}
+}
+
+/* iPhone QA: saved parking actions and side drawer, functional markup unchanged. */
+#savedParkingSection #saved button{
+ background:linear-gradient(145deg,#292013,#0a0a0a)!important;
+ color:#fce9c4!important;
+ border:1px solid #e5b247!important;
+ box-shadow:0 0 7px #cfa03a38!important;
+ border-radius:14px!important;
+ font-weight:650!important;
+}
+#savedParkingSection #saved button:hover,
+#savedParkingSection #saved button:focus-visible{
+ border-color:#ffe39a!important;
+ box-shadow:0 0 11px #e9b74c70!important;
+}
+#savedParkingSection #saved button:nth-of-type(3){
+ background:#1c1510!important;
+ color:#f1d6b0!important;
+ border-color:#bd8c3c!important;
+}
+#sideMenu{
+ background:linear-gradient(160deg,#18130e,#090909 60%)!important;
+ border-right:1px solid #dba940!important;
+ color:#f7eddb!important;
+ box-shadow:12px 0 35px #000b!important;
+}
+#sideMenu .side-menu-top{color:#ffdf95!important}
+#sideMenu .side-menu-top strong{color:#ffdf95!important}
+#sideMenuClose{
+ background:linear-gradient(145deg,#2a2014,#0b0b0b)!important;
+ color:#ffe09a!important;
+ border:1px solid #dfac42!important;
+ border-radius:13px!important;
+}
+#sideMenu .side-menu-links a,
+#sideMenu .side-menu-links button{
+ background:linear-gradient(145deg,#282015,#0e0d0c)!important;
+ color:#f8ecd4!important;
+ border:1px solid #d7a443!important;
+ border-radius:14px!important;
+ box-shadow:0 0 6px #d29e3933!important;
+}
+#sideMenu .side-menu-links a:hover,
+#sideMenu .side-menu-links button:hover{
+ background:#302315!important;
+ border-color:#f3c663!important;
+}
+#sideMenu .side-menu-links button[data-drawer-section]::after{color:#eac36f!important}
+#sideMenu section,
+#sideMenu #communityReportSection,
+#sideMenu .business,
+#sideMenu #contactSupport{
+ background:linear-gradient(145deg,#1d160f,#0b0b0b)!important;
+ border:1px solid #a98339!important;
+ color:#f5ebd9!important;
+}
+#sideMenu section h2,#sideMenu section h3,#sideMenu section label{color:#ffe1a0!important}
+#sideMenu section input,#sideMenu section textarea,#sideMenu section select{
+ background:#100e0c!important;
+ border:1px solid #b99243!important;
+ color:#fff4e1!important;
+}
+#sideMenu section button{
+ background:linear-gradient(145deg,#2d2111,#11100d)!important;
+ border:1px solid #d5a23d!important;
+ color:#f7e6c1!important;
+}
+#sideMenuBackdrop{background:#000b!important}
+@media(max-width:600px){
+ #savedParkingSection #saved button{font-size:13px!important;line-height:1.3!important}
+ #sideMenu{width:min(90vw,420px)!important}
+ #sideMenu .side-menu-links a,#sideMenu .side-menu-links button{font-size:14px!important;min-height:51px!important}
+}
+
+/* Nationwide brand header: Istanbul panorama is intentionally removed. */
+header{background-image:linear-gradient(180deg,#03040733,#03040722 60%,#03040777),url("/themes/rotapark-turkiye-gold-hero.svg")!important;background-size:cover,cover!important;background-position:center,center 45%!important;background-repeat:no-repeat!important}
+header::before,header::after{background-image:none!important}
+
+/* Original first concept: separate luxury wordmark from the nationwide route hero.
+   No Istanbul skyline, no crescent-star/landmarks, no changes to app controls. */
+@media(max-width:600px){
+ header{
+  height:245px!important;min-height:245px!important;
+  padding:8px 12px 0!important;
+  grid-template-columns:44px minmax(0,1fr) 38px 38px!important;
+  grid-template-rows:61px 25px 1fr!important;
+  align-items:center!important;
+  background-color:#030405!important;
+  background-image:linear-gradient(180deg,#030405 0%,#030405 22%,#03040555 52%,#03040515 100%),url("/themes/rotapark-turkiye-gold-hero.svg")!important;
+  background-size:100% 100%,auto 176px!important;
+  background-position:center,center bottom!important;
+  background-repeat:no-repeat!important;
+  border-bottom:1px solid #c28d32!important;
+ }
+ header .header-brand{
+  grid-column:2!important;grid-row:1!important;
+  justify-self:center!important;align-self:center!important;
+  gap:5px!important;z-index:2!important;
+ }
+ header .header-brand img{
+  width:41px!important;height:49px!important;
+  background:transparent!important;
+  filter:drop-shadow(0 0 3px #e4ac3c55)!important;
+ }
+ header .header-brand h1{
+  font-size:clamp(20px,5.8vw,28px)!important;
+  line-height:1.08!important;
+  letter-spacing:-.9px!important;
+  text-shadow:0 1px 4px #000!important;
+ }
+ header>small{
+  grid-column:1/-1!important;grid-row:2!important;
+  z-index:2!important;
+  align-self:center!important;justify-self:center!important;
+  color:#e7d8ba!important;
+  font-size:11px!important;
+  letter-spacing:.15px!important;
+  text-shadow:0 1px 5px #000!important;
+ }
+ header #sideMenuOpen{grid-column:1!important;grid-row:1!important;z-index:3!important}
+ header #rpNotificationShortcut{grid-column:3!important;grid-row:1!important;z-index:3!important}
+ header #rotaparkAccountLink{grid-column:4!important;grid-row:1!important;z-index:3!important}
+}
+
+/* ORIGINAL USER-APPROVED HERO PHOTO — no redraws, no SVG.
+   The JPG already contains the logo, menu and login art; transparent hit areas
+   retain real menu/login actions without duplicate text or icons. */
+@media(max-width:600px){
+ header{
+  display:block!important;
+  position:relative!important;
+  box-sizing:border-box!important;
+  width:100%!important;
+  height:auto!important;
+  min-height:0!important;
+  aspect-ratio:710/267!important;
+  padding:0!important;
+  margin:0!important;
+  background:#020202 url("/themes/rotapark-ilk-eskiz-ust-gorsel.jpg") center center/100% 100% no-repeat!important;
+  border-bottom:1px solid #d7a13c!important;
+ }
+ header::before,header::after{display:none!important;content:none!important}
+ header .header-brand,header>small{display:none!important}
+ header #sideMenuOpen{
+  display:block!important;position:absolute!important;
+  top:7%!important;left:3.5%!important;
+  width:12%!important;height:26%!important;
+  min-width:0!important;min-height:0!important;
+  margin:0!important;padding:0!important;
+  background:transparent!important;border:0!important;
+  box-shadow:none!important;color:transparent!important;
+  font-size:0!important;opacity:0!important;
+  z-index:5!important;
+ }
+ header #rotaparkAccountLink{
+  display:block!important;position:absolute!important;
+  top:7%!important;right:2%!important;left:auto!important;
+  width:23%!important;max-width:none!important;
+  height:27%!important;min-width:0!important;
+  margin:0!important;padding:0!important;
+  background:transparent!important;border:0!important;
+  box-shadow:none!important;color:transparent!important;
+  font-size:0!important;opacity:0!important;
+  z-index:5!important;
+ }
+ header #rpNotificationShortcut{display:none!important}
+}
+
+/* Extend opening greeting by 2 seconds (1.5s -> 3.5s) and align colors. */
+@keyframes rotaParkIntroGold{
+  0%,82%{opacity:1;visibility:visible}
+  100%{opacity:0;visibility:hidden}
+}
+#rotaParkIntro{
+ background:radial-gradient(circle at 50% 40%,#39260d 0%,#0c0905 53%,#020202 100%)!important;
+ color:#f9e6b8!important;
+ animation:rotaParkIntroGold 3.5s ease-out forwards!important;
+}
+#rotaParkIntro strong{color:#fff2d4!important;text-shadow:0 0 12px #e5aa3c55!important}
+#rotaParkIntro strong span{color:#ffca52!important}
+#rotaParkIntro small{color:#e3cda3!important}
+#rotaParkIntro .mark img{border:1px solid #e5b447!important;box-shadow:0 0 24px #e7ac3b5c!important}
+@media(prefers-reduced-motion:reduce){#rotaParkIntro{display:none!important}}
