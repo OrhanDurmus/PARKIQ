@@ -17,3 +17,8 @@ CREATE TABLE IF NOT EXISTS nearby_push_deliveries (
  created_at TEXT NOT NULL DEFAULT (datetime('now')),
  PRIMARY KEY(report_id,endpoint_hash)
 );
+
+-- Apply ONCE to existing production D1, not by re-running the CREATE TABLE above:
+-- ALTER TABLE nearby_push_subscriptions ADD COLUMN owner_id TEXT;
+-- CREATE INDEX IF NOT EXISTS idx_nearby_push_owner ON nearby_push_subscriptions(owner_id);
+-- Existing subscriptions have no owner and are intentionally skipped until re-enabled.
