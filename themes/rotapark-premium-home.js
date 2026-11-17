@@ -14,7 +14,7 @@
   var quick=document.createElement('nav');quick.id='rpOperatorShortcuts';quick.setAttribute('aria-label','Otopark hızlı erişim');
   [['📍','En Yakın',''],['Ⓟ','İSPARK','İSPARK'],['◆','İZELMAN','İZELMAN'],['▰','ANKAŞARK','ANPARK'],['⚡','EV Şarj','şarj'],['♿','Engelli','engelli']].forEach(function(a){
    var b=document.createElement('button');b.type='button';b.innerHTML='<span aria-hidden="true">'+a[0]+'</span><small>'+a[1]+'</small>';
-   b.addEventListener('click',function(){var q=$('#q');if(q)q.value=a[2];if(a[1]==='En Yakın'){var loc=$('#loc');if(loc){loc.click();return;}}var searchBtn=$('#search');if(searchBtn)searchBtn.click();if(a[2])document.body.classList.add('rp-filters-open')});
+   b.addEventListener('click',function(){if(a[1]==='EV Şarj'){if(window.rotaparkToggleEV)window.rotaparkToggleEV();return;}var q=$('#q');if(q)q.value=a[2];if(a[1]==='En Yakın'){var loc=$('#loc');if(loc){loc.click();return;}}var searchBtn=$('#search');if(searchBtn)searchBtn.click();if(a[2])document.body.classList.add('rp-filters-open')});
    quick.appendChild(b);
   });
   if(search)search.insertAdjacentElement('afterend',quick);
