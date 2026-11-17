@@ -3,9 +3,12 @@ import {reserveNearbyPushDelivery,releaseNearbyPushDelivery,deleteExpiredPushSub
 import {sendNearbyParkingPush} from '../functions/lib/web-push.js';
 
 const radius=1000;
+const reportLifetimeMs=2*60*60*1000;
+const activeReport=job=>Number.isFinite(job.createdAt)&&job.createdAt<=Date.now()+60000&&Date.now()-job.createdAt<reportLifetimeMs;
 async function fanout(env,job){
  const {reportId,latitude,longitude,excludedEndpointHash,ownerId}=job;
  if(!/^[0-9a-f-]{36}$/i.test(reportId)||![latitude,longitude].every(Number.isFinite))throw Error('invalid_report');
+ if(!activeReport(job))return;
  const latDelta=radius/110500,lonDelta=radius/(110500*Math.max(0.01,Math.cos(latitude*Math.PI/180)));
  const cursor=typeof job.cursor==='string'?job.cursor:'';
  const {results=[]}=await env.DB.prepare(`
@@ -15,15 +18,19 @@ async function fanout(env,job){
  ORDER BY endpoint_hash LIMIT 100
  `).bind(cursor,latitude-latDelta,latitude+latDelta,longitude-lonDelta,longitude+lonDelta).all();
  const messages=results.filter(r=>r.owner_id&&r.owner_id!==ownerId&&r.endpoint_hash!==excludedEndpointHash&&distanceMeters(latitude,longitude,r.latitude,r.longitude)<=radius)
-   .map(r=>({body:{kind:'nearby-delivery',reportId,endpointHash:r.endpoint_hash,ownerId,distanceMeters:Math.round(distanceMeters(latitude,longitude,r.latitude,r.longitude))}}));
+   .map(r=>({body:{kind:'nearby-delivery',reportId,endpointHash:r.endpoint_hash,ownerId,latitude,longitude,createdAt:job.createdAt,distanceMeters:Math.round(distanceMeters(latitude,longitude,r.latitude,r.longitude))}}));
  if(messages.length)await env.NEARBY_PUSH_QUEUE.sendBatch(messages);
- if(results.length===100)await env.NEARBY_PUSH_QUEUE.send({kind:'nearby-report',reportId,latitude,longitude,excludedEndpointHash,ownerId,cursor:results[results.length-1].endpoint_hash});
+ if(results.length===100)await env.NEARBY_PUSH_QUEUE.send({kind:'nearby-report',reportId,latitude,longitude,excludedEndpointHash,ownerId,createdAt:job.createdAt,cursor:results[results.length-1].endpoint_hash});
 }
 async function deliver(env,job){
  if(!/^[0-9a-f-]{36}$/i.test(job.reportId)||!/^[a-f0-9]{64}$/.test(job.endpointHash))throw Error('invalid_delivery');
- const row=await env.DB.prepare('SELECT endpoint,p256dh,auth,owner_id FROM nearby_push_subscriptions WHERE endpoint_hash=?')
+ if(!activeReport(job))return;
+ const row=await env.DB.prepare('SELECT endpoint,p256dh,auth,owner_id,latitude,longitude,updated_at FROM nearby_push_subscriptions WHERE endpoint_hash=?')
   .bind(job.endpointHash).first();
  if(!row||!row.owner_id||row.owner_id===job.ownerId)return;
+ // Recheck the latest saved opt-in location before sending a queued notification.
+ if(![job.latitude,job.longitude,row.latitude,row.longitude].every(Number.isFinite)||distanceMeters(job.latitude,job.longitude,row.latitude,row.longitude)>radius)return;
+ if(!row.updated_at||Date.parse(row.updated_at.replace(' ','T')+'Z')<Date.now()-30*86400000)return;
  const reserved=await reserveNearbyPushDelivery(env.DB,job.reportId,job.endpointHash);
  if(!reserved)return;
  try{
