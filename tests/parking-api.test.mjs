@@ -114,3 +114,21 @@ test('ISPARK snapshot matching never assigns a distant official facility',async(
  assert.equal(response.status,200);
  assert.equal((await response.json()).points[0].name,'Otopark kaydı');
 });
+
+test('ISPARK snapshot ignores missing and out-of-range official coordinates',async()=>{
+ const generic=point('Otopark kaydı',{osmType:'node',osmId:'93001'});
+ const env={
+  ASSETS:{fetch:async()=>Response.json({points:[generic],source:'test'})},
+  ISPARK_SNAPSHOTS:{get:async()=>({points:[
+   {id:91,name:'İSPARK Eksik Koordinat',lat:null,lng:null},
+   {id:92,name:'İSPARK Boş Koordinat',lat:'',lng:''},
+   {id:93,name:'İSPARK Geçersiz Enlem',lat:100,lng:29.2},
+   {id:94,name:'İSPARK Doğru Koordinat',lat:40.9,lng:29.2},
+  ]})},
+ };
+ const response=await onRequestGet({request:new Request(origin+'/api/parking?lat=40.9&lng=29.2'),env});
+ assert.equal(response.status,200);
+ const [p]=(await response.json()).points;
+ assert.equal(p.name,'İSPARK Doğru Koordinat');
+ assert.equal(p.isparkParkID,94);
+});
