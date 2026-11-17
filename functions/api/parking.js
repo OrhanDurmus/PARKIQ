@@ -100,7 +100,7 @@ export async function onRequestGet({request,env}){
   try{
    const data=await asset.json();
    if(!Array.isArray(data.points))throw Error('Invalid data');
-   const points=data.points.filter(p=>validPoint(p)&&publicParking(p)&&!excluded.has(parkingOsmKey(p))&&!confirmedNotParking.has(parkingOsmKey(p))&&!(p.geographicStatus==='confirmed_outside_istanbul'&&p.geographicReviewVerified===true)&&distanceSq(p,lat,lng)<=radiusSq).sort((a,b)=>distanceSq(a,lat,lng)-distanceSq(b,lat,lng)).slice(0,250);
+   const points=data.points.filter(p=>validPoint(p)&&publicParking(p)&&!excluded.has(parkingOsmKey(p))&&!confirmedNotParking.has(parkingOsmKey(p))&&!(p.geographicStatus==='confirmed_outside_istanbul'&&p.geographicReviewVerified===true)&&distanceSq(p,lat,lng)<=radiusSq).sort((a,b)=>distanceSq(a,lat,lng)-distanceSq(b,lat,lng));
    return response((await attachOfficialIsparkNames(await attachApprovedEntrances(points,env,url.origin),env)).map(enrichName).map(labelParkingAccess),data.source,data.updatedAt);
   }catch{return Response.json({error:'İstanbul otopark dosyası okunamadı'},{status:503})}
  }
@@ -110,7 +110,7 @@ export async function onRequestGet({request,env}){
  try{
   const data=await asset.json();
   if(!Array.isArray(data.points))throw Error('Invalid data');
-  const points=data.points.filter(p=>validPoint(p)&&publicParking(p)&&!excluded.has(parkingOsmKey(p))&&!confirmedNotParking.has(parkingOsmKey(p))&&distanceSq(p,lat,lng)<=radiusSq).sort((a,b)=>distanceSq(a,lat,lng)-distanceSq(b,lat,lng)).slice(0,250);
+  const points=data.points.filter(p=>validPoint(p)&&publicParking(p)&&!excluded.has(parkingOsmKey(p))&&!confirmedNotParking.has(parkingOsmKey(p))&&distanceSq(p,lat,lng)<=radiusSq).sort((a,b)=>distanceSq(a,lat,lng)-distanceSq(b,lat,lng));
   return response((await attachApprovedEntrances(points,env,url.origin)).map(labelParkingAccess),data.source,data.updatedAt);
  }catch{return Response.json({error:'Türkiye otopark veri dosyası okunamadı'},{status:503})}
 }
