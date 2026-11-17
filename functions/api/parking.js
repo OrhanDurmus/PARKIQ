@@ -44,13 +44,43 @@ async function attachOfficialIsparkNames(points,env){
   if(!official.length)return points;
   const generic=p=>/^(?:Otopark kaydı|Otopark|Parking)$/iu.test(String(p.name||'').trim());
   const meters=(a,b)=>Math.hypot((Number(a.lat)-Number(b.lat))*111195,(Number(a.lng)-Number(b.lng))*111195*Math.cos(Number(a.lat)*Math.PI/180));
+  // Spatial buckets reduce repeated full scans while preserving exact 12m checks.
+  const cellSize=0.0001;
+  const bucketKey=(lat,lng)=>Math.floor(Number(lat)/cellSize)+':'+Math.floor(Number(lng)/cellSize);
+  const buckets=new Map();
+  for(let j=0;j<points.length;j++){
+   const p=points[j],key=bucketKey(p.lat,p.lng);
+   if(!buckets.has(key))buckets.set(key,[]);
+   buckets.get(key).push(j);
+  }
+  const nearbyIndices=p=>{
+   const y=Math.floor(Number(p.lat)/cellSize),x=Math.floor(Number(p.lng)/cellSize);
+   const found=[];
+   // 12m may span more than one longitude cell at Turkish latitudes.
+   for(let dy=-2;dy<=2;dy++)for(let dx=-2;dx<=2;dx++){
+    found.push(...(buckets.get((y+dy)+':'+(x+dx))||[]));
+   }
+   return found;
+  };
+  const officialBuckets=new Map();
+  for(const o of official){
+   const key=bucketKey(o.lat,o.lng);
+   if(!officialBuckets.has(key))officialBuckets.set(key,[]);
+   officialBuckets.get(key).push(o);
+  }
   const match=new Map();
   for(let i=0;i<points.length;i++){
    const p=points[i];if(!generic(p))continue;
-   const nearby=official.filter(o=>meters(p,o)<=12);
+   const y=Math.floor(Number(p.lat)/cellSize),x=Math.floor(Number(p.lng)/cellSize);
+   const nearby=[];
+   for(let dy=-2;dy<=2;dy++)for(let dx=-2;dx<=2;dx++){
+    for(const o of officialBuckets.get((y+dy)+':'+(x+dx))||[]){
+     if(meters(p,o)<=12)nearby.push(o);
+    }
+   }
    if(nearby.length!==1)continue;
    const officialPoint=nearby[0];
-   if(points.some((other,j)=>j!==i&&meters(other,officialPoint)<=12))continue;
+   if(nearbyIndices(officialPoint).some(j=>j!==i&&meters(points[j],officialPoint)<=12))continue;
    match.set(i,{name:officialPoint.name.trim().slice(0,160),id:officialPoint.id??null});
   }
   return points.map((p,i)=>match.has(i)?{...p,name:match.get(i).name,nameSource:'ibb-ispark-coordinate-match',isparkParkID:match.get(i).id,sourceSnapshot:true}:p);
