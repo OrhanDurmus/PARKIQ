@@ -8,8 +8,8 @@ def record(tags,lat,lng,typ,oid):
     fee=tags.get('fee','').lower()
     kind=tags.get('parking','')
     access=tags.get('access','') or tags.get('motor_vehicle','') or tags.get('vehicle','')
-    address=', '.join(filter(None,[tags.get('addr:street',''),tags.get('addr:housenumber','')]))
-    points[typ+str(oid)]={'lat':round(lat,6),'lng':round(lng,6),'name':tags.get('name','Otopark kaydı')[:160],
+    address=', '.join(filter(None,[tags.get('addr:street',''),tags.get('addr:housenumber',''),tags.get('addr:suburb','') or tags.get('addr:neighbourhood',''),tags.get('addr:district','')]))
+    points[typ+str(oid)]={'lat':round(lat,6),'lng':round(lng,6),'name':(tags.get('name') or tags.get('name:tr') or 'Otopark kaydı')[:160],
        'fee':fee if fee in ('yes','no') else 'unknown',
        'kind':kind if kind in ('surface','underground','multi-storey','street_side','lane','rooftop') else 'unknown',
        'address':address[:160],'access':access[:80],'operator':tags.get('operator','')[:120],
