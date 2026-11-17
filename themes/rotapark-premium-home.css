@@ -507,3 +507,22 @@ header::before,header::after{background-image:none!important}
 #rotaParkIntro small{color:#e3cda3!important}
 #rotaParkIntro .mark img{border:1px solid #e5b447!important;box-shadow:0 0 24px #e7ac3b5c!important}
 @media(prefers-reduced-motion:reduce){#rotaParkIntro{display:none!important}}
+
+/* iPhone standalone status bar clearance: keep approved artwork unchanged. */
+@media(max-width:600px){
+ header{
+  aspect-ratio:auto!important;
+  height:calc(100vw * 267 / 710 + 54px)!important;
+  min-height:0!important;
+  background-size:100% calc(100% - 54px)!important;
+  background-position:center bottom!important;
+ }
+ header #sideMenuOpen{
+  top:calc(54px + (100vw * 267 / 710) * .07)!important;
+  height:calc((100vw * 267 / 710) * .26)!important;
+ }
+ header #rotaparkAccountLink{
+  top:calc(54px + (100vw * 267 / 710) * .07)!important;
+  height:calc((100vw * 267 / 710) * .27)!important;
+ }
+}
