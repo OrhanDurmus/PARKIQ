@@ -262,7 +262,7 @@ const updateDriveCamera=(duration=0)=>{
  const safeMaxY=Math.max(safeMinY,Math.min(canvas.height,maxY));
  const targetY=Math.min(Math.max(canvas.height*drivingCamera.vehicleY,safeMinY),safeMaxY);
  const svg=drive3dVehicle?.getElement().querySelector('svg');
- if(svg)svg.style.transform='rotate(0deg)';
+ if(svg){const relative=((pose.bearing-drive3d.getBearing()+540)%360)-180;svg.style.transform='rotate('+relative+'deg)'}
  const stationary=!headingMotionActive&&(!Number.isFinite(lastGps?.speed)||lastGps.speed<1.2);
  const previous=lastStableDriveCamera;
  const metersBetween=(a,b)=>Math.hypot((a.lat-b.lat)*111195,(a.lng-b.lng)*111195*Math.cos(pose.lat*Math.PI/180));
