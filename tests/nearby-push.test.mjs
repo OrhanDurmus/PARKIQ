@@ -44,3 +44,18 @@ test('queued nearby reports expire after two hours and reject missing/future tim
  assert.equal(recipients.isActiveNearbyReport(now+1000,now),false);
  assert.equal(recipients.isActiveNearbyReport(undefined,now),false);
 });
+
+test('deleted or mismatched street reports never trigger queued pushes',async()=>{
+ const now=Date.parse('2026-11-17T20:00:00Z');
+ const id='a'.repeat(8)+'-'+['b'.repeat(4),'c'.repeat(4),'d'.repeat(4),'e'.repeat(12)].join('-');
+ const job={reportId:id,createdAt:now-1000,ownerId:'owner'};
+ const report={id,type:'space',createdAt:job.createdAt,expiresAt:now+1000,ownerId:'owner'};
+ const kv={get:async()=>report};
+ assert.equal(await recipients.isStoredNearbyReportActive(kv,job,now),true);
+ assert.equal(await recipients.isStoredNearbyReportActive({get:async()=>null},job,now),false);
+ assert.equal(await recipients.isStoredNearbyReportActive(undefined,job,now),false);
+ assert.equal(await recipients.isStoredNearbyReportActive({get:async()=>({...report,type:'no_space'})},job,now),false);
+ assert.equal(await recipients.isStoredNearbyReportActive({get:async()=>({...report,createdAt:now-2000})},job,now),false);
+ assert.equal(await recipients.isStoredNearbyReportActive({get:async()=>({...report,ownerId:'other'})},job,now),false);
+ assert.equal(await recipients.isStoredNearbyReportActive(kv,job,now+2000),false);
+});
