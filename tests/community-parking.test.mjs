@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import {test} from 'node:test';
 import {onRequestPost} from '../functions/api/community-parking.js';
 
-const env={ISPARK_SNAPSHOTS:{put:async()=>{},get:async()=>null}};
+const env={SUPABASE_URL:'https://rotapark-test.supabase.co',SUPABASE_ANON_KEY:'test-anon-key',ISPARK_SNAPSHOTS:{put:async()=>{},get:async()=>null}};
 const originalFetch=globalThis.fetch;
 async function attempt(lat,lng){
  globalThis.fetch=async(url)=>new Response(url.includes('/auth/v1/user')?JSON.stringify({id:'test-user',email:'test@example.com'}):'false',{status:200,headers:{'Content-Type':'application/json'}});
