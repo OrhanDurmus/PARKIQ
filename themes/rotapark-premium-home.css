@@ -491,3 +491,19 @@ header::before,header::after{background-image:none!important}
  }
  header #rpNotificationShortcut{display:none!important}
 }
+
+/* Extend opening greeting by 2 seconds (1.5s -> 3.5s) and align colors. */
+@keyframes rotaParkIntroGold{
+  0%,82%{opacity:1;visibility:visible}
+  100%{opacity:0;visibility:hidden}
+}
+#rotaParkIntro{
+ background:radial-gradient(circle at 50% 40%,#39260d 0%,#0c0905 53%,#020202 100%)!important;
+ color:#f9e6b8!important;
+ animation:rotaParkIntroGold 3.5s ease-out forwards!important;
+}
+#rotaParkIntro strong{color:#fff2d4!important;text-shadow:0 0 12px #e5aa3c55!important}
+#rotaParkIntro strong span{color:#ffca52!important}
+#rotaParkIntro small{color:#e3cda3!important}
+#rotaParkIntro .mark img{border:1px solid #e5b447!important;box-shadow:0 0 24px #e7ac3b5c!important}
+@media(prefers-reduced-motion:reduce){#rotaParkIntro{display:none!important}}
