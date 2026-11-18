@@ -172,6 +172,8 @@
 /* Navigation-only controls: never show ordinary map shortcuts above the cockpit. */
 #mapWrap.navigation-fullscreen #mapQuickTools,
 #mapWrap.navigation-fullscreen .leaflet-control-zoom,
+/* leaflet-rotate injects its own top-left bearing control, not a zoom control. */
+#mapWrap.navigation-fullscreen .leaflet-control-container .leaflet-top.leaflet-left,
 #mapWrap.navigation-fullscreen #mapHome{display:none!important}
 #mapWrap.navigation-fullscreen{overflow:hidden!important}
 #mapWrap.navigation-fullscreen #map{height:100dvh!important;min-height:100dvh!important}
