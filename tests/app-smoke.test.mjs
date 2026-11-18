@@ -196,3 +196,24 @@ test('navigation sends the same text to phone TTS with the Turkish voice', async
     }
   }
 });
+
+test('parking uses one İSPARK request per search and reuses it for late live occupancy', async () => {
+ const load = html.split('async function loadParking(){')[1]?.split(" window.addEventListener('online'")[0];
+ const refresh = html.match(/async function refreshIsparkOccupancy\(seq,occupancyPromise\)\{.*?\}(?=window.rotaparkFilterOperator)/)?.[0];
+ assert.ok(load && refresh, 'Expected parking data loading functions');
+ assert.equal(load.match(/fetch\('\/api\/ispark-occupancy'/g)?.length, 1);
+ assert.match(load, /refreshIsparkOccupancy\(seq,occupancyPromise\)/);
+
+ const point = {name: 'İSPARK Test', lat: 41, lng: 29};
+ let renders = 0;
+ const context = {parkingSeq: 2, allParking: [point], showParking: () => renders++};
+ const apply = runInNewContext(refresh + ';refreshIsparkOccupancy', context);
+ await apply(1, Promise.resolve({points: [{...point, verifiedLive: true, freeSpaces: 5}]}));
+ assert.equal(renders, 0);
+ await apply(2, Promise.resolve({points: [{...point, sourceSnapshot: true, freeSpaces: 5}]}));
+ assert.equal(renders, 0);
+ const live = {...point, verifiedLive: true, freeSpaces: 5};
+ await apply(2, Promise.resolve({points: [live]}));
+ assert.equal(point.isparkLive, live);
+ assert.equal(renders, 1);
+});

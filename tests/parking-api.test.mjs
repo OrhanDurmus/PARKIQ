@@ -132,3 +132,35 @@ test('ISPARK snapshot ignores missing and out-of-range official coordinates',asy
  assert.equal(p.name,'İSPARK Doğru Koordinat');
  assert.equal(p.isparkParkID,94);
 });
+
+test('D1 exclusions and both city assets start before any read completes', async () => {
+ const started = [];
+ let release;
+ const waiting = new Promise(resolve => { release = resolve; });
+ const env = {
+  DB: {prepare: () => ({async all() { started.push('exclusions'); await waiting; return {results: []}; }})},
+  ASSETS: {async fetch(input) {
+   const path = new URL(input).pathname;
+   started.push(path);
+   await waiting;
+   return Response.json({points: []});
+  }},
+ };
+ const response = onRequestGet({request: new Request(origin + '/api/parking?lat=40.9&lng=29.2'), env});
+ try {
+  assert.deepEqual(started, ['exclusions', '/data/parking-turkiye.json', '/data/parking.json']);
+ } finally {
+  release();
+ }
+ assert.equal((await response).status, 200);
+});
+
+test('a failed national asset read still serves available curated Istanbul coverage', async () => {
+ const env = {ASSETS: {async fetch(input) {
+  if (new URL(input).pathname === '/data/parking-turkiye.json') throw Error('unavailable');
+  return Response.json({points: [point('curated')]});
+ }}};
+ const result = await onRequestGet({request: new Request(origin + '/api/parking?lat=40.9&lng=29.2'), env});
+ assert.equal(result.status, 200);
+ assert.deepEqual((await result.json()).points.map(p => p.name), ['curated']);
+});
