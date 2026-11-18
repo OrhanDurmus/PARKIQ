@@ -3,7 +3,7 @@ const fs=require('node:fs');
 const path=require('node:path');
 const root=path.resolve(__dirname,'..');
 const out=path.join(root,'www');
-const excluded=new Set(['.git','.github','node_modules','www','tests','docs','scripts','android','ios']);
+const excluded=new Set(['.git','.github','node_modules','www','tests','docs','scripts','android','ios','functions','workers','migrations','supabase']);
 const extensions=new Set(['.html','.css','.js','.json','.webmanifest','.svg','.png','.jpg','.jpeg','.webp','.gif','.ico','.woff','.woff2','.ttf','.mp3','.wav','.ogg','.txt','.xml','.geojson','.csv']);
 fs.rmSync(out,{recursive:true,force:true});
 fs.mkdirSync(out,{recursive:true});

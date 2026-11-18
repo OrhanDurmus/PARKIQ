@@ -19,5 +19,8 @@ jobs:
       - name: Verify required mobile files
         run: |
           node -e "const fs=require('fs'); for(const p of ['www/index.html','www/manifest.webmanifest','www/navigation-voice.js']){if(!fs.existsSync(p))throw new Error('Missing '+p)}; console.log('Mobile web assets ready')"
+      - name: Keep server code and migrations out of the mobile bundle
+        run: |
+          node -e "const fs=require('fs'); for(const p of ['functions','workers','migrations','supabase']){if(fs.existsSync('www/'+p))throw new Error('Unexpected '+p+' in the client bundle')}"
       - name: Ensure source HTML was not changed
         run: git diff --exit-code -- index.html
