@@ -302,12 +302,13 @@ const updateDriveCamera=(duration=0)=>{
  drive3d.once('idle',reveal);
  // Only switch from Leaflet after the first MapLibre style and tiles have loaded.
  // A fixed timeout could expose an unpainted or incorrectly sized first camera.
- const waitForFirstPaint=(attempt=0)=>{
+ const waitForFirstPaint=()=>{
   if(revealed||!wrap.classList.contains('navigation-active'))return;
   if(drive3d.loaded()&&drive3d.areTilesLoaded()&&drivePose&&routeGpsMarker){reveal();return}
-  if(attempt<40)setTimeout(()=>waitForFirstPaint(attempt+1),250);
+  // A slow first GPS fix must not strand navigation in the Leaflet fallback.
+  setTimeout(waitForFirstPaint,250);
  };
- setTimeout(()=>waitForFirstPaint(),250);
+ setTimeout(waitForFirstPaint,250);
  });const pauseDriveFollow=()=>{
  clearTimeout(resumeDriveFollowTimer);
  pauseGpsFollow();
