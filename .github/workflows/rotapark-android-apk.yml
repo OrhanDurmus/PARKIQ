@@ -53,6 +53,21 @@ jobs:
         run: npm run mobile:prepare
       - name: Create Android project
         run: npx cap add android
+      - name: Add native Android GPS permissions
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          manifest = Path('android/app/src/main/AndroidManifest.xml')
+          xml = manifest.read_text()
+          anchor = '<application'
+          if anchor not in xml:
+              raise SystemExit('Could not locate Android application element')
+          for permission in ['android.permission.ACCESS_COARSE_LOCATION', 'android.permission.ACCESS_FINE_LOCATION']:
+              if permission not in xml:
+                  xml = xml.replace(anchor, f'<uses-permission android:name="{permission}" />\n    ' + anchor, 1)
+          manifest.write_text(xml)
+          print('Android GPS permissions added.')
+          PY
       - name: Synchronize Android Capacitor
         run: npx cap sync android
       - name: Build debug APK
