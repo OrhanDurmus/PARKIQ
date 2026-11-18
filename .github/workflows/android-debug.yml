@@ -28,9 +28,58 @@ jobs:
         run: npm run mobile:prepare
       - name: Generate Android project
         run: npx cap add android
+      - name: Grant Android WebView foreground location permissions
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          path=Path('android/app/src/main/AndroidManifest.xml')
+          content=path.read_text()
+          permissions=('android.permission.ACCESS_COARSE_LOCATION','android.permission.ACCESS_FINE_LOCATION')
+          missing=[p for p in permissions if p not in content]
+          if missing:
+              match=re.search(r'<manifest[^>]*>',content)
+              if not match:
+                  raise SystemExit('Android manifest root not found')
+              tags=''.join(chr(10)+'    <uses-permission android:name="'+p+'" />' for p in missing)
+              content=content[:match.end()]+tags+content[match.end():]
+              path.write_text(content)
+          for permission in permissions:
+              if permission not in path.read_text():
+                  raise SystemExit('Missing Android permission: '+permission)
+          print('Android foreground location permissions configured')
+          PY
       - name: Compile debug APK
         working-directory: android
         run: ./gradlew assembleDebug --no-daemon
+      - name: Inspect compiled APK for server-only assets
+        run: |
+          python3 - <<'PY'
+          import zipfile
+          apk='android/app/build/outputs/apk/debug/app-debug.apk'
+          with zipfile.ZipFile(apk) as archive:
+              names=archive.namelist()
+          forbidden_prefixes=('assets/public/functions/','assets/public/workers/')
+          forbidden_files={
+              'assets/public/package.json',
+              'assets/public/package-lock.json',
+              'assets/public/capacitor.config.json',
+          }
+          bad=[name for name in names if name.startswith(forbidden_prefixes) or name in forbidden_files]
+          if bad:
+              raise SystemExit('Forbidden APK assets: '+', '.join(bad[:20]))
+          required={'assets/public/index.html','assets/capacitor.config.json'}
+          missing=required-set(names)
+          if missing:
+              raise SystemExit('Missing APK assets: '+', '.join(sorted(missing)))
+          with zipfile.ZipFile(apk) as archive:
+              manifest=archive.read('AndroidManifest.xml')
+          for permission in ('android.permission.ACCESS_FINE_LOCATION','android.permission.ACCESS_COARSE_LOCATION'):
+              if permission.encode('utf-16le') not in manifest:
+                  raise SystemExit('Missing compiled Android location permission: '+permission)
+          print('Compiled APK location permissions verified')
+          print(f'APK assets validated ({len(names)} ZIP entries)')
+          PY
       - name: Upload test-only APK
         uses: actions/upload-artifact@v4
         with:
@@ -38,3 +87,19 @@ jobs:
           path: android/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
           retention-days: 7
+      - name: Upload Android test APK to Appetize (manual runs only)
+        if: github.event_name == 'workflow_dispatch'
+        id: appetize
+        uses: appetizeio/github-action-appetize@v1.1.0
+        with:
+          apiToken: ${{ secrets.APPETIZE_API_TOKEN }}
+          platform: android
+          appFile: android/app/build/outputs/apk/debug/app-debug.apk
+          fileType: apk
+          note: ROTAPARK Android debug test from GitHub Actions
+      - name: Print Appetize test link
+        if: github.event_name == 'workflow_dispatch' && steps.appetize.outputs.publicKey != ''
+        env:
+          APPETIZE_PUBLIC_KEY: ${{ steps.appetize.outputs.publicKey }}
+        run: |
+          echo "ROTAPARK Appetize test link: https://appetize.io/app/$APPETIZE_PUBLIC_KEY"
