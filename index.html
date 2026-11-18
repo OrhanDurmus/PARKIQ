@@ -267,8 +267,8 @@ const updateDriveCamera=(duration=0)=>{
  // Keep the already-rendered Leaflet satellite map visible until MapLibre tiles and route are painted.
  var revealed=false;var reveal=function(){if(revealed||!drive3dReady||!wrap.classList.contains('navigation-active'))return;revealed=true;wrap.dataset.mapEngine='maplibre';wrap.classList.add('drive-3d');drive3d.resize();updateDriveCamera(0)};
  drive3d.once('idle',reveal);
- // Never switch to a partially painted map after a fixed timeout.
- // Keep the complete Leaflet satellite view until MapLibre has rendered its tiles.
+ // An idle event may not fire on animated/continuously updating maps. Reveal only once the satellite source has real tiles.
+ drive3d.on('render',()=>{if(!revealed&&drive3d.isStyleLoaded()&&drive3d.areTilesLoaded())reveal()});
  });const pauseDriveFollow=()=>{
  clearTimeout(resumeDriveFollowTimer);
  pauseGpsFollow();
@@ -283,7 +283,7 @@ const resumeDriveFollowAfterGesture=()=>{
 drive3d.on('dragstart',pauseDriveFollow);
 drive3d.on('dragend',resumeDriveFollowAfterGesture);
 drive3d.on('zoomstart',e=>{if(e.originalEvent)pauseDriveFollow()});
-drive3d.on('zoomend',resumeDriveFollowAfterGesture);drive3d.on('error',()=>{if(!drive3dReady){wrap.dataset.mapEngine='leaflet-fallback';wrap.classList.remove('drive-3d');msg.textContent='⚠️ Uydu haritası yüklenemedi. Normal harita görünümüne dönüldü.'}})}if(drive3dReady&&wrap.dataset.mapEngine==='maplibre')wrap.classList.add('drive-3d');setTimeout(()=>{drive3d?.resize();updateDriveCamera()},120)}catch(e){wrap.dataset.mapEngine='leaflet-fallback';console.warn('ROTAPARK MapLibre initialization failed',e);wrap.classList.remove('drive-3d')}};
+drive3d.on('zoomend',resumeDriveFollowAfterGesture);drive3d.on('error',()=>{if(!drive3dReady){wrap.dataset.mapEngine='leaflet-fallback';wrap.classList.remove('drive-3d');msg.textContent='⚠️ Uydu haritası yüklenemedi. Normal harita görünümüne dönüldü.'}})}if(drive3dReady){drive3d.resize();updateDriveCamera(0);if(drive3d.isStyleLoaded()&&drive3d.areTilesLoaded()){wrap.dataset.mapEngine='maplibre';wrap.classList.add('drive-3d')}else{wrap.dataset.mapEngine='maplibre-loading';drive3d.once('idle',()=>{if(wrap.classList.contains('navigation-active')){wrap.dataset.mapEngine='maplibre';wrap.classList.add('drive-3d');drive3d.resize();updateDriveCamera(0)}})}}setTimeout(()=>{drive3d?.resize();updateDriveCamera()},120)}catch(e){wrap.dataset.mapEngine='leaflet-fallback';console.warn('ROTAPARK MapLibre initialization failed',e);wrap.classList.remove('drive-3d')}};
 // Re-anchor the vehicle after viewport changes (iPhone rotation / Safari toolbar).
 let driveViewportFrame=0;
 const refreshDriveViewport=()=>{
