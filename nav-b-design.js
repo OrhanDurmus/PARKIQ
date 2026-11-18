@@ -8,28 +8,28 @@ function init(){
  sh.innerHTML=`<style>
  :host{display:none;position:absolute;inset:0;z-index:12000;pointer-events:none;font-family:system-ui,-apple-system,sans-serif;color:white}
  *{box-sizing:border-box}
- .turn{position:absolute;top:calc(env(safe-area-inset-top) + 8px);left:10px;right:10px;max-width:560px;margin:auto;background:#126343;border-radius:16px;box-shadow:0 3px 12px #172d3a40;padding:10px 14px;display:flex;align-items:center;gap:14px}
- .arrow{font-size:32px;font-weight:800;line-height:1;flex:0 0 auto}
+ .turn{position:absolute;top:calc(max(env(safe-area-inset-top), 12px) + 6px);left:0;right:0;max-width:600px;margin:auto;background:#006f72;border-radius:0 0 24px 24px;box-shadow:0 6px 20px #001b2355;padding:12px 16px 13px;display:flex;align-items:center;gap:12px;min-height:84px}
+ .arrow{font-size:38px;font-weight:850;line-height:1;flex:0 0 44px;text-align:center}
  .instruction{min-width:0}
- .direction{overflow-wrap:anywhere;font-size:clamp(17px,4.8vw,24px);line-height:1.2;font-weight:750}
- .dest{font-size:11px;color:#dbf5e8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:4px}
- .tools{position:absolute;right:12px;bottom:calc(env(safe-area-inset-bottom) + 94px);display:grid;gap:8px;pointer-events:auto}
- .round,.close{width:44px;height:44px;border:0;border-radius:50%;background:#fff;color:#17344b;font-size:21px;box-shadow:0 2px 9px #172d3a30;cursor:pointer}
- .bottom{position:absolute;bottom:calc(env(safe-area-inset-bottom) + 8px);left:10px;right:10px;max-width:560px;margin:auto;background:#fff;color:#182d3b;border-radius:16px;padding:5px 8px 5px 14px;box-shadow:0 2px 12px #172d3a35}
+ .direction{overflow-wrap:anywhere;font-size:clamp(19px,5.1vw,27px);line-height:1.18;font-weight:780;max-height:2.5em;overflow:hidden}
+ .dest{font-size:13px;color:#d0f2f0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:4px}
+ .tools{position:absolute;right:14px;bottom:calc(max(env(safe-area-inset-bottom), 10px) + 132px);display:grid;gap:12px;pointer-events:auto}
+ .round,.close{width:54px;height:54px;border:0;border-radius:50%;background:#181a1e;color:#fff;font-size:25px;box-shadow:0 3px 12px #0007;cursor:pointer}
+ .bottom{position:absolute;bottom:0;left:0;right:0;max-width:600px;margin:auto;background:#151518;color:#fff;border-radius:22px 22px 0 0;padding:14px 18px calc(max(env(safe-area-inset-bottom), 10px) + 13px);box-shadow:0 -4px 20px #0007;min-height:100px}
  .stats{display:flex;align-items:center;gap:10px}
  .numbers{flex:1;min-width:0}
- .primary{display:flex;align-items:baseline;gap:8px;font-variant-numeric:tabular-nums;font-size:16px;font-weight:650}
- #eta{color:#126343;font-size:20px;font-weight:800}
- .secondary,.gps{font-size:11px;color:#4c6270;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+ .primary{display:flex;align-items:baseline;gap:10px;font-variant-numeric:tabular-nums;font-size:19px;font-weight:650}
+ #eta{color:#fff;font-size:33px;font-weight:800}
+ .secondary,.gps{font-size:13px;color:#b4b6ba;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:5px}
  .gps:empty,.secondary:empty{display:none}
- .close{flex:0 0 44px;box-shadow:none;background:#f0f3f5;pointer-events:auto;font-size:25px}
- .progress{height:2px;background:#e6efeb;border-radius:10px;overflow:hidden;margin-top:2px}
- .fill{height:100%;width:0;background:#278460;transition:width .4s}
+ .close{flex:0 0 76px;width:76px;height:56px;border-radius:30px;box-shadow:none;background:#d52f29;color:#fff;pointer-events:auto;font-size:19px;font-weight:700}
+ .progress{height:3px;background:#33373b;border-radius:10px;overflow:hidden;margin-top:7px}
+ .fill{height:100%;width:0;background:#4389ff;transition:width .4s}
  @media(prefers-reduced-motion:reduce){.fill{transition:none}}
  </style>
  <div class="turn"><span class="arrow" id="arrow" aria-hidden="true">↑</span><div class="instruction"><div class="direction" id="direction" role="status">GPS bekleniyor…</div><div class="dest" id="dest"></div></div></div>
  <div class="tools"><button class="round" id="voice" aria-label="Sesi aç veya kapat">🔊</button><button class="round" id="recenter" aria-label="Konumuma dön">⌖</button></div>
- <div class="bottom"><div class="stats"><div class="numbers"><div class="primary"><span id="eta">—</span><span aria-hidden="true">·</span><span id="distance">—</span></div><div class="secondary" id="arrival"></div><div class="gps" id="gps"></div></div><button class="close" id="stop" aria-label="Rotayı bitir">×</button></div><div class="progress"><div class="fill" id="fill"></div></div></div>`;
+ <div class="bottom"><div class="stats"><div class="numbers"><div class="primary"><span id="eta">—</span><span aria-hidden="true">·</span><span id="distance">—</span></div><div class="secondary" id="arrival"></div><div class="gps" id="gps"></div></div><button class="close" id="stop" aria-label="Rotayı bitir">Çıkış</button></div><div class="progress"><div class="fill" id="fill"></div></div></div>`;
  const $=id=>sh.getElementById(id);
  $('voice').onclick=()=>document.getElementById('navVoice')?.click();
  $('recenter').onclick=()=>document.getElementById('navRecenter')?.click();
