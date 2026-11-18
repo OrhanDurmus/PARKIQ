@@ -19,5 +19,8 @@ jobs:
       - name: Verify required mobile files
         run: |
           node -e "const fs=require('fs'); for(const p of ['www/index.html','www/manifest.webmanifest','www/navigation-voice.js']){if(!fs.existsSync(p))throw new Error('Missing '+p)}; console.log('Mobile web assets ready')"
+      - name: Reject server code and build metadata in mobile assets
+        run: |
+          node -e "const fs=require('fs'); for(const p of ['www/functions','www/workers','www/package.json','www/package-lock.json','www/capacitor.config.json']){if(fs.existsSync(p))throw new Error('Unexpected APK asset: '+p)}; console.log('No server code or build metadata in mobile bundle')"
       - name: Ensure source HTML was not changed
         run: git diff --exit-code -- index.html
