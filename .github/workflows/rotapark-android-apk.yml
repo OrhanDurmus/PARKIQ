@@ -32,8 +32,10 @@ jobs:
         with:
           distribution: temurin
           java-version: '21'
-      - name: Setup Android SDK
-        uses: android-actions/setup-android@v3
+      - name: Check Android SDK preinstalled on GitHub runner
+        run: |
+          test -d "$ANDROID_HOME" || { echo 'Android SDK missing'; exit 1; }
+          echo "Android SDK found at $ANDROID_HOME"
       - name: Install Capacitor dependencies
         run: npm install --no-audit --no-fund
       - name: Verify fixed production URL (never build preview link APK)
