@@ -6,14 +6,22 @@ export async function onRequestGet({env,request}){
   const kv=env?.ISPARK_SNAPSHOTS;
   if(!kv?.list||!kv?.get)return json({ok:false,error:'not_configured'},503);
   try{
+    const now=Date.now();
+    const history=new URL(request.url).searchParams.get('view')==='history';
+    // History requests must not scan every active street report first.
+    if(history){
+      const audit=await kv.list({prefix:'community:audit:deleted:',limit:100});
+      const events=(await Promise.all(audit.keys.map(k=>kv.get(k.name,'json'))))
+        .filter(Boolean).sort((a,b)=>b.deletedAt-a.deletedAt);
+      return json({ok:true,events,partial:!audit.list_complete,checkedAt:now});
+    }
     let cursor,keys=[],pages=0;
     do{
       const batch=await kv.list({prefix:'community:street:',limit:200,...(cursor?{cursor}:{})});
-      keys.push(...batch.keys.map(k=>k.name));cursor=batch.list_complete?undefined:batch.cursor;pages++;
+      keys.push(...batch.keys.map(k=>k.name));
+      cursor=batch.list_complete?undefined:batch.cursor;
+      pages++;
     }while(cursor&&pages<5);
-    const now=Date.now();
-    const history=new URL(request.url).searchParams.get('view')==='history';
-    if(history){const audit=await kv.list({prefix:'community:audit:deleted:',limit:100});const events=(await Promise.all(audit.keys.map(k=>kv.get(k.name,'json')))).filter(Boolean).sort((a,b)=>b.deletedAt-a.deletedAt);return json({ok:true,events,partial:!audit.list_complete,checkedAt:now});}
     const items=(await Promise.all(keys.map(k=>kv.get(k,'json'))))
       .filter(x=>x&&x.expiresAt>now&&Number.isFinite(x.lat)&&Number.isFinite(x.lng))
       .sort((a,b)=>b.createdAt-a.createdAt).slice(0,200)
