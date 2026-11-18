@@ -101,4 +101,5 @@ jobs:
         if: github.event_name == 'workflow_dispatch' && steps.appetize.outputs.publicKey != ''
         env:
           APPETIZE_PUBLIC_KEY: ${{ steps.appetize.outputs.publicKey }}
-        run: echo "ROTAPARK Appetize test link: https://appetize.io/app/$APPETIZE_PUBLIC_KEY"
+        run: |
+          echo "ROTAPARK Appetize test link: https://appetize.io/app/$APPETIZE_PUBLIC_KEY"
