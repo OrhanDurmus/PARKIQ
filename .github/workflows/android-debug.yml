@@ -87,3 +87,18 @@ jobs:
           path: android/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
           retention-days: 7
+      - name: Upload Android test APK to Appetize (manual runs only)
+        if: github.event_name == 'workflow_dispatch'
+        id: appetize
+        uses: appetizeio/github-action-appetize@v1.1.0
+        with:
+          apiToken: ${{ secrets.APPETIZE_API_TOKEN }}
+          platform: android
+          appFile: android/app/build/outputs/apk/debug/app-debug.apk
+          fileType: apk
+          note: ROTAPARK Android debug test from GitHub Actions
+      - name: Print Appetize test link
+        if: github.event_name == 'workflow_dispatch' && steps.appetize.outputs.publicKey != ''
+        env:
+          APPETIZE_PUBLIC_KEY: ${{ steps.appetize.outputs.publicKey }}
+        run: echo "ROTAPARK Appetize test link: https://appetize.io/app/$APPETIZE_PUBLIC_KEY"
