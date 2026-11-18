@@ -38,10 +38,10 @@ jobs:
           permissions=('android.permission.ACCESS_COARSE_LOCATION','android.permission.ACCESS_FINE_LOCATION')
           missing=[p for p in permissions if p not in content]
           if missing:
-              match=re.search(r'<manifest\\b[^>]*>',content)
+              match=re.search(r'<manifest[^>]*>',content)
               if not match:
                   raise SystemExit('Android manifest root not found')
-              tags=''.join('\\n    <uses-permission android:name="'+p+'" />' for p in missing)
+              tags=''.join(chr(10)+'    <uses-permission android:name="'+p+'" />' for p in missing)
               content=content[:match.end()]+tags+content[match.end():]
               path.write_text(content)
           for permission in permissions:
