@@ -33,7 +33,7 @@ export async function onRequestPost({request,env,context}){
   const hourly=Number(await kv.get(hourKey)||0);
   if(hourly>=5)return json({ok:false,error:'hourly_limit'},429);
   const id=crypto.randomUUID(),now=Date.now();
-  const point={id,lat:Math.round(lat*1e5)/1e5,lng:Math.round(lng*1e5)/1e5,type:data.type,note,address,displayName:displayName||String(user.user_metadata?.full_name||user.user_metadata?.name||user.email?.split('@')[0]||'ROTAPARK kullanıcısı').slice(0,32),verifiedAccount:true,createdAt:now,expiresAt:now+2*60*60*1000};
+  const point={id,lat:Math.round(lat*1e5)/1e5,lng:Math.round(lng*1e5)/1e5,type:data.type,note,address,displayName:displayName||'ROTAPARK kullanıcısı',verifiedAccount:true,createdAt:now,expiresAt:now+2*60*60*1000};
   const stored={...point,ownerId:user.id,ownerTokenHash:await tokenHash(ownerToken)};
   // Exclude the reporting device from its own nearby push notification.
   const ownPushEndpoint=typeof data.ownPushEndpoint==='string'?data.ownPushEndpoint:'';
