@@ -117,3 +117,82 @@ test('reroute result requires a fresh trusted GPS fix before replacing route',()
   assert.match(html,/if\(gpsSignalLost\|\|gpsQualityRecoveryPending\|\|!gpsLastAcceptedAt\|\|Date\.now\(\)-gpsLastAcceptedAt>15000\)/);
   assert.match(html,/Rota hesaplandı ancak GPS konumu güncel değil/);
 });
+
+const navigationVoice = readFileSync(new URL('../navigation-voice.js', import.meta.url), 'utf8');
+
+function loadNavigationSpeech({useVoiceEngine = true, azureAvailable = true} = {}) {
+  const requests = [];
+  const utterances = [];
+  const turkishVoice = {lang: 'tr_TR'};
+  const context = {
+    AbortController, setTimeout, clearTimeout,
+    console: {info() {}},
+    document: {
+      createElement: () => ({style: {}, setAttribute() {}, pause() {}, async play() {}}),
+      body: {appendChild() {}},
+      getElementById: () => null,
+    },
+    URL: {createObjectURL: () => 'blob:voice', revokeObjectURL() {}},
+    async fetch(url, options) {
+      requests.push({url, ...JSON.parse(options.body)});
+      return {ok: azureAvailable, status: 503, blob: async () => ({size: 1})};
+    },
+    speechSynthesis: {
+      getVoices: () => [{lang: 'en-US'}, turkishVoice],
+      cancel() {},
+      speak: utterance => utterances.push(utterance),
+    },
+    SpeechSynthesisUtterance: class {
+      constructor(text) { this.text = text; }
+    },
+  };
+  context.window = context;
+  let playback;
+  if (useVoiceEngine) {
+    runInNewContext(navigationVoice, context);
+    const {speak} = context.RotaParkVoice;
+    context.RotaParkVoice.speak = text => { playback = speak(text); };
+  }
+  const source = html.match(/const speakTurkish=sentence=>\{[\s\S]*?\};(?=const decodeWalkShape)/)?.[0];
+  assert.ok(source, 'Expected the navigation speech entry point');
+  const speakTurkish = runInNewContext(source + 'speakTurkish', context);
+  return {
+    async speak(input) {
+      assert.equal(speakTurkish(input), true);
+      await playback;
+    },
+    requests, utterances, turkishVoice,
+  };
+}
+
+const turkishCommands = [
+  ['Sağa dönün', 'Sağa dönün'],
+  ['Sola dönün', 'Sola dönün'],
+  ['Düz devam edin', 'Düz devam edin'],
+  ['50 metre sonra hafif sağa dönün.', '50 metre sonra hafif sağa dönün.'],
+  ['⬅️ Hafif sola dönün · 50 m', 'Hafif sola dönün'],
+  ['Sağa dön, düz devam et.', 'Sağa dönün, düz devam edin.'],
+  ['Yola çıkın, yola katılın.', 'Yola çıkın, yola katılın.'],
+  ['Geri dönünüz.', 'Geri dönünüz.'],
+];
+
+test('navigation sends whole Turkish imperatives to the Azure endpoint', async () => {
+  const {speak, requests} = loadNavigationSpeech();
+  for (const [input] of turkishCommands) await speak(input);
+  assert.deepEqual(requests, turkishCommands.map(([, text]) => ({url: '/api/tts', text, style: 'clear'})));
+});
+
+test('navigation sends the same text to phone TTS with the Turkish voice', async () => {
+  for (const useVoiceEngine of [true, false]) {
+    const {speak, utterances, turkishVoice} = loadNavigationSpeech({
+      useVoiceEngine, azureAvailable: false,
+    });
+    for (const [input, expected] of turkishCommands) {
+      await speak(input);
+      const utterance = utterances.pop();
+      assert.equal(utterance?.text, expected);
+      assert.equal(utterance.lang, 'tr-TR');
+      assert.equal(utterance.voice, turkishVoice);
+    }
+  }
+});
