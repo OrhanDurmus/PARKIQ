@@ -224,6 +224,16 @@ recenter.onclick=()=>{clearTimeout(resumeDriveFollowTimer);followGps=true;recent
 let drivePose=null;
 let navMotionFrame=0;
 let lastNavMotionFixAt=0;
+// Optional diagnostics: add ?navPerf=1 to a Preview URL. No GPS coordinates are logged or sent.
+const navPerfEnabled=new URLSearchParams(location.search).get('navPerf')==='1';
+const navPerf={gpsAt:0,gpsGap:0,frames:0,frameAt:0,frameGap:0,cameraUpdates:0,cameraSkipped:0};
+let navPerfPanel=null;
+const renderNavPerf=()=>{
+ if(!navPerfEnabled||!document.body)return;
+ if(!navPerfPanel){navPerfPanel=document.createElement('div');navPerfPanel.setAttribute('aria-label','Navigasyon performans teşhisi');navPerfPanel.style.cssText='position:fixed;left:8px;top:76px;z-index:2147483646;background:#101820df;color:#e5f5ff;font:12px/1.5 monospace;padding:8px 10px;border:1px solid #ffffff55;border-radius:8px;pointer-events:none;white-space:pre';document.body.appendChild(navPerfPanel)}
+ navPerfPanel.textContent='NAV PERF (yerel)\\nGPS aralığı: '+Math.round(navPerf.gpsGap)+' ms\\nKare aralığı: '+Math.round(navPerf.frameGap)+' ms\\nKamera: '+navPerf.cameraUpdates+' / atlanan '+navPerf.cameraSkipped+'\\nAraç: '+(navMotionFrame?'hareketli':'bekliyor');
+};
+if(navPerfEnabled)setInterval(renderNavPerf,1000);
 const cancelNavMotion=()=>{if(navMotionFrame){cancelAnimationFrame(navMotionFrame);navMotionFrame=0}};
 let stableNavVehicleFix=null;
 const animateNavPosition=(lat,lng,bearing,immediate=false)=>{
@@ -237,6 +247,7 @@ const animateNavPosition=(lat,lng,bearing,immediate=false)=>{
  if(distance<1.5&&angularChange<5&&!immediate)return;
  cancelNavMotion();
  const fixNow=performance.now();
+ if(navPerfEnabled){navPerf.gpsGap=navPerf.gpsAt?fixNow-navPerf.gpsAt:0;navPerf.gpsAt=fixNow}
  const fixInterval=lastNavMotionFixAt?fixNow-lastNavMotionFixAt:1000;
  lastNavMotionFixAt=fixNow;
  // GPS arrives in discrete fixes; keep movement approximately uniform between them.
@@ -246,6 +257,7 @@ const animateNavPosition=(lat,lng,bearing,immediate=false)=>{
  const deltaBearing=((bearing-initialBearing+540)%360)-180;
  const started=fixNow;
  const render=(now)=>{
+  if(navPerfEnabled){navPerf.frameGap=navPerf.frameAt?now-navPerf.frameAt:0;navPerf.frameAt=now;navPerf.frames++}
   const t=duration?Math.min(1,(now-started)/duration):1;
   const eased=t;
   const nextLat=current.lat+(lat-current.lat)*eased,nextLng=current.lng+(lng-current.lng)*eased;
@@ -289,6 +301,7 @@ const updateDriveCamera=(duration=0)=>{
  const bearingChange=previous?Math.abs(bearingDelta(stableBearing,previous.bearing)):360;
  const paddingTop=Math.max(0,Math.round(2*targetY-canvas.height));
  if(nearPrevious&&bearingChange<(stationary?12:0.6)&&previous.paddingTop===paddingTop){
+  if(navPerfEnabled)navPerf.cameraSkipped++;
   const svg=drive3dVehicle?.getElement().querySelector('svg');
   if(svg)svg.style.transform='rotate('+(((pose.bearing-drive3d.getBearing()+540)%360)-180)+'deg)';
   return;
@@ -296,6 +309,7 @@ const updateDriveCamera=(duration=0)=>{
  const bearing=previous&&bearingChange<0.6?previous.bearing:stableBearing;
  const options={center:[pose.lng,pose.lat],bearing,zoom:drivingCamera.zoom,pitch:drivingCamera.pitch,padding:{top:paddingTop,bottom:0,left:0,right:0}};
  lastStableDriveCamera={lat:pose.lat,lng:pose.lng,bearing,paddingTop};
+ if(navPerfEnabled)navPerf.cameraUpdates++;
  if(duration)drive3d.easeTo({...options,duration,essential:true});else drive3d.jumpTo(options);
  const svg=drive3dVehicle?.getElement().querySelector('svg');
  if(svg)svg.style.transform='rotate('+(((pose.bearing-drive3d.getBearing()+540)%360)-180)+'deg)';
