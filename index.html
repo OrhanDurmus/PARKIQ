@@ -226,6 +226,7 @@ const animateNavPosition=(lat,lng,bearing,immediate=false)=>{
  const initialBearing=drivePose?.bearing??bearing;
  const deltaBearing=((bearing-initialBearing+540)%360)-180;
  const started=performance.now();
+ const navMotionSession=gpsTrackingSession;
  const render=(now)=>{
   const t=duration?Math.min(1,(now-started)/duration):1;
   const eased=t*t*(3-2*t);
@@ -236,7 +237,7 @@ const animateNavPosition=(lat,lng,bearing,immediate=false)=>{
    drivePose={lat:nextLat,lng:nextLng,bearing:(initialBearing+deltaBearing*eased+360)%360};drive3dRoute();
    if(followGps&&(!duration||t===1||Math.floor(now/70)!==Math.floor((now-16)/70)))updateDriveCamera(0);
   }
-  if(t<1&&routeWatch!==null&&!document.hidden)navMotionFrame=requestAnimationFrame(render);else navMotionFrame=0;
+  if(t<1&&gpsTrackingSession===navMotionSession&&!document.hidden)navMotionFrame=requestAnimationFrame(render);else navMotionFrame=0;
  };
  navMotionFrame=requestAnimationFrame(render);
 };
