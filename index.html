@@ -250,7 +250,7 @@ const animateNavPosition=(lat,lng,bearing,immediate=false)=>{
    drivePose={lat:nextLat,lng:nextLng,bearing:(initialBearing+deltaBearing*eased+360)%360};
    if(drive3d&&drive3dReady){
     drive3dVehicle?.setLngLat([nextLng,nextLat]);
-    if(followGps&&$('mapWrap').classList.contains('drive-3d')&&(!duration||t===1||Math.floor(now/70)!==Math.floor((now-16)/70)))updateDriveCamera(0);
+    if(followGps&&$('mapWrap').classList.contains('drive-3d')&&(!duration||t===1||Math.floor(now/34)!==Math.floor((now-16)/34)))updateDriveCamera(0);
    }
   }
   if(t<1&&routeWatch!==null&&!document.hidden)navMotionFrame=requestAnimationFrame(render);else navMotionFrame=0;
@@ -277,16 +277,16 @@ const updateDriveCamera=(duration=0)=>{
  const previous=lastStableDriveCamera;
  const metersBetween=(a,b)=>Math.hypot((a.lat-b.lat)*111195,(a.lng-b.lng)*111195*Math.cos(pose.lat*Math.PI/180));
  const bearingDelta=(a,b)=>((a-b+540)%360)-180;
- const nearPrevious=previous&&metersBetween(pose,previous)<(stationary?9:2.5);
+ const nearPrevious=previous&&metersBetween(pose,previous)<(stationary?9:0.35);
  const stableBearing=previous&&stationary?previous.bearing:pose.bearing;
  const bearingChange=previous?Math.abs(bearingDelta(stableBearing,previous.bearing)):360;
  const paddingTop=Math.max(0,Math.round(2*targetY-canvas.height));
- if(nearPrevious&&bearingChange<(stationary?12:3)&&previous.paddingTop===paddingTop){
+ if(nearPrevious&&bearingChange<(stationary?12:0.6)&&previous.paddingTop===paddingTop){
   const svg=drive3dVehicle?.getElement().querySelector('svg');
   if(svg)svg.style.transform='rotate('+(((pose.bearing-drive3d.getBearing()+540)%360)-180)+'deg)';
   return;
  }
- const bearing=previous&&bearingChange<3?previous.bearing:stableBearing;
+ const bearing=previous&&bearingChange<0.6?previous.bearing:stableBearing;
  const options={center:[pose.lng,pose.lat],bearing,zoom:drivingCamera.zoom,pitch:drivingCamera.pitch,padding:{top:paddingTop,bottom:0,left:0,right:0}};
  lastStableDriveCamera={lat:pose.lat,lng:pose.lng,bearing,paddingTop};
  if(duration)drive3d.easeTo({...options,duration,essential:true});else drive3d.jumpTo(options);
@@ -296,7 +296,7 @@ const updateDriveCamera=(duration=0)=>{
  version:8,
  sources:{imagery:{type:'raster',tiles:['https://services.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'],tileSize:256,maxzoom:19,attribution:'Imagery © Esri, Vantor, Earthstar Geographics and the GIS User Community'}},
  layers:[{id:'satellite-imagery',type:'raster',source:'imagery'}]
-},center:[lastGps?.lng||28.9784,lastGps?.lat||41.0082],zoom:drivingCamera.zoom,pitch:drivingCamera.pitch,bearing:0,interactive:true,dragRotate:false,touchPitch:false,maxPitch:drivingCamera.pitch});drive3d.on('load',()=>{drive3dReady=true;wrap.dataset.mapEngine='maplibre-loading';drive3d.resize();updateDriveCamera();drive3d.addSource('driving-route',{type:'geojson',data:routeGeometry||{type:'FeatureCollection',features:[]}});drive3d.addLayer({id:'driving-route-casing',type:'line',source:'driving-route',paint:{'line-color':'#1453aa','line-width':6,'line-opacity':.95},layout:{'line-cap':'round','line-join':'round'}});drive3d.addLayer({id:'driving-route-line',type:'line',source:'driving-route',paint:{'line-color':'#4285f4','line-width':9,'line-opacity':.95},layout:{'line-cap':'round','line-join':'round'}});drive3dRoute();const vehicle=document.createElement('div');vehicle.style.cssText='width:34px;height:43px;pointer-events:none;filter:drop-shadow(0 2px 4px #000a)';vehicle.innerHTML='<svg width="34" height="43" viewBox="0 0 25 32" xmlns="http://www.w3.org/2000/svg"><path d="M12.5 2 L23 27 Q24 30 20 29 L12.5 25 L5 29 Q1 30 2 27 Z" fill="#168be5" stroke="white" stroke-width="2.7" stroke-linejoin="round"/><path d="M12.5 8 L12.5 23" stroke="#d9f6ff" stroke-width="2" stroke-linecap="round"/></svg>';drive3dVehicle=new maplibregl.Marker({element:vehicle,rotationAlignment:'viewport',pitchAlignment:'viewport'}).setLngLat([lastGps?.lng||28.9784,lastGps?.lat||41.0082]).addTo(drive3d);
+},center:[lastGps?.lng||28.9784,lastGps?.lat||41.0082],zoom:drivingCamera.zoom,pitch:drivingCamera.pitch,bearing:0,interactive:true,dragRotate:false,touchPitch:false,maxPitch:drivingCamera.pitch});drive3d.on('load',()=>{drive3dReady=true;wrap.dataset.mapEngine='maplibre-loading';drive3d.resize();updateDriveCamera();drive3d.addSource('driving-route',{type:'geojson',data:routeGeometry||{type:'FeatureCollection',features:[]}});drive3d.addLayer({id:'driving-route-casing',type:'line',source:'driving-route',paint:{'line-color':'#1453aa','line-width':9,'line-opacity':.95},layout:{'line-cap':'round','line-join':'round'}});drive3d.addLayer({id:'driving-route-line',type:'line',source:'driving-route',paint:{'line-color':'#4285f4','line-width':6,'line-opacity':.95},layout:{'line-cap':'round','line-join':'round'}});drive3dRoute();const vehicle=document.createElement('div');vehicle.style.cssText='width:34px;height:43px;pointer-events:none;filter:drop-shadow(0 2px 4px #000a)';vehicle.innerHTML='<svg width="34" height="43" viewBox="0 0 25 32" xmlns="http://www.w3.org/2000/svg"><path d="M12.5 2 L23 27 Q24 30 20 29 L12.5 25 L5 29 Q1 30 2 27 Z" fill="#168be5" stroke="white" stroke-width="2.7" stroke-linejoin="round"/><path d="M12.5 8 L12.5 23" stroke="#d9f6ff" stroke-width="2" stroke-linecap="round"/></svg>';drive3dVehicle=new maplibregl.Marker({element:vehicle,rotationAlignment:'viewport',pitchAlignment:'viewport'}).setLngLat([lastGps?.lng||28.9784,lastGps?.lat||41.0082]).addTo(drive3d);
  // Keep the already-rendered Leaflet satellite map visible until MapLibre tiles and route are painted.
  var revealed=false;var reveal=function(){if(revealed||!drive3dReady||!wrap.classList.contains('navigation-active')||routeWatch===null||!drivePose||!routeGpsMarker)return;revealed=true;drive3dVehicle?.setLngLat([drivePose.lng,drivePose.lat]);wrap.dataset.mapEngine='maplibre';wrap.classList.add('drive-3d');drive3d.resize();lastStableDriveCamera=null;updateDriveCamera(0)};
  drive3d.once('idle',reveal);
