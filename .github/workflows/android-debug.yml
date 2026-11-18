@@ -26,8 +26,39 @@ jobs:
         run: npm install --no-audit --no-fund
       - name: Prepare bundled web assets
         run: npm run mobile:prepare
+      - name: Point PR test APK at isolated Cloudflare Preview
+        if: github.event_name == 'pull_request'
+        env:
+          PREVIEW_URL: https://fix-nav-arrow-gps-jitter-202.parkiq.pages.dev
+        run: |
+          node - <<'NODE'
+          const fs = require('fs');
+          const file = 'capacitor.config.json';
+          const config = JSON.parse(fs.readFileSync(file, 'utf8'));
+          const url = new URL(process.env.PREVIEW_URL);
+          config.server.url = url.origin;
+          config.server.allowNavigation = [url.hostname];
+          fs.writeFileSync(file, JSON.stringify(config, null, 2) + String.fromCharCode(10));
+          console.log('Test APK target:', config.server.url);
+          NODE
       - name: Generate Android project
         run: npx cap add android
+      - name: Enable Android GPS permissions in generated manifest
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          manifest = Path('android/app/src/main/AndroidManifest.xml')
+          source = manifest.read_text()
+          permissions = (
+              '    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />\n'
+              '    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />\n'
+          )
+          assert '<manifest' in source and '<application' in source
+          if 'android.permission.ACCESS_FINE_LOCATION' not in source:
+              source = source.replace('<application', permissions + '    <application', 1)
+          manifest.write_text(source)
+          print('Android location permissions added:', 'ACCESS_FINE_LOCATION' in source)
+          PY
       - name: Compile debug APK
         working-directory: android
         run: ./gradlew assembleDebug --no-daemon
@@ -38,3 +69,23 @@ jobs:
           path: android/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
           retention-days: 7
+      - name: Check Appetize integration availability
+        id: appetize
+        env:
+          APPETIZE_API_TOKEN: ${{ secrets.APPETIZE_API_TOKEN }}
+        run: |
+          if [ -n "$APPETIZE_API_TOKEN" ]; then
+            echo "enabled=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::Appetize upload skipped: add APPETIZE_API_TOKEN as a repository Actions secret."
+          fi
+      - name: Upload Preview APK to Appetize
+        if: steps.appetize.outputs.enabled == 'true'
+        uses: appetizeio/github-action-appetize@v1.1.0
+        with:
+          apiToken: ${{ secrets.APPETIZE_API_TOKEN }}
+          publicKey: ${{ secrets.APPETIZE_PUBLIC_KEY }}
+          appFile: android/app/build/outputs/apk/debug/app-debug.apk
+          platform: android
+          note: ROTAPARK Preview navigation GPS test
