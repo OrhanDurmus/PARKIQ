@@ -31,6 +31,28 @@ jobs:
       - name: Compile debug APK
         working-directory: android
         run: ./gradlew assembleDebug --no-daemon
+      - name: Inspect compiled APK for server-only assets
+        run: |
+          python3 - <<'PY'
+          import zipfile
+          apk='android/app/build/outputs/apk/debug/app-debug.apk'
+          with zipfile.ZipFile(apk) as archive:
+              names=archive.namelist()
+          forbidden_prefixes=('assets/public/functions/','assets/public/workers/')
+          forbidden_files={
+              'assets/public/package.json',
+              'assets/public/package-lock.json',
+              'assets/public/capacitor.config.json',
+          }
+          bad=[name for name in names if name.startswith(forbidden_prefixes) or name in forbidden_files]
+          if bad:
+              raise SystemExit('Forbidden APK assets: '+', '.join(bad[:20]))
+          required={'assets/public/index.html','assets/capacitor.config.json'}
+          missing=required-set(names)
+          if missing:
+              raise SystemExit('Missing APK assets: '+', '.join(sorted(missing)))
+          print(f'APK assets validated ({len(names)} ZIP entries)')
+          PY
       - name: Upload test-only APK
         uses: actions/upload-artifact@v4
         with:
