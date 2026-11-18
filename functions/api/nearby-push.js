@@ -20,7 +20,8 @@ export async function onRequestPost({request,env}){
  const user=await authenticatedUser(request,env);if(!user)return reply({ok:false,error:'login_required'},401);
  const id=await hash(endpoint);
  try{
-  await env.DB.prepare("INSERT INTO nearby_push_subscriptions(endpoint_hash,endpoint,p256dh,auth,latitude,longitude,owner_id) VALUES(?,?,?,?,?,?,?) ON CONFLICT(endpoint_hash) DO UPDATE SET p256dh=excluded.p256dh,auth=excluded.auth,latitude=excluded.latitude,longitude=excluded.longitude,owner_id=excluded.owner_id,updated_at=datetime('now')").bind(id,endpoint,subscription.keys.p256dh,subscription.keys.auth,lat,lng,user.id).run();
+  const result=await env.DB.prepare("INSERT INTO nearby_push_subscriptions(endpoint_hash,endpoint,p256dh,auth,latitude,longitude,owner_id) VALUES(?,?,?,?,?,?,?) ON CONFLICT(endpoint_hash) DO UPDATE SET p256dh=excluded.p256dh,auth=excluded.auth,latitude=excluded.latitude,longitude=excluded.longitude,updated_at=datetime('now') WHERE nearby_push_subscriptions.owner_id=excluded.owner_id").bind(id,endpoint,subscription.keys.p256dh,subscription.keys.auth,lat,lng,user.id).run();
+  if(result?.meta?.changes===0)return reply({ok:false,error:'subscription_owned_by_another_account'},409);
   return reply({ok:true});
  }catch{return reply({ok:false,error:'database_unavailable'},503)}
 }
