@@ -43,6 +43,22 @@ jobs:
           NODE
       - name: Generate Android project
         run: npx cap add android
+      - name: Enable Android GPS permissions in generated manifest
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          manifest = Path('android/app/src/main/AndroidManifest.xml')
+          source = manifest.read_text()
+          permissions = (
+              '    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />\n'
+              '    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />\n'
+          )
+          assert '<manifest' in source and '<application' in source
+          if 'android.permission.ACCESS_FINE_LOCATION' not in source:
+              source = source.replace('<application', permissions + '    <application', 1)
+          manifest.write_text(source)
+          print('Android location permissions added:', 'ACCESS_FINE_LOCATION' in source)
+          PY
       - name: Compile debug APK
         working-directory: android
         run: ./gradlew assembleDebug --no-daemon
