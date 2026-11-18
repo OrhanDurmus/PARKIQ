@@ -59,3 +59,36 @@ test('deleted or mismatched street reports never trigger queued pushes',async()=
  assert.equal(await recipients.isStoredNearbyReportActive({get:async()=>({...report,ownerId:'other'})},job,now),false);
  assert.equal(await recipients.isStoredNearbyReportActive(kv,job,now+2000),false);
 });
+
+
+test('subscription registration preserves endpoint ownership across accounts',async()=>{
+ const api=await load('../functions/api/nearby-push.js');
+ const oldFetch=globalThis.fetch;
+ let owner='account-a';
+ let sqlSeen='';
+ globalThis.fetch=async()=>Response.json({id:owner});
+ const endpoint='https://fcm.googleapis.com/fcm/send/test';
+ const subscription={endpoint,keys:{p256dh:'A'.repeat(44),auth:'B'.repeat(24)}};
+ const db={prepare(sql){
+  sqlSeen=sql;
+  return {bind(...values){return {run:async()=>{
+   const attemptedOwner=values[6];
+   if(attemptedOwner!=='account-a')return {meta:{changes:0}};
+   return {meta:{changes:1}};
+  }}}};
+ }};
+ const request=()=>new Request('https://rotapark.com.tr/api/nearby-push',{
+  method:'POST',headers:{Authorization:'Bearer test-token','Content-Type':'application/json'},
+  body:JSON.stringify({subscription,latitude:40.9,longitude:29.3})
+ });
+ try{
+  const env={DB:db,WEB_PUSH_PUBLIC_KEY:'public',SUPABASE_URL:'https://example.supabase.co',SUPABASE_ANON_KEY:'public'};
+  assert.equal((await api.onRequestPost({request:request(),env})).status,200);
+  assert.match(sqlSeen,/WHERE nearby_push_subscriptions\.owner_id=excluded\.owner_id/);
+  assert.doesNotMatch(sqlSeen.split(' WHERE ')[0],/owner_id=excluded\.owner_id/);
+  owner='account-b';
+  const denied=await api.onRequestPost({request:request(),env});
+  assert.equal(denied.status,409);
+  assert.equal((await denied.json()).error,'subscription_owned_by_another_account');
+ }finally{globalThis.fetch=oldFetch}
+});
