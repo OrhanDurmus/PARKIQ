@@ -29,7 +29,7 @@ jobs:
       - name: Point PR test APK at isolated Cloudflare Preview
         if: github.event_name == 'pull_request'
         env:
-          PREVIEW_URL: https://3a87c755.parkiq.pages.dev
+          PREVIEW_URL: https://fix-nav-arrow-gps-jitter-202.parkiq.pages.dev
         run: |
           node - <<'NODE'
           const fs = require('fs');
