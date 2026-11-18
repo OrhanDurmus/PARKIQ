@@ -230,8 +230,8 @@ const navPerf={gpsAt:0,gpsGap:0,frames:0,frameAt:0,frameGap:0,cameraUpdates:0,ca
 let navPerfPanel=null;
 const renderNavPerf=()=>{
  if(!navPerfEnabled||!document.body)return;
- if(!navPerfPanel){navPerfPanel=document.createElement('div');navPerfPanel.setAttribute('aria-label','Navigasyon performans teşhisi');navPerfPanel.style.cssText='position:fixed;left:8px;top:76px;z-index:2147483646;background:#101820df;color:#e5f5ff;font:12px/1.5 monospace;padding:8px 10px;border:1px solid #ffffff55;border-radius:8px;pointer-events:none;white-space:pre';document.body.appendChild(navPerfPanel)}
- navPerfPanel.textContent='NAV PERF (yerel)\\nGPS aralığı: '+Math.round(navPerf.gpsGap)+' ms\\nKare aralığı: '+Math.round(navPerf.frameGap)+' ms\\nKamera: '+navPerf.cameraUpdates+' / atlanan '+navPerf.cameraSkipped+'\\nAraç: '+(navMotionFrame?'hareketli':'bekliyor');
+ if(!navPerfPanel){navPerfPanel=document.createElement('div');navPerfPanel.setAttribute('aria-label','Navigasyon performans teşhisi');navPerfPanel.style.cssText='position:fixed;left:8px;top:calc(env(safe-area-inset-top, 0px) + 12px);z-index:2147483646;max-width:calc(100vw - 16px);background:#101820ee;color:#e5f5ff;font:11px/1.4 monospace;padding:6px 8px;border:1px solid #ffffff55;border-radius:8px;pointer-events:none;white-space:pre-line;overflow-wrap:anywhere';document.body.appendChild(navPerfPanel)}
+ navPerfPanel.textContent=['NAV PERF (yerel)','GPS: '+Math.round(navPerf.gpsGap)+' ms · Kare: '+Math.round(navPerf.frameGap)+' ms','Kamera: '+navPerf.cameraUpdates+' · Atlanan: '+navPerf.cameraSkipped,'Araç: '+(navMotionFrame?'hareketli':'bekliyor')].join(String.fromCharCode(10));
 };
 if(navPerfEnabled)setInterval(renderNavPerf,1000);
 const cancelNavMotion=()=>{if(navMotionFrame){cancelAnimationFrame(navMotionFrame);navMotionFrame=0}};
