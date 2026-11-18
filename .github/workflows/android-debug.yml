@@ -72,6 +72,12 @@ jobs:
           missing=required-set(names)
           if missing:
               raise SystemExit('Missing APK assets: '+', '.join(sorted(missing)))
+          with zipfile.ZipFile(apk) as archive:
+              manifest=archive.read('AndroidManifest.xml')
+          for permission in ('android.permission.ACCESS_FINE_LOCATION','android.permission.ACCESS_COARSE_LOCATION'):
+              if permission.encode('utf-16le') not in manifest:
+                  raise SystemExit('Missing compiled Android location permission: '+permission)
+          print('Compiled APK location permissions verified')
           print(f'APK assets validated ({len(names)} ZIP entries)')
           PY
       - name: Upload test-only APK
