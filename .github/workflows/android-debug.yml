@@ -26,6 +26,21 @@ jobs:
         run: npm install --no-audit --no-fund
       - name: Prepare bundled web assets
         run: npm run mobile:prepare
+      - name: Point PR test APK at isolated Cloudflare Preview
+        if: github.event_name == 'pull_request'
+        env:
+          PREVIEW_URL: https://3a87c755.parkiq.pages.dev
+        run: |
+          node - <<'NODE'
+          const fs = require('fs');
+          const file = 'capacitor.config.json';
+          const config = JSON.parse(fs.readFileSync(file, 'utf8'));
+          const url = new URL(process.env.PREVIEW_URL);
+          config.server.url = url.origin;
+          config.server.allowNavigation = [url.hostname];
+          fs.writeFileSync(file, JSON.stringify(config, null, 2) + '\\n');
+          console.log('Test APK target:', config.server.url);
+          NODE
       - name: Generate Android project
         run: npx cap add android
       - name: Compile debug APK
