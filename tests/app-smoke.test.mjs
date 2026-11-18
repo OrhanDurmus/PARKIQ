@@ -92,9 +92,10 @@ test('stale GPS fixes are rejected before route progress is updated',()=>{
 test('stale geolocation callbacks cannot update a new tracking session',()=>{
   assert.match(html,/gpsTrackingSession=0/);
   assert.match(html,/currentGpsSession=\+\+gpsTrackingSession/);
-  assert.match(html,/watchPosition\(pos=>\{if\(currentGpsSession!==gpsTrackingSession\)return/);
+  assert.match(html,/const handleNavGpsFix=pos=>\{if\(currentGpsSession!==gpsTrackingSession\)return/);
+  assert.match(html,/watchPosition\(handleNavGpsFix,err=>/);
   assert.match(html,/err=>\{if\(currentGpsSession!==gpsTrackingSession\)return/);
-  assert.match(html,/function stopTracking\(\)\{(?:cancelNavMotion\(\);)?(?:stopDrive3d\(\);)?gpsTrackingSession\+\+/);
+  assert.match(html,/function stopTracking\(\)\{[^}]*cancelNavMotion\(\);stopDrive3d\(\);gpsTrackingSession\+\+/);
 });
 
 test('foreground GPS probe callbacks respect the active tracking session',()=>{
@@ -110,7 +111,7 @@ test('async reroute results cannot overwrite a restarted GPS session',()=>{
 
 test('stale reroute cleanup cannot reset a new navigation reroute',()=>{
   assert.match(html,/finally\{if\(gpsTrackingSession===rerouteSession&&navigationRequestId===rerouteRequestId\)rerouting=false/);
-  assert.match(html,/function stopTracking\(\)\{(?:cancelNavMotion\(\);)?(?:stopDrive3d\(\);)?gpsTrackingSession\+\+;rerouting=false/);
+  assert.match(html,/function stopTracking\(\)\{[^}]*cancelNavMotion\(\);stopDrive3d\(\);gpsTrackingSession\+\+;rerouting=false/);
 });
 
 test('reroute result requires a fresh trusted GPS fix before replacing route',()=>{
