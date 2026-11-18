@@ -228,7 +228,7 @@ const cancelNavMotion=()=>{if(navMotionFrame){cancelAnimationFrame(navMotionFram
 let stableNavVehicleFix=null;
 const animateNavPosition=(lat,lng,bearing,immediate=false)=>{
  if(!routeGpsMarker)return;
- const current=routeGpsMarker.getLatLng();
+ const current=$('mapWrap').classList.contains('drive-3d')&&drivePose?{lat:drivePose.lat,lng:drivePose.lng}:routeGpsMarker.getLatLng();
  const distance=map.distance(current,[lat,lng]);
  const currentBearing=drivePose?.bearing??bearing;
  const angularChange=Math.abs(((bearing-currentBearing+540)%360)-180);
