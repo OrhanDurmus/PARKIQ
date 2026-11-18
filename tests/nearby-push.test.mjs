@@ -85,7 +85,7 @@ test('subscription registration preserves endpoint ownership across accounts',as
   const env={DB:db,WEB_PUSH_PUBLIC_KEY:'public',SUPABASE_URL:'https://example.supabase.co',SUPABASE_ANON_KEY:'public'};
   assert.equal((await api.onRequestPost({request:request(),env})).status,200);
   assert.match(sqlSeen,/WHERE nearby_push_subscriptions\.owner_id=excluded\.owner_id/);
-  assert.doesNotMatch(sqlSeen,/SET[^"]*owner_id=excluded\.owner_id/);
+  assert.doesNotMatch(sqlSeen.split(' WHERE ')[0],/owner_id=excluded\.owner_id/);
   owner='account-b';
   const denied=await api.onRequestPost({request:request(),env});
   assert.equal(denied.status,409);
