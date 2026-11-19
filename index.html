@@ -552,12 +552,20 @@ function traceParkingRender(points,viewport){
  }
  const operatorEvidence={explicitOperatorTag:0,nameHint:0,officialNameMatch:0,unclassifiedWithOperatorText:0};
  const unclassifiedExamples=[];
+ const unclassifiedOperatorSamples=[];
  for(const p of withinRadius){
   if(parkingOperatorHint(p.operator))operatorEvidence.explicitOperatorTag++;
   if(parkingOperatorHint(p.name))operatorEvidence.nameHint++;
   if(officialOperatorListing(p)||izelmanExactOfficialName(p))operatorEvidence.officialNameMatch++;
   if(!parkingFilterOperator(p)){
-   if(String(p.operator||'').trim())operatorEvidence.unclassifiedWithOperatorText++;
+   if(String(p.operator||'').trim()){
+    operatorEvidence.unclassifiedWithOperatorText++;
+    if(unclassifiedOperatorSamples.length<40)unclassifiedOperatorSamples.push({
+     name:String(p.name||'').slice(0,90),
+     operator:String(p.operator||'').slice(0,90),
+     osmId:String(p.osmId||'').slice(0,60)
+    });
+   }
    if(unclassifiedExamples.length<8)unclassifiedExamples.push({
     name:String(p.name||'').slice(0,90),
     operator:String(p.operator||'').slice(0,90),
@@ -572,6 +580,7 @@ function traceParkingRender(points,viewport){
   operatorBreakdown,
   operatorEvidence,
   unclassifiedExamples,
+  unclassifiedOperatorSamples,
   build:'parking-viewport-cluster-v1',
   serviceWorkerControlled:Boolean(navigator.serviceWorker?.controller),
   operator:activeParkingOperator,
