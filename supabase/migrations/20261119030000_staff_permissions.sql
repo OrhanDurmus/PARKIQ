@@ -48,6 +48,21 @@ revoke all on public.rotapark_staff_role_permissions from public, anon, authenti
 revoke all on public.rotapark_staff_user_permissions from public, anon, authenticated;
 revoke all on public.rotapark_staff_permission_audit from public, anon, authenticated;
 
+-- Require the existing role source; abort the whole transaction on schema mismatch.
+do $
+begin
+  if to_regprocedure('public.rotapark_my_role()') is null
+     or to_regclass('public.rotapark_staff_roles') is null then
+    raise exception 'Missing ROTAPARK authoritative role source';
+  end if;
+  if not exists (
+    select 1 from pg_proc
+    where oid='public.rotapark_my_role()'::regprocedure and prosecdef
+  ) then
+    raise exception 'ROTAPARK role RPC must be SECURITY DEFINER';
+  end if;
+end; $;
+
 -- Founder-only mutation, protected by existing authoritative role RPC.
 create or replace function public.rotapark_founder_set_role_permission(
   p_role text, p_permission text, p_enabled boolean
