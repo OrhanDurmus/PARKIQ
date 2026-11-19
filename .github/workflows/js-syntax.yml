@@ -14,4 +14,4 @@ jobs:
       - name: Validate inline and external JavaScript
         run: node scripts/check-js-syntax.cjs
       - name: Verify public authentication configuration
-        run: node --test tests/auth-config.test.mjs
+        run: node --test tests/auth-config.test.mjs tests/auth-config-whitespace.test.mjs
