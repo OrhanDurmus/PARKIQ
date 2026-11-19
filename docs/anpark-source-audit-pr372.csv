@@ -1,0 +1,25 @@
+official_id,official_name,active,lat,lng,center_distance_km,reviewed_osm_id,match_distance_m,action
+1095,ALSANCAK YOL BOYU OTOPARKI,True,39.941283987606035,32.855654018215056,0.942,,,separate_official_identity
+1105,BATIKENT REKREASYON ALANI,True,39.965459,32.710895,13.179,,,separate_official_identity
+1101,ÇUBUK-1 BARAJI OTOPARKI,True,40.00321131012254,32.926571741594586,9.632,,,separate_official_identity
+1099,DEMİRTEPE AÇIK OTOPARKI,True,39.923778,32.849556,1.376,,,separate_official_identity
+1111,DIŞKAPI AÇIK OTOPARKI,True,39.951653,32.857095,2.042,,,separate_official_identity
+1098,GÖKSU PARKI OTOPARKI,True,39.988505,32.647731,19.084,,,separate_official_identity
+1117,HANIMELİ AÇIK OTOPARKI,True,39.926431,32.852785,0.974,,,separate_official_identity
+1096,KALE AÇIK OTOPARKI,False,39.937984,32.865275,0.697,,,exclude_inactive
+1110,KALE YOL BOYU OTOPARKI,True,39.937984,32.865275,0.697,,,separate_official_identity
+1104,KIZILCAHAMAM SOĞUK SU MİLLİ PARKI,True,40.468634,32.630351,62.646,,,separate_official_identity
+1109,KOLEJ AÇIK OTOPARKI,True,39.922722,32.862333,1.208,,,separate_official_identity
+1107,MAİDAN YOL BOYU,True,39.909377,32.765033,8.502,,,separate_official_identity
+1116,MAVİ GÖL REKREASYON ALANI,True,39.915044,32.987089,11.052,,,separate_official_identity
+1100,MOGAN REKREASYON ALANI,True,39.779457,32.7881,18.174,,,separate_official_identity
+1108,NECATİBEY YOL BOYU OTOPARK,True,39.926057,32.854509,0.929,,,separate_official_identity
+1106,PANORA AVM YOL BOYU OTOPARKI,True,39.8489625,32.8341122,9.639,,,separate_official_identity
+1115,RÜZGARLI CADDESİ YOL BOYU OTOPARKI,True,39.942570337306186,32.85010068991611,1.308,,,separate_official_identity
+1112,RÜZGARLI ÇOK KATLI OTOPARKI,True,39.944798,32.851739,1.438,,,separate_official_identity
+1102,RÜZGARLI YOL BOYU OTOPARKI,True,39.945445,32.850876,1.536,,,separate_official_identity
+1118,SIHHIYE ÇOK KATLI OTOPARKI,True,39.926417,32.859245,0.777,way/421433589,86.8,enrich_reviewed_osm
+1103,TANDOĞAN AÇIK OTOPARKI,True,39.9345,32.837278,1.916,,,separate_official_identity
+1097,ULUS 100.YIL KAPALI OTOPARKI,True,39.940857,32.853291,0.993,node/13025867011,39.8,enrich_reviewed_osm
+1114,YDA KAPALI OTOPARKI,True,39.90994900660763,32.80855318006441,5.081,,,separate_official_identity
+1113,YDA YOL BOYU,True,39.910356,32.808125,5.09,,,separate_official_identity

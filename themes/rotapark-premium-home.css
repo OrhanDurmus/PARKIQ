@@ -668,3 +668,7 @@ header #rpNotificationShortcut:focus-visible{outline:2px solid #ffe18c!important
  }
  header #rpNotificationShortcut svg{width:20px!important;height:20px!important}
 }
+
+/* Restore the current regional search without requesting location or moving the map. */
+#rpOperatorShortcuts #parkingOperatorReset[hidden]{display:none!important}
+#rpOperatorShortcuts #parkingOperatorReset{font-size:12px!important;padding:8px!important}

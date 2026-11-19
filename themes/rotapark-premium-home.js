@@ -30,6 +30,7 @@
    });
    quick.appendChild(b);
   });
+  var clearOperator=document.createElement('button');clearOperator.type='button';clearOperator.id='parkingOperatorReset';clearOperator.hidden=true;clearOperator.textContent='Tüm otoparkları göster';clearOperator.addEventListener('click',function(){window.rotaparkClearParkingOperator?.();});quick.appendChild(clearOperator);
   if(search)search.insertAdjacentElement('afterend',quick);
   tools.insertAdjacentElement('afterend',summary);
   summary.insertAdjacentElement('afterend',map);
