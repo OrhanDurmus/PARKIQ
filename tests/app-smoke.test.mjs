@@ -18,6 +18,16 @@ test('main HTML has parseable inline JavaScript',()=>{
     }
   });
 });
+test('regional parking refresh preserves cache until replacement data succeeds',()=>{
+  const load=html.split('async function loadParking(){')[1]?.split("window.addEventListener('online'")[0];
+  const move=html.split("map.on('moveend',()=>{").at(-1)?.split('setTimeout(loadParking,400)')[0];
+  assert.ok(load&&move,'Parking refresh and map move handlers must exist');
+  assert.doesNotMatch(load,/allParking=\\[\\];lastParkingFetchCenter=null/,'Loading another region must not discard the last successful data');
+  assert.doesNotMatch(move,/allParking=\\[\\];lastParkingFetchCenter=null/,'Panning must not discard cached parking data');
+  assert.match(load,/lastParkingFetchCenter=c;lastParkingSuccessAt=Date\\.now\\(\\)/,'Only a successful fetch should update the cache center');
+  assert.match(move,/showParking\\(\\);updateParkingFreshness\\(true\\)/,'Old-city pins should be filtered out while the next region loads');
+});
+
 test('critical navigation and parking controls are present',()=>{
   for(const id of ['map','parkingNameSearch','nearestFive','parkingList','navOverlay','navStop','navRecenter','navGpsQuality','navDiagnosticPanel','navDiagnosticText','navDiagnosticCopy','navDiagnosticClose','navDiagnostics','navCompact','navRemaining','navEta','mapSearchHere','mapLocateMe','mapFitParking']){
     assert.match(html,new RegExp('id=["\\x27]'+id+'["\\x27]'),'Missing #'+id);
