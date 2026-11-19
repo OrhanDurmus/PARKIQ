@@ -218,7 +218,7 @@ test('parking uses one İSPARK request per search and reuses it for late live oc
  assert.equal(renders, 1);
 });
 
-function operatorParkingFixture() {
+function operatorParkingFixture({inViewport = () => true} = {}) {
  const nodes = new Map();
  const element = () => ({
   children: [], attributes: {}, dataset: {}, classList: {toggle() {}, contains: () => false},
@@ -244,7 +244,8 @@ function operatorParkingFixture() {
  const navigator = {onLine: true};
  const pending = [];
  const markers = [];
- const parkingLayer = {clearLayers() {markers.length = 0;}};
+ const markerLocations = [];
+ const parkingLayer = {clearLayers() {markers.length = 0;markerLocations.length = 0;}};
  const window = {};
  let center = {lat: 41, lng: 29};
  const map = {
@@ -252,7 +253,7 @@ function operatorParkingFixture() {
   getCenter: () => center,
   invalidateSize() {},
   getZoom: () => 12,
-  getBounds: () => ({contains: () => true, pad: () => ({contains: () => true})}),
+  getBounds: () => ({contains: inViewport, pad: () => ({contains: () => true})}),
   project: ([lat, lng]) => ({x: lng, y: lat}),
   distance: () => 0,
  };
@@ -260,7 +261,7 @@ function operatorParkingFixture() {
   divIcon: options => options,
   marker(coords, options) {
    return {
-    addTo(layer) {assert.equal(layer, parkingLayer);markers.push(options.title);return this;},
+    addTo(layer) {assert.equal(layer, parkingLayer);markers.push(options.title);markerLocations.push(coords);return this;},
     on() {},
     bindPopup() {},
    };
@@ -296,7 +297,7 @@ function operatorParkingFixture() {
  };
  runInNewContext([
   part(html, 'const parkingOperatorCenters=', 'window.rotaparkFocusLocation='),
-  part(html, 'function revealParkingResults(', "$('navSearch').onclick="),
+  part(html, 'let parkingTraceApi=', "$('navSearch').onclick="),
   part(html, 'async function loadParking(){', " window.addEventListener('online'"),
  ].join("\n"), context);
 
@@ -316,7 +317,7 @@ function operatorParkingFixture() {
   assert.deepEqual(markers, count > 1 ? [count + ' otopark · Yakınlaştır']
    : count === 1 ? [operator + ' 0 · Doluluk bilinmiyor'] : []);
  };
- return {select, verify, pending, navigator, $, reset:context.resetParkingFilters};
+ return {select, verify, pending, navigator, $, markerLocations, reset:context.resetParkingFilters};
 }
 
 const operatorPoints = operator => [
@@ -392,4 +393,19 @@ test('empty results wait for the latest load and clearing the operator restores 
  assert.equal($('summaryTotal').textContent, 3);
  assert.equal($('emptyNotice').hidden, true);
  assert.equal($('nearestFive').children.filter(node => node.className === 'near-item').length, 3);
+});
+
+
+test('a cluster with visible members must keep its marker inside the viewport', async () => {
+ const inViewport = ([, lng]) => lng >= 29;
+ const {select, verify, pending, markerLocations} = operatorParkingFixture({inViewport});
+ select('İSPARK');
+ pending[0].finish([
+  {name:'İSPARK 0', operator:'İSPARK', lat:41, lng:29.001},
+  {name:'İSPARK 1', operator:'İSPARK', lat:41, lng:28.990},
+  {name:'İSPARK 2', operator:'İSPARK', lat:41, lng:28.991},
+ ]);
+ await settleParking();
+ verify('İSPARK', 3);
+ assert.equal(markerLocations.filter(inViewport).length, 1);
 });
