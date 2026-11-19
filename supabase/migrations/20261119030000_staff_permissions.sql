@@ -99,7 +99,11 @@ create or replace function public.rotapark_staff_has_permission(p_permission tex
 returns boolean language plpgsql security definer set search_path = '' as $$
 declare v_role text;
 begin
-  if auth.uid() is null or p_permission is null then return false; end if;
+  if auth.uid() is null or p_permission is null or p_permission not in (
+    'parking_reports.read','parking_reports.moderate','support.read',
+    'support.reply','users.block','announcements.publish',
+    'staff.moderators.manage','parking_records.edit'
+  ) then return false; end if;
   v_role := public.rotapark_my_role();
   if v_role = 'founder' then return true; end if;
   if v_role not in ('admin','moderator') then return false; end if;
