@@ -15,5 +15,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
+      - name: Validate staff permissions fail-closed checks
+        run: node scripts/check-staff-permissions.cjs
       - name: Validate parking API and app startup syntax
         run: node --test tests/parking-api.test.mjs tests/business-parking.test.mjs tests/app-smoke.test.mjs
