@@ -38,6 +38,20 @@ test('navigation controls have handlers',()=>{
   }
 });
 
+test('map show-all clears an active operator before fitting general parking',()=>{
+  const handlerSource=html.split("$('mapFitParking').onclick=")[1]?.split(";$('parking').onclick")[0];
+  assert.ok(handlerSource,'Missing map show-all handler');
+  const events=[];
+  const context={activeParkingOperator:'İZELMAN',resetParkingFilters(){events.push('reset')},$:id=>({click(){events.push(id)}})};
+  const handler=runInNewContext('('+handlerSource+')',context);
+  handler();
+  assert.deepEqual(events,['reset','focusNearbyParking']);
+  events.length=0;
+  context.activeParkingOperator=null;
+  handler();
+  assert.deepEqual(events,['focusNearbyParking']);
+});
+
 test('diagnostics button actually opens, copies and closes the report',async()=>{
   const scripts=[...html.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script\s*>/gi)];
   const diagnostic=scripts.map(m=>m[2]).find(body=>body.includes("function openReport()")&&body.includes("navDiagnosticCopy"));
@@ -216,4 +230,305 @@ test('parking uses one İSPARK request per search and reuses it for late live oc
  await apply(2, Promise.resolve({points: [live]}));
  assert.equal(point.isparkLive, live);
  assert.equal(renders, 1);
+});
+
+function operatorParkingFixture({inViewport = () => true, resolveOperator = point => point.operator} = {}) {
+ const nodes = new Map();
+ const element = () => ({
+  children: [], attributes: {}, dataset: {}, classList: {toggle() {}, contains: () => false},
+  append(...children) {this.children.push(...children);},
+  appendChild(child) {this.append(child);},
+  replaceChildren() {this.children = [];},
+  setAttribute(name, value) {this.attributes[name] = value;},
+  addEventListener(name, listener) {this[name] = listener;},
+  scrollIntoView() {},
+ });
+ const $ = id => {
+  if (!nodes.has(id)) nodes.set(id, element());
+  return nodes.get(id);
+ };
+ $('legacyParkingCards').hidden = true;
+ const buttons = [];
+ const document = {
+  createElement: element,
+  querySelectorAll: selector => selector === '[data-parking-operator]'
+   ? buttons.filter(button => button.dataset.parkingOperator)
+   : [],
+ };
+ const navigator = {onLine: true};
+ const pending = [];
+ const markers = [];
+ const markerLocations = [];
+ const parkingLayer = {clearLayers() {markers.length = 0;markerLocations.length = 0;}};
+ const window = {};
+ let center = {lat: 41, lng: 29};
+ const map = {
+  setView([lat, lng]) {center = {lat, lng};},
+  getCenter: () => center,
+  invalidateSize() {},
+  getZoom: () => 12,
+  getBounds: () => ({contains: inViewport, pad: () => ({contains: () => true})}),
+  project: ([lat, lng]) => ({x: lng, y: lat}),
+  distance: () => 0,
+ };
+ const L = {
+  divIcon: options => options,
+  marker(coords, options) {
+   return {
+    addTo(layer) {assert.equal(layer, parkingLayer);markers.push(options.title);markerLocations.push(coords);return this;},
+    on() {},
+    bindPopup() {},
+   };
+  },
+ };
+ const context = {
+  $, window, document, navigator, map, L, parkingLayer, AbortController,
+  setTimeout: () => 1, clearTimeout() {}, allParking: [], parkingSeq: 0,
+  parkingAbort: null, parkingTimer: null, parkingListLimit: 60, quickMode: 'all',
+  lastParkingFetchCenter: null, lastParkingSuccessAt: 0, parkingDataStale: false, parkingDataPartial: false, routeWatch: null,
+  routeGeometry: null, visibleParkingResults: [], parkingType: {}, favKey: 'favorites',
+  corporateOperator: resolveOperator, parkingDisplayName: point => point.name,
+  fresh: () => false, dist: () => 0, tariffLine: () => '', isSmyrnaParking: () => false,
+  renderFavorites() {}, read: () => [], status() {},
+  updateParkingFreshness(stale, partial = context.parkingDataPartial) {
+   context.parkingDataStale = stale;context.parkingDataPartial = partial;
+  },
+  fetch(url, options) {
+   if (url.startsWith('/api/parking?')) {
+    return new Promise(resolve => pending.push({
+     url, signal: options.signal,
+     finish: points => resolve({ok: true, json: async () => ({points})}),
+    }));
+   }
+   return Promise.resolve({ok: true, json: async () => ({points: []})});
+  },
+ };
+ const part = (source, start, end) => {
+  const from = source.indexOf(start);
+  const to = source.indexOf(end, from + start.length);
+  assert.ok(from >= 0 && to > from, 'Expected source section ' + start);
+  return source.slice(from, to);
+ };
+ runInNewContext([
+  part(html, 'const normalizeParkingPlace=', 'window.rotaparkFocusLocation='),
+  part(html, 'let parkingTraceApi=', "$('navSearch').onclick="),
+  part(html, 'async function loadParking(){', " window.addEventListener('online'"),
+  part(html, 'window.rotaparkClearParkingOperator=', "$('resetFilters').onclick="),
+ ].join("\n"), context);
+
+ const theme = readFileSync(new URL('../themes/rotapark-premium-home.js', import.meta.url),'utf8');
+ Object.assign(context, {quick: {appendChild: button => {buttons.push(button);if(button.id)nodes.set(button.id,button);}}});
+ runInNewContext(part(theme, "  [['📍','En Yakın'", '  if(search)search.insertAdjacentElement'), context);
+ const select = operator => buttons.find(button => button.dataset.parkingOperator === operator).click();
+ const verify = (operator, count, loading = false) => {
+  for (const button of document.querySelectorAll('[data-parking-operator]')) {
+   assert.equal(button.attributes['aria-pressed'], String(button.dataset.parkingOperator === operator));
+  }
+  assert.equal(String($('summaryTotal').textContent), loading?'—':String(count));
+  assert.equal($('emptyNotice').hidden, loading||count>0);
+  const nearby = $('nearestFive').children.filter(node => node.className === 'near-item');
+  assert.deepEqual(nearby.map(node => node.children[0].textContent),
+   Array.from({length: count}, (_, index) => operator + ' ' + index));
+  assert.deepEqual(markers, count > 1 ? [count + ' otopark · Yakınlaştır']
+   : count === 1 ? [operator + ' 0 · Doluluk bilinmiyor'] : []);
+ };
+ return {select, verify, pending, navigator, $, markerLocations, markers, map, reset:()=>$('parkingOperatorReset').click()};
+}
+
+const operatorPoints = operator => [
+ {name:operator + ' 0', operator, lat:39, lng:29},
+ ...(operator === 'İZELMAN' ? [{name:operator + ' 1', operator, lat:39, lng:29.001}] : []),
+ {name:'Anonim otopark', lat:39, lng:29.002},
+ {name:'Başka işletmeci', operator:operator === 'ANPARK' ? 'İSPARK' : 'ANPARK', lat:39, lng:29.003},
+];
+const settleParking = () => new Promise(resolve => setImmediate(resolve));
+
+test('operator buttons replace pins, clusters, count and nearby results together', async () => {
+ const {select, verify, pending} = operatorParkingFixture();
+ for (const operator of ['İZELMAN','İSPARK','ANPARK','İZELMAN']) {
+  select(operator);
+  verify(operator, 0, true);
+  const request = pending.at(-1);
+  select(operator);
+  assert.equal(pending.at(-1), request, 'repeated selection while loading must reuse the request');
+  request.finish(operatorPoints(operator));
+  await settleParking();
+  verify(operator, operator === 'İZELMAN' ? 2 : 1);
+  select(operator);
+  assert.equal(pending.at(-1), request, 'repeated selection after success must keep the results');
+ }
+ assert.equal(pending.length, 4);
+ assert.match(pending[1].url, /lat=41\.0082&lng=28\.9784&radius=30$/);
+});
+
+test('superseded operator requests cannot render, including when the new selection is offline', async () => {
+ const {select, verify, pending, navigator} = operatorParkingFixture();
+ select('İZELMAN');
+ select('İSPARK');
+ select('ANPARK');
+ assert.equal(pending[0].signal.aborted, true);
+ assert.equal(pending[1].signal.aborted, true);
+ pending[2].finish(operatorPoints('ANPARK'));
+ await settleParking();
+ for (const [index, operator] of [[0,'İZELMAN'],[1,'İSPARK']]) {
+  pending[index].finish(operatorPoints(operator));
+  await settleParking();
+  verify('ANPARK', 1);
+ }
+ select('İSPARK');
+ navigator.onLine = false;
+ select('İZELMAN');
+ assert.equal(pending[3].signal.aborted, true);
+ pending[3].finish(operatorPoints('İSPARK'));
+ await settleParking();
+ verify('İZELMAN', 0, true);
+ navigator.onLine = true;
+ select('İZELMAN');
+ pending[4].finish(operatorPoints('İZELMAN'));
+ await settleParking();
+ verify('İZELMAN', 2);
+});
+
+
+test('empty results wait for the latest load and clearing the operator restores regional results', async () => {
+ const {select, verify, pending, $, reset, map} = operatorParkingFixture();
+ select('ANPARK');
+ verify('ANPARK', 0, true);
+ reset();
+ verify(null, 0, true);
+ pending[0].finish([]);
+ await settleParking();
+ verify(null, 0);
+ select('İSPARK');
+ verify('İSPARK', 0, true);
+ pending[1].finish(operatorPoints('İSPARK'));
+ await settleParking();
+ verify('İSPARK', 1);
+ assert.equal($('parkingOperatorReset').hidden,false);
+ const beforeCenter=map.getCenter(),beforeRadius=$('searchRadius').value,beforeRequests=pending.length;
+ reset();
+ assert.equal($('parkingOperatorReset').hidden,true);
+ assert.deepEqual(map.getCenter(),beforeCenter);
+ assert.equal($('searchRadius').value,beforeRadius);
+ assert.equal(pending.length,beforeRequests,'clearing the filter must reuse all regional records');
+ assert.equal($('summaryTotal').textContent, 3);
+ assert.equal($('emptyNotice').hidden, true);
+ assert.equal($('nearestFive').children.filter(node => node.className === 'near-item').length, 3);
+});
+
+
+test('a cluster with visible members must keep its marker inside the viewport', async () => {
+ const inViewport = ([, lng]) => lng >= 29;
+ const {select, verify, pending, markerLocations} = operatorParkingFixture({inViewport});
+ select('İSPARK');
+ pending[0].finish([
+  {name:'İSPARK 0', operator:'İSPARK', lat:41, lng:29.001},
+  {name:'İSPARK 1', operator:'İSPARK', lat:41, lng:28.990},
+  {name:'İSPARK 2', operator:'İSPARK', lat:41, lng:28.991},
+ ]);
+ await settleParking();
+ verify('İSPARK', 3);
+ assert.equal(markerLocations.filter(inViewport).length, 1);
+});
+
+test('ambiguous operator tags stay in general results and are excluded from operator shortcuts', async () => {
+ const {select, verify, pending, reset, $} = operatorParkingFixture();
+ select('İSPARK');
+ pending[0].finish([
+  {name:'İSPARK 0',operator:'İSPARK',lat:41,lng:29},
+  {name:'İZELMAN',operator:'İSPARK',lat:41,lng:29.001},
+ ]);
+ await settleParking();
+ verify('İSPARK', 1);
+ reset();
+ assert.equal($('summaryTotal').textContent, 2);
+});
+
+test('a delayed city lookup cannot replace the latest province search', async () => {
+ const from = html.indexOf("$('search').onclick=async");
+ const to = html.indexOf("$('q').addEventListener", from);
+ const pending = new Map();
+ const centers = {
+  Bursa: {lat:'40.195',lon:'29.06',name:'Bursa',type:'city',display_name:'Bursa'},
+  Ankara: {lat:'39.9334',lon:'32.8597',name:'Ankara',type:'city',display_name:'Ankara'},
+ };
+ const q = {value:'Bursa'};
+ const search = {};
+ const views = [];
+ const fields = {q,search,map:{scrollIntoView(){}},parkingNameSearch:{},feeFilter:{},kindFilter:{}};
+ const context = {
+  $: id => fields[id],
+  window:{rotaparkClearParkingOperator(){}},
+  document:{querySelectorAll:()=>[]},
+  parkingSelectionRevision:0,
+  allParking:[{name:'Ankara Demir Spor Kulübü · Otopark',lat:41,lng:29}],
+  parkingProvinceNames:new Set(['bursa','ankara']),
+  normalizeParkingPlace:s=>s.toLowerCase(),
+  status(){},loadParking(){},
+  map:{setView:point=>views.push(Array.from(point))},
+  fetch(url){
+   const query=new URL(url).searchParams;
+   const city=query.get('q').split(',')[0];
+   const response={ok:true,json:async()=>[centers[city]]};
+   if(city==='Bursa'&&!query.has('featuretype')){
+    return new Promise(resolve=>pending.set(city,()=>resolve(response)));
+   }
+   return Promise.resolve(response);
+  },
+ };
+ runInNewContext(html.slice(from,to),context);
+ const outdated=search.onclick();
+ q.value='Ankara';
+ await search.onclick();
+ pending.get('Bursa')();
+ await outdated;
+ assert.deepEqual(views, [[39.9334,32.8597]]);
+});
+
+test('conflicting live operator labels cannot acquire a corporate badge in general results', () => {
+ const section=(start,end)=>html.slice(html.indexOf(start),html.indexOf(end,html.indexOf(start)+start.length));
+ const context={officialTariff:()=>null,officialOperatorListing:()=>null,izelmanExactOfficialName:()=>false};
+ runInNewContext(section('const normalizeParkingPlace=','const parkingOperatorCenters=')+
+  section('function isOfficialIspark','function parkingDisplayName'),context);
+ // Observed in BOTH real APIs on 2026-11-19: preserve this record, but do not
+ // choose one of its contradictory labels as the corporate badge/filter.
+ const conflict={osmType:'way',osmId:'866788590',name:'İZELMAN',operator:'İSPARK',lat:38.42,lng:27.14};
+ assert.equal(context.corporateOperator(conflict),null);
+ assert.equal(context.parkingFilterOperator(conflict),null);
+ assert.equal(context.isOfficialIspark({...conflict,name:'İSPARK Test',operator:'İSPARK'}),true);
+ assert.equal(context.corporateOperator({...conflict,name:'İZELMAN Test',operator:'İZELMAN A.Ş.'}),'İZELMAN');
+ assert.equal(context.corporateOperator({...conflict,name:'ANPARK Test',operator:'ANPARK',lat:39.9334,lng:32.8597}),'ANPARK');
+ assert.equal(context.corporateOperator({...conflict,sourceSnapshot:true,isparkParkID:'123'}),'İSPARK');
+});
+
+test('real ANPARK directory survives operator switches and restores all regional OSM records', async () => {
+ const section=(start,end)=>html.slice(html.indexOf(start),html.indexOf(end,html.indexOf(start)+start.length));
+ const context={fetch:async()=>({ok:false})};
+ runInNewContext(section('const officialParkingTariffs=','function parkingDisplayName')+
+  section('const anparkOfficialNames','function nationalTariffSource')+
+  section('const normalizeParkingPlace=','const parkingOperatorCenters='),context);
+ runInNewContext('izelmanTariffRows='+JSON.stringify(JSON.parse(readFileSync(new URL('../data/izelman-tariffs.json',import.meta.url))).rows),context);
+ // Same-name private/corporate lookalikes do not prove ANPARK operation.
+ assert.equal(context.corporateOperator({name:'Sıhhiye Çok Katlı Otoparkı',operator:'Özel işletme',lat:39.93,lng:32.85}),null);
+ const {onRequestGet}=await import('../functions/api/parking.js');
+ const env={ASSETS:{async fetch(input){try{return new Response(readFileSync(new URL('..'+new URL(input).pathname,import.meta.url)))}catch{return new Response('',{status:404})}}}};
+ const f=operatorParkingFixture({resolveOperator:context.corporateOperator});
+ const rowsByOperator=new Map();
+ for(const [operator,lat,lng] of [['İSPARK',41.0082,28.9784],['İZELMAN',38.4237,27.1428],['ANPARK',39.9334,32.8597]]){
+  const response=await onRequestGet({request:new Request(`https://test/api/parking?lat=${lat}&lng=${lng}&radius=30`),env});
+  rowsByOperator.set(operator,(await response.json()).points);
+ }
+ for(const operator of ['ANPARK','İSPARK','İZELMAN','ANPARK']){
+  f.select(operator);assert.equal(f.markers.length,0,'previous pins must be cleared');
+  const rows=rowsByOperator.get(operator);
+  f.pending.at(-1).finish(rows);await settleParking();
+  const before=JSON.stringify(rows);
+  const expected=rows.filter(p=>context.parkingFilterOperator(p)===operator).length;
+  assert.equal(f.$('summaryTotal').textContent,expected);
+  assert.deepEqual(f.markers,expected>1?[expected+' otopark · Yakınlaştır']:[]);
+  if(operator==='ANPARK')assert.equal(expected,22);
+  f.reset();assert.equal(f.$('summaryTotal').textContent,rows.length);
+  assert.deepEqual(f.markers,[rows.length+' otopark · Yakınlaştır']);
+  assert.equal(JSON.stringify(rows),before,'filter switches must not mutate records');
+ }
 });

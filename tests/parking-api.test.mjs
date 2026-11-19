@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { readFile } from 'node:fs/promises';
 import { test } from 'node:test';
 import { onRequestGet } from '../functions/api/parking.js';
 
@@ -163,4 +164,39 @@ test('a failed national asset read still serves available curated Istanbul cover
  const result = await onRequestGet({request: new Request(origin + '/api/parking?lat=40.9&lng=29.2'), env});
  assert.equal(result.status, 200);
  assert.deepEqual((await result.json()).points.map(p => p.name), ['curated']);
+});
+
+test('all 81 province centers preserve parking identities as the radius expands', async () => {
+ const centers = (await readFile(new URL('./fixtures/parking-city-centers.txt', import.meta.url), 'utf8'))
+  .trim().split('\n').map(row => row.split('|'));
+ assert.equal(centers.length, 81);
+ assert.equal(new Set(centers.map(([city]) => city)).size, 81);
+ const assets = new Map();
+ const env = {ASSETS: {async fetch(input) {
+  const path = new URL(input).pathname;
+  if (!assets.has(path)) {
+   assets.set(path, await readFile(new URL('..' + path, import.meta.url)).catch(() => null));
+  }
+  const body = assets.get(path);
+  return new Response(body, {status: body ? 200 : 404});
+ }}};
+ for (const [city, lat, lng] of centers) {
+  let previous = new Set();
+  for (const radius of [3,10,20,30]) {
+   const response = await onRequestGet({
+    request: new Request(origin + '/api/parking?lat=' + lat + '&lng=' + lng + '&radius=' + radius),
+    env,
+   });
+   const label = city + ' ' + radius + ' km';
+   assert.equal(response.status, 200, label);
+   const {points} = await response.json();
+   const ids = new Set(points.map(point => JSON.stringify(point)));
+   assert.ok([...previous].every(id => ids.has(id)), 'Lost a record as the radius expanded for ' + label);
+   assert.ok(points.every(point => Math.hypot(
+    (point.lat - Number(lat)) * 111195,
+    (point.lng - Number(lng)) * 111195 * Math.cos(Number(lat) * Math.PI / 180),
+   ) <= radius * 1000), 'Out-of-radius point for ' + label);
+   previous = ids;
+  }
+ }
 });

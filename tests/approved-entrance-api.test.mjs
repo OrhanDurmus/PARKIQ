@@ -1,10 +1,7 @@
 // Run: node --test tests/approved-entrance-api.test.mjs
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {readFile} from 'node:fs/promises';
-
-const source=await readFile(new URL('../functions/api/parking.js',import.meta.url),'utf8');
-const {onRequestGet}=await import('data:text/javascript;base64,'+Buffer.from(source).toString('base64'));
+import {onRequestGet} from '../functions/api/parking.js';
 const origin='https://rotapark.test';
 const parking={lat:38.42853,lng:27.152311,name:'Kahramanlar',osmType:'way',osmId:'600623501'};
 const valid={entranceVerified:true,entranceLat:38.4286,entranceLng:27.1524,entranceOsmUrl:'https://www.openstreetmap.org/node/123',roadOsmUrl:'https://www.openstreetmap.org/way/456',evidenceUrl:'https://example.org/verified'};

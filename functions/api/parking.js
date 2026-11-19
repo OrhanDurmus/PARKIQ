@@ -1,4 +1,5 @@
-// ROTAPARK: Istanbul's curated extract remains primary; other Turkish cities use bounded OSM queries.
+import {mergeAnparkDirectory} from '../lib/anpark-directory.js';
+// Preserve national OSM coverage and overlay reviewed operator identities without rewriting the extract.
 const inTurkey=(lat,lng)=>Number.isFinite(lat)&&Number.isFinite(lng)&&lat>=35.5&&lat<=42.5&&lng>=25.5&&lng<=45.0;
 const inIstanbul=(lat,lng)=>lat>=40&&lat<=42.5&&lng>=26&&lng<=31;
 const distanceSq=(p,lat,lng)=>{const dy=(p.lat-lat)*111195,dx=(p.lng-lng)*111195*Math.cos(lat*Math.PI/180);return dx*dx+dy*dy};
@@ -16,7 +17,8 @@ const enrichName=p=>{
  if(reviewed)return {...p,name:reviewed,nameSource:'reviewed-co-located-osm'};
  const operator=String(p.operator||'').trim();
  if(operator&&!/^(?:otopark|otopark kaydı|personel otoparkı|bina otoparkı|özel otopark|park alanı|tır & kamyon park alanı)$/iu.test(operator)){
-  return {...p,name:operator+' · Otopark',nameSource:'osm-operator-label'};
+  const alreadyParking=/\b(?:otopark(?:ı|i)?|parking|park alanı)\b/iu.test(operator);
+  return {...p,name:alreadyParking?operator:operator+' · Otopark',nameSource:'osm-operator-label'};
  }
  return p;
 };
@@ -144,10 +146,11 @@ export async function onRequestGet({request,env}){
  if(!inTurkey(lat,lng))return Response.json({error:'Koordinatlar Türkiye sınırları dışında'},{status:400});
  // National coverage includes provinces inside the broad Istanbul rectangle.
  // Read independent inputs together; curated Istanbul records still win on overlap.
- const [excluded,national,istanbul]=await Promise.all([
+ const [excluded,national,istanbul,anpark]=await Promise.all([
   approvedNonParkingIds(env),
   readParkingAsset(env,url.origin,'/data/parking-turkiye.json'),
   inIstanbul(lat,lng)?readParkingAsset(env,url.origin,'/data/parking.json'):null,
+  lat>=39.2&&lat<=40.8&&lng>=31.5&&lng<=33.8?readParkingAsset(env,url.origin,'/data/anpark-official.json'):null,
  ]);
  if(!national&&!istanbul)return Response.json({error:'Otopark veri dosyaları yüklenemedi'},{status:503});
  const valid=p=>validPoint(p)&&publicParking(p)&&!excluded.has(parkingOsmKey(p))&&!confirmedNotParking.has(parkingOsmKey(p))&&distanceSq(p,lat,lng)<=radiusSq;
@@ -157,7 +160,8 @@ export async function onRequestGet({request,env}){
  const keyFor=p=>parkingOsmKey(p)||'unidentified:'+JSON.stringify(p);
  for(const p of national?.points||[]){if(eligible(p))combined.set(keyFor(p),p)}
  for(const p of istanbul?.points||[]){if(eligible(p))combined.set(keyFor(p),p)}
- const points=[...combined.values()].sort((a,b)=>distanceSq(a,lat,lng)-distanceSq(b,lat,lng));
+ const points=mergeAnparkDirectory([...combined.values()],anpark,national?.points||[],new Set([...excluded,...confirmedNotParking])).filter(valid).sort((a,b)=>distanceSq(a,lat,lng)-distanceSq(b,lat,lng));
  const enriched=await attachApprovedEntrances(points,env,url.origin);
- return response((await attachOfficialIsparkNames(enriched,env)).map(enrichName).map(labelParkingAccess),istanbul&&national?'İstanbul + Türkiye OSM':istanbul?.source||national?.source,Math.max(Date.parse(istanbul?.updatedAt||0)||0,Date.parse(national?.updatedAt||0)||0)?new Date(Math.max(Date.parse(istanbul?.updatedAt||0)||0,Date.parse(national?.updatedAt||0)||0)).toISOString():null);
+ const source=istanbul&&national?'İstanbul + Türkiye OSM':istanbul?.source||national?.source;
+ return response((await attachOfficialIsparkNames(enriched,env)).map(enrichName).map(labelParkingAccess),points.some(p=>p.anparkFacilityId)?source+' + ANPARK / BELTAŞ':source,Math.max(Date.parse(istanbul?.updatedAt||0)||0,Date.parse(national?.updatedAt||0)||0)?new Date(Math.max(Date.parse(istanbul?.updatedAt||0)||0,Date.parse(national?.updatedAt||0)||0)).toISOString():null);
 }
