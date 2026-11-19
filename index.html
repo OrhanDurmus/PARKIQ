@@ -598,6 +598,12 @@ function traceParkingRender(points,viewport){
   unclassifiedExamples,
   unclassifiedOperatorSamples,
   anparkNameCandidates,
+  anparkOfficialCoverage:{
+   listed:anparkOfficialNames.length,
+   matchedOfficialNames:[...new Set(withinRadius.filter(p=>parkingFilterOperator(p)==='ANPARK'&&officialOperatorListing(p)).map(p=>officialOperatorListing(p)&&anparkOfficialNames.find(n=>normalizeOperatorSite(n)===normalizeOperatorSite(p.name))||p.name))],
+   missingOfficialNames:anparkOfficialNames.filter(n=>!withinRadius.some(p=>parkingFilterOperator(p)==='ANPARK'&&normalizeOperatorSite(p.name)===normalizeOperatorSite(n))),
+   note:'Official site name coverage within selected radius; missing does not imply absent nationwide or missing OSM feature'
+  },
   build:'parking-viewport-cluster-v1',
   serviceWorkerControlled:Boolean(navigator.serviceWorker?.controller),
   operator:activeParkingOperator,
