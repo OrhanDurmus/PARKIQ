@@ -14,7 +14,20 @@
   var quick=document.createElement('nav');quick.id='rpOperatorShortcuts';quick.setAttribute('aria-label','Otopark hızlı erişim');
   [['📍','En Yakın',''],['Ⓟ','İSPARK','İSPARK'],['◆','İZELMAN','İZELMAN'],['▰','ANPARK','ANPARK'],['⚡','EV Şarj','şarj'],['♿','Engelli','engelli']].forEach(function(a){
    var b=document.createElement('button');b.type='button';b.innerHTML='<span aria-hidden="true">'+a[0]+'</span><small>'+a[1]+'</small>';
-   b.addEventListener('click',function(){if(a[1]==='EV Şarj'){if(window.rotaparkToggleEV)window.rotaparkToggleEV();return;}if(a[1]==='ANPARK'||a[1]==='İZELMAN'){if(window.rotaparkFilterOperator)window.rotaparkFilterOperator(a[1]);else {var notice=$('#status');if(notice)notice.textContent='ANPARK filtresi henüz hazır değil; sayfayı yenileyin.';}return;}var q=$('#q');if(q)q.value=a[2];if(a[1]==='En Yakın'){if(window.rotaparkFocusLocation){window.rotaparkFocusLocation();return;}var loc=$('#loc');if(loc){loc.click();return;}}var searchBtn=$('#search');if(searchBtn)searchBtn.click();if(a[2])document.body.classList.add('rp-filters-open')});
+   var operator=['İSPARK','İZELMAN','ANPARK'].includes(a[1])?a[1]:null;
+   if(operator){b.dataset.parkingOperator=operator;b.setAttribute('aria-pressed','false');}
+   b.addEventListener('click',function(){
+    if(a[1]==='EV Şarj'){window.rotaparkToggleEV?.();return;}
+    if(operator){window.rotaparkFilterOperator?.(operator);return;}
+    if(a[1]==='En Yakın')window.rotaparkClearParkingOperator?.();
+    var q=$('#q');if(q)q.value=a[2];
+    if(a[1]==='En Yakın'){
+     if(window.rotaparkFocusLocation){window.rotaparkFocusLocation();return;}
+     var loc=$('#loc');if(loc){loc.click();return;}
+    }
+    var searchBtn=$('#search');if(searchBtn)searchBtn.click();
+    if(a[2])document.body.classList.add('rp-filters-open');
+   });
    quick.appendChild(b);
   });
   if(search)search.insertAdjacentElement('afterend',quick);

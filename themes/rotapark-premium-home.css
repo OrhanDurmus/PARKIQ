@@ -102,7 +102,7 @@ body,main,.app-shell{background-color:#050506!important;color:#f7f3e8!important}
  color:#fff4d9!important;
  box-shadow:0 0 8px #e9a93d44,inset 0 1px 0 #ffeb9d22!important;
 }
-#rpOperatorShortcuts button:active{background:#493115!important}
+#rpOperatorShortcuts button[aria-pressed="true"],#rpOperatorShortcuts button:active{background:#493115!important}
 #parkingSummary{background:#050506!important}
 #parkingSummary>div{
  background:linear-gradient(145deg,#2c2114,#0a0a0c 75%)!important;
