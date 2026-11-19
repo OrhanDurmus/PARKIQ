@@ -13,5 +13,7 @@ jobs:
           node-version: '22'
       - name: Validate inline and external JavaScript
         run: node scripts/check-js-syntax.cjs
+      - name: Check staging permission probe syntax
+        run: node --check scripts/probe-staff-staging.mjs
       - name: Verify public authentication configuration
         run: node --test tests/auth-config.test.mjs
