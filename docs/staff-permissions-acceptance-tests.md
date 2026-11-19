@@ -33,3 +33,7 @@ Attempt direct `select`, `insert`, `update`, and `delete` on all three permissio
 ## Release gate
 
 Do not merge or deploy to Production until staging results and migration review are documented. Existing navigation, GPS, camera, voice, and map code must remain untouched.
+
+## Automated staging read-only probes
+
+Run `scripts/probe-staff-staging.mjs` locally against the separate staging Supabase URL, supplying `SUPABASE_STAGING_URL`, `SUPABASE_STAGING_ANON_KEY`, `STAGING_FOUNDER_JWT`, `STAGING_ADMIN_JWT`, `STAGING_MODERATOR_JWT`, and `STAGING_USER_JWT` as environment variables. The script makes only RPC reads and checks founder-only reads, current roles, and unknown permission rejection. Do not commit credentials or print JWTs in CI logs. It does not verify writes, audit entries, revocation, or full browser/API security; those still require the manual matrix above.
