@@ -33,7 +33,23 @@ begin
     if to_regprocedure('public.'||fn) is null then
       raise exception 'Missing permission RPC: %',fn;
     end if;
+    if not exists (
+      select 1 from pg_proc p
+      where p.oid=to_regprocedure('public.'||fn) and p.prosecdef
+    ) then
+      raise exception 'RPC must be SECURITY DEFINER: %',fn;
+    end if;
+    if has_function_privilege('anon','public.'||fn,'EXECUTE') then
+      raise exception 'Anonymous EXECUTE permission must be revoked: %',fn;
+    end if;
+    if not has_function_privilege('authenticated','public.'||fn,'EXECUTE') then
+      raise exception 'Authenticated RPC EXECUTE missing: %',fn;
+    end if;
   end loop;
+
+  if to_regprocedure('public.rotapark_my_role()') is null then
+    raise exception 'Existing authoritative role RPC is missing';
+  end if;
 
   if to_regprocedure('public.rotapark_founder_set_user_permission(uuid,text,boolean)') is not null then
     raise notice 'Existing per-user permission writer found: review its grants and role checks before rollout';
