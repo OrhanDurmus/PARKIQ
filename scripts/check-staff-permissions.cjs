@@ -14,6 +14,8 @@ for (const table of ['rotapark_staff_role_permissions','rotapark_staff_user_perm
 assert.match(sql,/public\.rotapark_my_role\(\) is distinct from 'founder'/);
 assert.match(sql,/if v_role not in \('admin','moderator'\) then return false;/);
 assert.match(sql,/enabled boolean not null default false/);
+assert.match(sql,/p_permission not in \(/,'Unknown permission keys must be rejected');
+assert.match(sql,/if v_role = 'founder' then return true;/);
 assert.doesNotMatch(sql,/grant execute on function public\.rotapark_founder_set_user_permission/);
 assert.match(home,/id="rotaparkStaffCenterLink"[^>]*hidden/);
 assert.match(home,/\['founder','admin','moderator'\]\.includes\(role\)/);
