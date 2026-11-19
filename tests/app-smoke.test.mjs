@@ -217,3 +217,42 @@ test('parking uses one İSPARK request per search and reuses it for late live oc
  assert.equal(point.isparkLive, live);
  assert.equal(renders, 1);
 });
+
+test('initial map uses a valid last viewport or central Istanbul', () => {
+ const declaration = html.match(/function initialParkingView\(\)\{[\s\S]*?\n\}(?=\nfunction updateParkingFilterCount)/)?.[0];
+ assert.ok(declaration);
+ const getView = saved => runInNewContext(declaration + ';JSON.stringify(initialParkingView())', {read: () => saved});
+ assert.deepEqual(JSON.parse(getView({lat:38.42,lng:27.13,zoom:14})), [[38.42,27.13],14]);
+ for(const saved of [null,{lat:99,lng:27,zoom:14},{lat:38,lng:27,zoom:50}]){
+   assert.deepEqual(JSON.parse(getView(saved)), [[41.0082,28.9784],11]);
+ }
+ const init = html.split('function init(){')[1]?.split("map.on('zoomend'")[0];
+ assert.match(init, /setView\(\.\.\.initialParkingView\(\)\)/);
+ assert.doesNotMatch(init, /permissions\.query|locateOnStartup/);
+});
+
+test('parking combines source identities and respects exclusions', () => {
+ const declaration = html.match(/function combineParkingRecords\(points,excluded\)\{[\s\S]*?\n\}(?=\nasync function loadParking)/)?.[0];
+ assert.ok(declaration);
+ const combine = runInNewContext(declaration + ';combineParkingRecords');
+ const verified = {lat:41,lng:29,osmId:'101',osmType:'node',isparkParkID:7,verifiedBusiness:true};
+ const osm = {...verified,osmId:'node/101',verifiedBusiness:false};
+ const official = {lat:41,lng:29.001,isparkParkID:'7',name:'İSPARK'};
+ const excluded = {lat:41,lng:29.002,osmId:'way/102'};
+ assert.deepEqual(Array.from(combine([verified,osm,official,excluded],new Set(['way/102']))),[verified]);
+});
+
+test('parking links use a nearby confirmed entrance and fall back to the facility coordinates', () => {
+ const source = html.match(/function parkingNavigationLinks\([\s\S]*?\n\}(?=\nfunction parkingCardNavigation)/)?.[0];
+ assert.ok(source);
+ const document = {createElement: tag => ({tag,children:[],setAttribute(){},appendChild(node){this.children.push(node)}})};
+ const links = runInNewContext(source+';parkingNavigationLinks',{document,dist:()=>40});
+ const point = {lat:41,lng:29,entranceLat:41.001,entranceLng:29.001,entranceVerified:true};
+ const confirmed = links(point).children;
+ assert.equal(confirmed.length,3);
+ for(const link of confirmed)assert.match(decodeURIComponent(link.href), /41\.001,29\.001/);
+ const fallback = links({...point,entranceVerified:false}).children;
+ assert.equal(fallback[3].tag,'small');
+ for(const link of fallback.slice(0,3))assert.match(decodeURIComponent(link.href), /41,29/);
+ assert.equal(links({lat:null,lng:29}),null);
+});

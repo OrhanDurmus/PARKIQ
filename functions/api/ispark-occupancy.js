@@ -29,7 +29,8 @@ const normalize=(item)=>{
   const stamp=iso?Date.parse(iso):NaN;
   // The public endpoint exposes capacity counts but no per-parking update timestamp.
   // Never call these figures verified live; expose as source-reported snapshots only.
-  const fresh=Number.isFinite(stamp)&&Math.abs(Date.now()-stamp)<=15*60*1000;
+  const age=Date.now()-stamp;
+  const fresh=Number.isFinite(stamp)&&age>=-60000&&age<=15*60*1000;
   if(!name||lat===null||lng===null||lat<40||lat>42.5||lng<26||lng>31)return null;
   return {id:id==null?null:String(id),name:repairName(String(name)).slice(0,160),lat,lng,capacity:Number.isInteger(capacity)&&capacity>0?capacity:null,freeSpaces:Number.isInteger(free)&&free>=0&&(capacity===null||free<=capacity)?free:null,occupancyUpdatedAt:fresh?new Date(stamp).toISOString():null,verifiedLive:fresh&&Number.isInteger(free)&&free>=0&&(capacity===null||free<=capacity),sourceSnapshot:true};
 };
@@ -55,7 +56,17 @@ export async function onRequestGet({request,context,env}){
     const rows=Array.isArray(payload)?payload:Array.isArray(payload?.data)?payload.data:Array.isArray(payload?.parks)?payload.parks:null;
     if(!rows)throw Error('Unknown source response');
     stage='normalize';
-    const points=rows.slice(0,2000).map(normalize).filter(Boolean);
+    const unique=new Map();
+    for(const row of rows.slice(0,2000)){
+      const point=normalize(row);
+      if(!point)continue;
+      const key=point.id??JSON.stringify([point.name,point.lat,point.lng]);
+      const previous=unique.get(key);
+      if(!previous||(point.verifiedLive&&(!previous.verifiedLive||point.occupancyUpdatedAt>previous.occupancyUpdatedAt))){
+        unique.set(key,point);
+      }
+    }
+    const points=[...unique.values()];
     if(rows.length===0||points.length===0){stage='normalize';throw Error('No valid parking records');}
     const result=Response.json({source:'IBB İSPARK',points,sourceRecordCount:rows.length,receivedAt:new Date().toISOString(),liveCount:points.filter(p=>p.verifiedLive).length},{headers:{'Cache-Control':'public, max-age=60'}});
     if(cache){
