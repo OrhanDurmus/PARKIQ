@@ -536,7 +536,24 @@ function traceParkingRender(points,viewport){
    represented++;
   }
  }
+ const radiusMeters=(Number($('searchRadius').value)||10)*1000;
+ const withinRadius=allParking.filter(p=>Number.isFinite(Number(p.lat))&&
+  Number.isFinite(Number(p.lng))&&map.distance(map.getCenter(),[Number(p.lat),Number(p.lng)])<=radiusMeters);
+ const operatorBreakdown={'İSPARK':0,'İZELMAN':0,'ANPARK':0,unclassified:0,conflictingLabels:0};
+ for(const p of withinRadius){
+  const tagged=parkingOperatorHint(p.operator),named=parkingOperatorHint(p.name);
+  if(tagged&&named&&tagged!==named)operatorBreakdown.conflictingLabels++;
+  const classification=parkingFilterOperator(p);
+  if(classification&&Object.prototype.hasOwnProperty.call(operatorBreakdown,classification)){
+   operatorBreakdown[classification]++;
+  }else{
+   operatorBreakdown.unclassified++;
+  }
+ }
  const trace={
+  radiusKm:Number($('searchRadius').value)||10,
+  withinRadius:withinRadius.length,
+  operatorBreakdown,
   build:'parking-viewport-cluster-v1',
   serviceWorkerControlled:Boolean(navigator.serviceWorker?.controller),
   operator:activeParkingOperator,
