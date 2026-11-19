@@ -9,6 +9,7 @@ const key=process.env.SUPABASE_STAGING_ANON_KEY;
 const tokens={founder:process.env.STAGING_FOUNDER_JWT,admin:process.env.STAGING_ADMIN_JWT,moderator:process.env.STAGING_MODERATOR_JWT,user:process.env.STAGING_USER_JWT};
 if(!url||!key||Object.values(tokens).some(v=>!v)){console.error('Missing staging URL, anon key, or one of four test JWTs. No requests made.');process.exit(2)}
 if(!/^https:\/\//.test(url)||/rotapark\.com\.tr/i.test(url)){console.error('Refusing non-HTTPS or application production domain.');process.exit(2)}
+if(process.env.STAGING_TEST_CONFIRMED!=='yes'){console.error('Set STAGING_TEST_CONFIRMED=yes only after verifying this is a separate staging project. No requests made.');process.exit(2)}
 const call=async(token,fn,args={})=>{
  const response=await fetch(url+'/rest/v1/rpc/'+fn,{method:'POST',headers:{apikey:key,Authorization:'Bearer '+token,'Content-Type':'application/json'},body:JSON.stringify(args),signal:AbortSignal.timeout(12000)});
  const raw=await response.text();let body;try{body=JSON.parse(raw)}catch{body=raw}
