@@ -566,6 +566,7 @@ function traceParkingRender(points,viewport){
   }
  }
  const trace={
+  center:{lat:Number(map.getCenter().lat.toFixed(6)),lng:Number(map.getCenter().lng.toFixed(6))},
   radiusKm:Number($('searchRadius').value)||10,
   withinRadius:withinRadius.length,
   operatorBreakdown,
