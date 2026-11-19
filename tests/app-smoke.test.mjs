@@ -296,7 +296,7 @@ function operatorParkingFixture({inViewport = () => true} = {}) {
   return source.slice(from, to);
  };
  runInNewContext([
-  part(html, 'const parkingOperatorCenters=', 'window.rotaparkFocusLocation='),
+  part(html, 'const normalizeParkingPlace=', 'window.rotaparkFocusLocation='),
   part(html, 'let parkingTraceApi=', "$('navSearch').onclick="),
   part(html, 'async function loadParking(){', " window.addEventListener('online'"),
  ].join("\n"), context);
@@ -408,4 +408,58 @@ test('a cluster with visible members must keep its marker inside the viewport', 
  await settleParking();
  verify('İSPARK', 3);
  assert.equal(markerLocations.filter(inViewport).length, 1);
+});
+
+test('ambiguous operator tags stay in general results and are excluded from operator shortcuts', async () => {
+ const {select, verify, pending, reset, $} = operatorParkingFixture();
+ select('İSPARK');
+ pending[0].finish([
+  {name:'İSPARK 0',operator:'İSPARK',lat:41,lng:29},
+  {name:'İZELMAN',operator:'İSPARK',lat:41,lng:29.001},
+ ]);
+ await settleParking();
+ verify('İSPARK', 1);
+ reset();
+ assert.equal($('summaryTotal').textContent, 2);
+});
+
+test('a delayed city lookup cannot replace the latest province search', async () => {
+ const from = html.indexOf("$('search').onclick=async");
+ const to = html.indexOf("$('q').addEventListener", from);
+ const pending = new Map();
+ const centers = {
+  Bursa: {lat:'40.195',lon:'29.06',name:'Bursa',type:'city',display_name:'Bursa'},
+  Ankara: {lat:'39.9334',lon:'32.8597',name:'Ankara',type:'city',display_name:'Ankara'},
+ };
+ const q = {value:'Bursa'};
+ const search = {};
+ const views = [];
+ const fields = {q,search,map:{scrollIntoView(){}},parkingNameSearch:{},feeFilter:{},kindFilter:{}};
+ const context = {
+  $: id => fields[id],
+  window:{rotaparkClearParkingOperator(){}},
+  document:{querySelectorAll:()=>[]},
+  parkingSelectionRevision:0,
+  allParking:[{name:'Ankara Demir Spor Kulübü · Otopark',lat:41,lng:29}],
+  parkingProvinceNames:new Set(['bursa','ankara']),
+  normalizeParkingPlace:s=>s.toLowerCase(),
+  status(){},loadParking(){},
+  map:{setView:point=>views.push(Array.from(point))},
+  fetch(url){
+   const query=new URL(url).searchParams;
+   const city=query.get('q').split(',')[0];
+   const response={ok:true,json:async()=>[centers[city]]};
+   if(city==='Bursa'&&!query.has('featuretype')){
+    return new Promise(resolve=>pending.set(city,()=>resolve(response)));
+   }
+   return Promise.resolve(response);
+  },
+ };
+ runInNewContext(html.slice(from,to),context);
+ const outdated=search.onclick();
+ q.value='Ankara';
+ await search.onclick();
+ pending.get('Bursa')();
+ await outdated;
+ assert.deepEqual(views, [[39.9334,32.8597]]);
 });
