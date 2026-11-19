@@ -553,11 +553,27 @@ function traceParkingRender(points,viewport){
  const operatorEvidence={explicitOperatorTag:0,nameHint:0,officialNameMatch:0,unclassifiedWithOperatorText:0};
  const unclassifiedExamples=[];
  const unclassifiedOperatorSamples=[];
+ // Diagnostic candidates only: never assign an operator from fuzzy name similarity.
+ const anparkNameCandidates=[];
+ const officialNameTokens=anparkOfficialNames.map(name=>({name,key:normalizeOperatorSite(name)}));
  for(const p of withinRadius){
   if(parkingOperatorHint(p.operator))operatorEvidence.explicitOperatorTag++;
   if(parkingOperatorHint(p.name))operatorEvidence.nameHint++;
   if(officialOperatorListing(p)||izelmanExactOfficialName(p))operatorEvidence.officialNameMatch++;
   if(!parkingFilterOperator(p)){
+   if(anparkNameCandidates.length<30){
+    const key=normalizeOperatorSite(p.name);
+    if(key.length>=9&&!/^(?:otoparkkaydı|otopark|parking)$/iu.test(key)){
+     const matches=officialNameTokens.filter(o=>o.key.length>=9&&(key.includes(o.key)||o.key.includes(key)));
+     if(matches.length===1)anparkNameCandidates.push({
+      name:String(p.name||'').slice(0,90),
+      officialName:matches[0].name,
+      osmId:String(p.osmId||'').slice(0,60),
+      operator:String(p.operator||'').slice(0,90),
+      note:'name-similarity-only-not-verified'
+     });
+    }
+   }
    if(String(p.operator||'').trim()){
     operatorEvidence.unclassifiedWithOperatorText++;
     if(unclassifiedOperatorSamples.length<40)unclassifiedOperatorSamples.push({
@@ -581,6 +597,7 @@ function traceParkingRender(points,viewport){
   operatorEvidence,
   unclassifiedExamples,
   unclassifiedOperatorSamples,
+  anparkNameCandidates,
   build:'parking-viewport-cluster-v1',
   serviceWorkerControlled:Boolean(navigator.serviceWorker?.controller),
   operator:activeParkingOperator,
