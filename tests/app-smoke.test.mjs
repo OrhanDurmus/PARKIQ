@@ -22,10 +22,10 @@ test('regional parking refresh preserves cache until replacement data succeeds',
   const load=html.split('async function loadParking(){')[1]?.split("window.addEventListener('online'")[0];
   const move=html.split("map.on('moveend',()=>{").at(-1)?.split('setTimeout(loadParking,400)')[0];
   assert.ok(load&&move,'Parking refresh and map move handlers must exist');
-  assert.doesNotMatch(load,/allParking=\\[\\];lastParkingFetchCenter=null/,'Loading another region must not discard the last successful data');
-  assert.doesNotMatch(move,/allParking=\\[\\];lastParkingFetchCenter=null/,'Panning must not discard cached parking data');
-  assert.match(load,/lastParkingFetchCenter=c;lastParkingSuccessAt=Date\\.now\\(\\)/,'Only a successful fetch should update the cache center');
-  assert.match(move,/showParking\\(\\);updateParkingFreshness\\(true\\)/,'Old-city pins should be filtered out while the next region loads');
+  assert.ok(!load.includes('allParking=[];lastParkingFetchCenter=null'),'Loading another region must not discard the last successful data');
+  assert.ok(!move.includes('allParking=[];lastParkingFetchCenter=null'),'Panning must not discard cached parking data');
+  assert.ok(load.includes('lastParkingFetchCenter=c;lastParkingSuccessAt=Date.now()'),'Only a successful fetch should update the cache center');
+  assert.ok(move.includes('showParking();updateParkingFreshness(true)'),'Old-city pins should be filtered out while the next region loads');
 });
 
 test('critical navigation and parking controls are present',()=>{
