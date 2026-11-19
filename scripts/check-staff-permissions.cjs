@@ -13,6 +13,18 @@ for (const table of ['rotapark_staff_role_permissions','rotapark_staff_user_perm
  assert.match(sql,new RegExp('revoke all on public\\.'+table+' from public, anon, authenticated;'));
 }
 assert.match(sql,/public\.rotapark_my_role\(\) is distinct from 'founder'/);
+// Authorization must be checked inside every privileged RPC, not only in the UI.
+for(const rpc of ['rotapark_founder_set_role_permission','rotapark_founder_get_role_permissions']){
+ const body=sql.split('create or replace function public.'+rpc+'(')[1]?.split('end; $;')[0];
+ assert.ok(body,'Missing founder RPC '+rpc);
+ assert.match(body,/auth\.uid\(\) is null or public\.rotapark_my_role\(\) is distinct from 'founder'/,'Founder RPC must check current server role: '+rpc);
+}
+assert.match(sql,/insert into public\.rotapark_staff_permission_audit\(/,'Permission changes must be audited');
+assert.match(sql,/revoke all on function public\.rotapark_founder_set_role_permission\(text,text,boolean\) from public,anon;/);
+assert.match(sql,/revoke all on function public\.rotapark_founder_get_role_permissions\(\) from public,anon;/);
+assert.match(sql,/revoke all on function public\.rotapark_staff_has_permission\(text\) from public,anon;/);
+assert.doesNotMatch(sql,/grant (?:select|insert|update|delete|all) on public\.rotapark_staff_/i,'Permission tables must never grant direct client access');
+
 assert.match(sql,/if v_role not in \('admin','moderator'\) then return false;/);
 assert.match(sql,/enabled boolean not null default false/);
 assert.match(sql,/p_permission not in \(/,'Unknown permission keys must be rejected');
