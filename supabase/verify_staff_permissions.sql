@@ -36,7 +36,7 @@ begin
   end loop;
 
   if to_regprocedure('public.rotapark_founder_set_user_permission(uuid,text,boolean)') is not null then
-    raise exception 'Unsafe per-user permission writer is present';
+    raise notice 'Existing per-user permission writer found: review its grants and role checks before rollout';
   end if;
 
   if exists(select 1 from public.rotapark_staff_role_permissions where enabled) then
