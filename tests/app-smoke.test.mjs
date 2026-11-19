@@ -39,11 +39,11 @@ test('navigation controls have handlers',()=>{
 });
 
 test('map show-all clears an active operator before fitting general parking',()=>{
-  const match=html.match(/\\$\\('mapFitParking'\\)\\.onclick=(\\(\\)=>\\{[^}]*\\})/);
-  assert.ok(match,'Missing map show-all handler');
+  const handlerSource=html.split("$('mapFitParking').onclick=")[1]?.split(";$('parking').onclick")[0];
+  assert.ok(handlerSource,'Missing map show-all handler');
   const events=[];
   const context={activeParkingOperator:'İZELMAN',resetParkingFilters(){events.push('reset')},$:id=>({click(){events.push(id)}})};
-  const handler=runInNewContext('('+match[1]+')',context);
+  const handler=runInNewContext('('+handlerSource+')',context);
   handler();
   assert.deepEqual(events,['reset','focusNearbyParking']);
   events.length=0;
