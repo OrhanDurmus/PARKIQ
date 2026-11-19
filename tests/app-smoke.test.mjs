@@ -221,7 +221,7 @@ test('parking uses one İSPARK request per search and reuses it for late live oc
 function operatorParkingFixture() {
  const nodes = new Map();
  const element = () => ({
-  children: [], attributes: {}, dataset: {}, classList: {toggle() {}},
+  children: [], attributes: {}, dataset: {}, classList: {toggle() {}, contains: () => false},
   append(...children) {this.children.push(...children);},
   appendChild(child) {this.append(child);},
   replaceChildren() {this.children = [];},
@@ -250,8 +250,9 @@ function operatorParkingFixture() {
  const map = {
   setView([lat, lng]) {center = {lat, lng};},
   getCenter: () => center,
+  invalidateSize() {},
   getZoom: () => 12,
-  getBounds: () => ({pad: () => ({contains: () => true})}),
+  getBounds: () => ({contains: () => true, pad: () => ({contains: () => true})}),
   project: ([lat, lng]) => ({x: lng, y: lat}),
   distance: () => 0,
  };
@@ -269,12 +270,14 @@ function operatorParkingFixture() {
   $, window, document, navigator, map, L, parkingLayer, AbortController,
   setTimeout: () => 1, clearTimeout() {}, allParking: [], parkingSeq: 0,
   parkingAbort: null, parkingTimer: null, parkingListLimit: 60, quickMode: 'all',
-  lastParkingFetchCenter: null, lastParkingSuccessAt: 0, parkingDataStale: false,
+  lastParkingFetchCenter: null, lastParkingSuccessAt: 0, parkingDataStale: false, parkingDataPartial: false, routeWatch: null,
   routeGeometry: null, visibleParkingResults: [], parkingType: {}, favKey: 'favorites',
   corporateOperator: point => point.operator, parkingDisplayName: point => point.name,
   fresh: () => false, dist: () => 0, tariffLine: () => '', isSmyrnaParking: () => false,
   renderFavorites() {}, read: () => [], status() {},
-  updateParkingFreshness(stale) {context.parkingDataStale = stale;},
+  updateParkingFreshness(stale, partial = context.parkingDataPartial) {
+   context.parkingDataStale = stale;context.parkingDataPartial = partial;
+  },
   fetch(url, options) {
    if (url.startsWith('/api/parking?')) {
     return new Promise(resolve => pending.push({
@@ -293,7 +296,7 @@ function operatorParkingFixture() {
  };
  runInNewContext([
   part(html, 'const parkingOperatorCenters=', 'window.rotaparkFocusLocation='),
-  part(html, 'function showParking(){', "$('navSearch').onclick="),
+  part(html, 'function revealParkingResults(', "$('navSearch').onclick="),
   part(html, 'async function loadParking(){', " window.addEventListener('online'"),
  ].join("\n"), context);
 
@@ -301,18 +304,19 @@ function operatorParkingFixture() {
  Object.assign(context, {quick: {appendChild: button => buttons.push(button)}});
  runInNewContext(part(theme, "  [['📍','En Yakın'", '  if(search)search.insertAdjacentElement'), context);
  const select = operator => buttons.find(button => button.dataset.parkingOperator === operator).click();
- const verify = (operator, count) => {
+ const verify = (operator, count, loading = false) => {
   for (const button of document.querySelectorAll('[data-parking-operator]')) {
    assert.equal(button.attributes['aria-pressed'], String(button.dataset.parkingOperator === operator));
   }
-  assert.equal(Number($('summaryTotal').textContent), count);
+  assert.equal(String($('summaryTotal').textContent), loading?'—':String(count));
+  assert.equal($('emptyNotice').hidden, loading||count>0);
   const nearby = $('nearestFive').children.filter(node => node.className === 'near-item');
   assert.deepEqual(nearby.map(node => node.children[0].textContent),
    Array.from({length: count}, (_, index) => operator + ' ' + index));
   assert.deepEqual(markers, count > 1 ? [count + ' otopark · Yakınlaştır']
    : count === 1 ? [operator + ' 0 · Doluluk bilinmiyor'] : []);
  };
- return {select, verify, pending, navigator};
+ return {select, verify, pending, navigator, $, reset:context.resetParkingFilters};
 }
 
 const operatorPoints = operator => [
@@ -327,7 +331,7 @@ test('operator buttons replace pins, clusters, count and nearby results together
  const {select, verify, pending} = operatorParkingFixture();
  for (const operator of ['İZELMAN','İSPARK','ANPARK','İZELMAN']) {
   select(operator);
-  verify(operator, 0);
+  verify(operator, 0, true);
   const request = pending.at(-1);
   select(operator);
   assert.equal(pending.at(-1), request, 'repeated selection while loading must reuse the request');
@@ -361,10 +365,31 @@ test('superseded operator requests cannot render, including when the new selecti
  assert.equal(pending[3].signal.aborted, true);
  pending[3].finish(operatorPoints('İSPARK'));
  await settleParking();
- verify('İZELMAN', 0);
+ verify('İZELMAN', 0, true);
  navigator.onLine = true;
  select('İZELMAN');
  pending[4].finish(operatorPoints('İZELMAN'));
  await settleParking();
  verify('İZELMAN', 2);
+});
+
+
+test('empty results wait for the latest load and clearing the operator restores regional results', async () => {
+ const {select, verify, pending, $, reset} = operatorParkingFixture();
+ select('ANPARK');
+ verify('ANPARK', 0, true);
+ reset();
+ verify(null, 0, true);
+ pending[0].finish([]);
+ await settleParking();
+ verify(null, 0);
+ select('İSPARK');
+ verify('İSPARK', 0, true);
+ pending[1].finish(operatorPoints('İSPARK'));
+ await settleParking();
+ verify('İSPARK', 1);
+ reset();
+ assert.equal($('summaryTotal').textContent, 3);
+ assert.equal($('emptyNotice').hidden, true);
+ assert.equal($('nearestFive').children.filter(node => node.className === 'near-item').length, 3);
 });
