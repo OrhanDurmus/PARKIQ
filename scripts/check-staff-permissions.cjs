@@ -20,5 +20,6 @@ assert.doesNotMatch(sql,/grant execute on function public\.rotapark_founder_set_
 assert.match(home,/id="rotaparkStaffCenterLink"[^>]*hidden/);
 assert.match(home,/\['founder','admin','moderator'\]\.includes\(role\)/);
 assert.match(staff,/rotapark_my_role/);
+assert.match(staff,/getElementById\('rolesLink'\)\.hidden=role!=='founder'/,'Founder-only Access routes must not be offered to admins');
 assert.match(permissions,/role!=='founder'/);
 console.log('Staff permissions static security checks passed');
