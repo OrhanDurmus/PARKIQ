@@ -18,6 +18,14 @@ test('main HTML has parseable inline JavaScript',()=>{
     }
   });
 });
+test('startup parking UI distinguishes loading from empty results',()=>{
+  const show=html.split('function showParking(){')[1]?.split('const sort=')[0];
+  assert.ok(show,'Parking rendering must exist');
+  assert.ok(show.includes("const initialParkingLoad=!lastParkingSuccessAt&&!parkingDataStale&&navigator.onLine"));
+  assert.ok(show.includes("heading.textContent=initialParkingLoad?'Otoparklar yükleniyor…'"));
+  assert.ok(show.includes('if(!initialParkingLoad)empty.appendChild(reset)'));
+});
+
 test('regional parking refresh preserves cache until replacement data succeeds',()=>{
   const load=html.split('async function loadParking(){')[1]?.split("window.addEventListener('online'")[0];
   const move=html.split("map.on('moveend',()=>{").at(-1)?.split('setTimeout(loadParking,400)')[0];
