@@ -96,7 +96,7 @@ grant execute on function public.rotapark_founder_set_role_permission(text,text,
 grant execute on function public.rotapark_founder_get_role_permissions() to authenticated;
 
 create or replace function public.rotapark_staff_has_permission(p_permission text)
-returns boolean language plpgsql security definer set search_path = '' as $
+returns boolean language plpgsql security definer set search_path = '' as $$
 declare v_role text;
 begin
   if auth.uid() is null or p_permission is null then return false; end if;
@@ -107,7 +107,7 @@ begin
     select p.enabled from public.rotapark_staff_role_permissions p
     where p.staff_role=v_role and p.permission_key=p_permission
   ),false);
-end; $;
+end; $$;
 
 revoke all on function public.rotapark_staff_has_permission(text) from public,anon;
 grant execute on function public.rotapark_staff_has_permission(text) to authenticated;
