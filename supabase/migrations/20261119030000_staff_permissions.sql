@@ -49,7 +49,7 @@ revoke all on public.rotapark_staff_user_permissions from public, anon, authenti
 revoke all on public.rotapark_staff_permission_audit from public, anon, authenticated;
 
 -- Require the existing role source; abort the whole transaction on schema mismatch.
-do $
+do $staff_guard$
 begin
   if to_regprocedure('public.rotapark_my_role()') is null
      or to_regclass('public.rotapark_staff_roles') is null then
@@ -61,7 +61,7 @@ begin
   ) then
     raise exception 'ROTAPARK role RPC must be SECURITY DEFINER';
   end if;
-end; $;
+end; $staff_guard$;
 
 -- Founder-only mutation, protected by existing authoritative role RPC.
 create or replace function public.rotapark_founder_set_role_permission(
