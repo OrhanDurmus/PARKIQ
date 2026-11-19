@@ -16,7 +16,8 @@ const enrichName=p=>{
  if(reviewed)return {...p,name:reviewed,nameSource:'reviewed-co-located-osm'};
  const operator=String(p.operator||'').trim();
  if(operator&&!/^(?:otopark|otopark kaydı|personel otoparkı|bina otoparkı|özel otopark|park alanı|tır & kamyon park alanı)$/iu.test(operator)){
-  return {...p,name:operator+' · Otopark',nameSource:'osm-operator-label'};
+  const alreadyParking=/\b(?:otopark(?:ı|i)?|parking|park alanı)\b/iu.test(operator);
+  return {...p,name:alreadyParking?operator:operator+' · Otopark',nameSource:'osm-operator-label'};
  }
  return p;
 };
