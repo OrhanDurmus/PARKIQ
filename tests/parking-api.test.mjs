@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { onRequestGet } from '../functions/api/parking.js';
+import { onRequestGet as readIspark } from '../functions/api/ispark-occupancy.js';
 
 const origin='https://rotapark.test';
 const center={lat:40.9,lng:29.2};
@@ -162,5 +163,61 @@ test('a failed national asset read still serves available curated Istanbul cover
  }}};
  const result = await onRequestGet({request: new Request(origin + '/api/parking?lat=40.9&lng=29.2'), env});
  assert.equal(result.status, 200);
- assert.deepEqual((await result.json()).points.map(p => p.name), ['curated']);
+ const data = await result.json();
+ assert.deepEqual(data.points.map(p => p.name), ['curated']);
+ assert.equal(data.partial,true);
+});
+
+test('an expired asset cache preserves recent records during an outage and marks coverage partial', async t => {
+ const start = Date.UTC(2026,10,19);
+ const now = t.mock.method(Date,'now',() => start);
+ let unavailable = false;
+ const env = {ASSETS:{async fetch(){
+  if(unavailable)throw Error('source unavailable');
+  return Response.json({points:[point('curated')]});
+ }}};
+ const request = new Request(origin+'/api/parking?lat=40.9&lng=29.2');
+ const first = await onRequestGet({request,env});
+ assert.equal((await first.json()).partial,false);
+ unavailable = true;
+ now.mock.mockImplementation(() => start+61000);
+ const fallback = await (await onRequestGet({request,env})).json();
+ assert.equal(fallback.partial,true);
+ assert.equal(fallback.points[0].name,'curated');
+ now.mock.mockImplementation(() => start+86461000);
+ assert.equal((await onRequestGet({request,env})).status,503);
+});
+
+test('IBB rows keep capacity and free spaces separate and deduplicate by official ID', async t => {
+ const now = Date.UTC(2026,10,19,9);
+ t.mock.method(Date,'now',() => now);
+ const base = {parkName:'İSPARK Test',lat:40.9,lng:29.2,capacity:80};
+ t.mock.method(globalThis,'fetch',async () => Response.json([
+  {...base,parkID:12,emptyCapacity:40},
+  {...base,parkID:12,emptyCapacity:25,lastUpdate:new Date(now-10000).toISOString()},
+  {...base,parkID:13,emptyCapacity:90,lastUpdate:new Date(now).toISOString()},
+  {...base,parkID:14,emptyCapacity:5,lastUpdate:new Date(now+120000).toISOString()},
+ ]));
+ const response = await readIspark({request:new Request(origin+'/api/ispark-occupancy'),env:{}});
+ const result = await response.json();
+ assert.equal(result.sourceRecordCount,4);
+ assert.equal(result.liveCount,1);
+ assert.deepEqual(result.points.map(({id,capacity,freeSpaces,verifiedLive})=>[id,capacity,freeSpaces,verifiedLive]),[
+  ['12',80,25,true],['13',80,null,false],['14',80,5,false],
+ ]);
+});
+
+test('an unavailable IBB source returns KV records without live labels', async t => {
+ t.mock.method(globalThis,'fetch',async () => new Response(null,{status:503}));
+ const env={ISPARK_SNAPSHOTS:{get:async()=>({
+  receivedAt:new Date().toISOString(),
+  points:[{id:'4',name:'İSPARK',capacity:40,freeSpaces:8,verifiedLive:true,occupancyUpdatedAt:new Date().toISOString()}],
+ })}};
+ const response=await readIspark({request:new Request(origin+'/api/ispark-occupancy'),env});
+ const result=await response.json();
+ assert.equal(result.upstreamUnavailable,true);
+ assert.equal(result.liveCount,0);
+ assert.equal(result.points[0].freeSpaces,8);
+ assert.equal(result.points[0].verifiedLive,false);
+ assert.equal(result.points[0].occupancyUpdatedAt,null);
 });
