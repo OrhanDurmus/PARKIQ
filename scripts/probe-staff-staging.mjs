@@ -9,6 +9,17 @@ const key=process.env.SUPABASE_STAGING_ANON_KEY;
 const tokens={founder:process.env.STAGING_FOUNDER_JWT,admin:process.env.STAGING_ADMIN_JWT,moderator:process.env.STAGING_MODERATOR_JWT,user:process.env.STAGING_USER_JWT};
 if(!url||!key||Object.values(tokens).some(v=>!v)){console.error('Missing staging URL, anon key, or one of four test JWTs. No requests made.');process.exit(2)}
 if(!/^https:\/\//.test(url)||/rotapark\.com\.tr/i.test(url)){console.error('Refusing non-HTTPS or application production domain.');process.exit(2)}
+const projectRef=process.env.SUPABASE_STAGING_PROJECT_REF;
+const parsedUrl=new URL(url);
+if(!projectRef||!/^[a-z0-9]{20}$/.test(projectRef)||parsedUrl.hostname!==projectRef+'.supabase.co'||parsedUrl.pathname!=='/'){
+ console.error('Staging URL must exactly match the explicitly supplied Supabase staging project ref. No requests made.');process.exit(2)
+}
+for(const [role,token] of Object.entries(tokens)){
+ try{
+  const payload=JSON.parse(Buffer.from(token.split('.')[1],'base64url').toString('utf8'));
+  if(payload.iss!==url+'/auth/v1'||payload.role!=='authenticated'||!payload.sub||payload.exp*1000<=Date.now())throw Error('invalid token context');
+ }catch{console.error(role+': JWT issuer, expiry, or authenticated role does not match staging project. No requests made.');process.exit(2)}
+}
 if(process.env.STAGING_TEST_CONFIRMED!=='yes'){console.error('Set STAGING_TEST_CONFIRMED=yes only after verifying this is a separate staging project. No requests made.');process.exit(2)}
 const call=async(token,fn,args={})=>{
  const response=await fetch(url+'/rest/v1/rpc/'+fn,{method:'POST',headers:{apikey:key,Authorization:'Bearer '+token,'Content-Type':'application/json'},body:JSON.stringify(args),signal:AbortSignal.timeout(12000)});
