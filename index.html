@@ -598,12 +598,17 @@ function traceParkingRender(points,viewport){
   unclassifiedExamples,
   unclassifiedOperatorSamples,
   anparkNameCandidates,
-  anparkOfficialCoverage:{
-   listed:anparkOfficialNames.length,
-   matchedOfficialNames:[...new Set(withinRadius.filter(p=>parkingFilterOperator(p)==='ANPARK'&&officialOperatorListing(p)).map(p=>officialOperatorListing(p)&&anparkOfficialNames.find(n=>normalizeOperatorSite(n)===normalizeOperatorSite(p.name))||p.name))],
-   missingOfficialNames:anparkOfficialNames.filter(n=>!withinRadius.some(p=>parkingFilterOperator(p)==='ANPARK'&&normalizeOperatorSite(p.name)===normalizeOperatorSite(n))),
-   note:'Official site name coverage within selected radius; missing does not imply absent nationwide or missing OSM feature'
-  },
+  anparkOfficialCoverage:(()=>{
+   const c=map.getCenter(),inAnkara=c.lat>=39.2&&c.lat<=40.7&&c.lng>=31.5&&c.lng<=33.7;
+   if(!inAnkara)return {applicable:false,listed:anparkOfficialNames.length,matchedOfficialNames:[],missingOfficialNames:[],note:'ANPARK coverage not applicable outside Ankara; move map to Ankara before auditing'};
+   return {
+    applicable:true,
+    listed:anparkOfficialNames.length,
+    matchedOfficialNames:[...new Set(withinRadius.filter(p=>parkingFilterOperator(p)==='ANPARK'&&officialOperatorListing(p)).map(p=>anparkOfficialNames.find(n=>normalizeOperatorSite(n)===normalizeOperatorSite(p.name))||p.name))],
+    missingOfficialNames:anparkOfficialNames.filter(n=>!withinRadius.some(p=>parkingFilterOperator(p)==='ANPARK'&&normalizeOperatorSite(p.name)===normalizeOperatorSite(n))),
+    note:'Name coverage only within selected Ankara radius; unmatched names are not proof of missing nationwide data'
+   };
+  })(),
   build:'parking-viewport-cluster-v1',
   serviceWorkerControlled:Boolean(navigator.serviceWorker?.controller),
   operator:activeParkingOperator,
