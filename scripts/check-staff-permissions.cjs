@@ -6,6 +6,7 @@ const sql = fs.readFileSync('supabase/migrations/20261119030000_staff_permission
 const staff = fs.readFileSync('staff/index.html','utf8');
 const permissions = fs.readFileSync('staff/permissions/index.html','utf8');
 const home = fs.readFileSync('index.html','utf8');
+const verify = fs.readFileSync('supabase/verify_staff_permissions.sql','utf8');
 assert.equal((sql.match(/\$\$/g)||[]).length,6,'SQL function bodies must be dollar-quoted');
 for (const table of ['rotapark_staff_role_permissions','rotapark_staff_user_permissions','rotapark_staff_permission_audit']) {
  assert.match(sql,new RegExp('alter table public\\.'+table+' enable row level security;'));
@@ -22,4 +23,8 @@ assert.match(home,/\['founder','admin','moderator'\]\.includes\(role\)/);
 assert.match(staff,/rotapark_my_role/);
 assert.match(staff,/getElementById\('rolesLink'\)\.hidden=role!=='founder'/,'Founder-only Access routes must not be offered to admins');
 assert.match(permissions,/role!=='founder'/);
+assert.match(verify,/has_function_privilege\('anon'/);
+assert.match(verify,/has_function_privilege\('authenticated'/);
+assert.match(verify,/p\.prosecdef/);
+assert.match(verify,/public\.rotapark_my_role\(\)/);
 console.log('Staff permissions static security checks passed');
