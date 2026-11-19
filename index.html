@@ -550,10 +550,27 @@ function traceParkingRender(points,viewport){
    operatorBreakdown.unclassified++;
   }
  }
+ const operatorEvidence={explicitOperatorTag:0,nameHint:0,officialNameMatch:0,unclassifiedWithOperatorText:0};
+ const unclassifiedExamples=[];
+ for(const p of withinRadius){
+  if(parkingOperatorHint(p.operator))operatorEvidence.explicitOperatorTag++;
+  if(parkingOperatorHint(p.name))operatorEvidence.nameHint++;
+  if(officialOperatorListing(p)||izelmanExactOfficialName(p))operatorEvidence.officialNameMatch++;
+  if(!parkingFilterOperator(p)){
+   if(String(p.operator||'').trim())operatorEvidence.unclassifiedWithOperatorText++;
+   if(unclassifiedExamples.length<8)unclassifiedExamples.push({
+    name:String(p.name||'').slice(0,90),
+    operator:String(p.operator||'').slice(0,90),
+    osmId:String(p.osmId||'').slice(0,60)
+   });
+  }
+ }
  const trace={
   radiusKm:Number($('searchRadius').value)||10,
   withinRadius:withinRadius.length,
   operatorBreakdown,
+  operatorEvidence,
+  unclassifiedExamples,
   build:'parking-viewport-cluster-v1',
   serviceWorkerControlled:Boolean(navigator.serviceWorker?.controller),
   operator:activeParkingOperator,
