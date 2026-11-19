@@ -601,9 +601,24 @@ function traceParkingRender(points,viewport){
   anparkOfficialCoverage:(()=>{
    const c=map.getCenter(),inAnkara=c.lat>=39.2&&c.lat<=40.7&&c.lng>=31.5&&c.lng<=33.7;
    if(!inAnkara)return {applicable:false,listed:anparkOfficialNames.length,matchedOfficialNames:[],missingOfficialNames:[],note:'ANPARK coverage not applicable outside Ankara; move map to Ankara before auditing'};
+   const centerDistanceKm=(lat,lng)=>{
+    const r=Math.PI/180,dLat=(lat-c.lat)*r,dLng=(lng-c.lng)*r;
+    const a=Math.sin(dLat/2)**2+Math.cos(c.lat*r)*Math.cos(lat*r)*Math.sin(dLng/2)**2;
+    return 12742*Math.asin(Math.min(1,Math.sqrt(a)));
+   };
+   const classified=withinRadius.filter(p=>parkingFilterOperator(p)==='ANPARK');
    return {
     applicable:true,
     listed:anparkOfficialNames.length,
+    classifiedSamples:classified.slice(0,20).map(p=>({
+     name:String(p.name||'').slice(0,90),
+     operator:String(p.operator||'').slice(0,90),
+     osmId:String(p.osmId||'').slice(0,60),
+     lat:Number(Number(p.lat).toFixed(6)),
+     lng:Number(Number(p.lng).toFixed(6)),
+     distanceKm:Number(centerDistanceKm(Number(p.lat),Number(p.lng)).toFixed(2)),
+     officialNameMatch:Boolean(officialOperatorListing(p))
+    })),
     matchedOfficialNames:[...new Set(withinRadius.filter(p=>parkingFilterOperator(p)==='ANPARK'&&officialOperatorListing(p)).map(p=>anparkOfficialNames.find(n=>normalizeOperatorSite(n)===normalizeOperatorSite(p.name))||p.name))],
     missingOfficialNames:anparkOfficialNames.filter(n=>!withinRadius.some(p=>parkingFilterOperator(p)==='ANPARK'&&normalizeOperatorSite(p.name)===normalizeOperatorSite(n))),
     note:'Name coverage only within selected Ankara radius; unmatched names are not proof of missing nationwide data'
