@@ -15,6 +15,7 @@ const call=async(token,fn,args={})=>{
  const raw=await response.text();let body;try{body=JSON.parse(raw)}catch{body=raw}
  return {status:response.status,body};
 };
+const tableRead=async(token,table)=>{const response=await fetch(url+'/rest/v1/'+table+'?select=*&limit=1',{headers:{apikey:key,Authorization:'Bearer '+token},signal:AbortSignal.timeout(12000)});return response.status};
 let failures=0;
 for(const [role,token] of Object.entries(tokens)){
  const current=await call(token,'rotapark_my_role');
@@ -27,6 +28,10 @@ for(const [role,token] of Object.entries(tokens)){
  }else if(list.status>=200&&list.status<300){console.error(role+': unauthorized founder read succeeded');failures++}
  const allowed=await call(token,'rotapark_staff_has_permission',{p_permission:'support.read'});
  if(allowed.status!==200||typeof allowed.body!=='boolean'){console.error(role+': effective permission check failed');failures++}
+ for(const table of ['rotapark_staff_role_permissions','rotapark_staff_user_permissions','rotapark_staff_permission_audit']){
+  const status=await tableRead(token,table);
+  if(status>=200&&status<300){console.error(role+': direct table SELECT unexpectedly succeeded on '+table);failures++}
+ }
  // Intentionally do not invoke any mutating RPC, even with an unauthorized token.
  console.log(role+': read-only checks completed');
 }
