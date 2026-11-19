@@ -38,6 +38,20 @@ test('navigation controls have handlers',()=>{
   }
 });
 
+test('map show-all clears an active operator before fitting general parking',()=>{
+  const match=html.match(/\\$\\('mapFitParking'\\)\\.onclick=(\\(\\)=>\\{[^}]*\\})/);
+  assert.ok(match,'Missing map show-all handler');
+  const events=[];
+  const context={activeParkingOperator:'İZELMAN',resetParkingFilters(){events.push('reset')},$:id=>({click(){events.push(id)}})};
+  const handler=runInNewContext('('+match[1]+')',context);
+  handler();
+  assert.deepEqual(events,['reset','focusNearbyParking']);
+  events.length=0;
+  context.activeParkingOperator=null;
+  handler();
+  assert.deepEqual(events,['focusNearbyParking']);
+});
+
 test('diagnostics button actually opens, copies and closes the report',async()=>{
   const scripts=[...html.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script\s*>/gi)];
   const diagnostic=scripts.map(m=>m[2]).find(body=>body.includes("function openReport()")&&body.includes("navDiagnosticCopy"));
