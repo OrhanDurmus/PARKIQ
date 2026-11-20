@@ -78,6 +78,8 @@ begin
     'staff.moderators.manage','parking_records.edit') or p_enabled is null then
     raise exception 'invalid_permission' using errcode='22023';
   end if;
+  -- Serialize even the first write, when no permission row exists yet.
+  perform pg_catalog.pg_advisory_xact_lock(pg_catalog.hashtextextended(p_role || ':' || p_permission, 0));
   select enabled into v_old from public.rotapark_staff_role_permissions
     where staff_role=p_role and permission_key=p_permission for update;
   insert into public.rotapark_staff_role_permissions(staff_role,permission_key,enabled,updated_by)
