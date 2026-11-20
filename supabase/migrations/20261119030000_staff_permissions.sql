@@ -72,7 +72,7 @@ begin
   if auth.uid() is null or public.rotapark_my_role() is distinct from 'founder' then
     raise exception 'permission_denied' using errcode='42501';
   end if;
-  if p_role not in ('admin','moderator') or p_permission not in (
+  if p_role is null or p_permission is null or p_role not in ('admin','moderator') or p_permission not in (
     'parking_reports.read','parking_reports.moderate','support.read',
     'support.reply','users.block','announcements.publish',
     'staff.moderators.manage','parking_records.edit') or p_enabled is null then
