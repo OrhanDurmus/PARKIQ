@@ -30,7 +30,7 @@ const call=async(token,fn,args={})=>{
  return {status:response.status,body};
 };
 const denied=r=>r.status===401||r.status===403||(r.status===400&&r.body&&typeof r.body==='object'&&r.body.code==='42501');
-const tableRead=async(token,table)=>{const response=await fetch(url+'/rest/v1/'+table+'?select=*&limit=1',{headers:{apikey:key,Authorization:'Bearer '+token},signal:AbortSignal.timeout(12000)});return response.status};
+const tableRead=async(token,table)=>{const response=await fetch(url+'/rest/v1/'+table+'?select=*&limit=1',{headers:{apikey:key,Authorization:'Bearer '+token},signal:AbortSignal.timeout(12000)});const raw=await response.text();let body;try{body=JSON.parse(raw)}catch{body=raw}return {status:response.status,body}};
 let failures=0;
 for(const [role,token] of Object.entries(tokens)){
  const current=await call(token,'rotapark_my_role');
@@ -52,8 +52,8 @@ for(const [role,token] of Object.entries(tokens)){
  if(role==='user'&&allowed.body!==false){console.error('user: ordinary account unexpectedly received staff permission');failures++}
  if(role==='founder'&&allowed.body!==true){console.error('founder: known permission unexpectedly denied');failures++}
  for(const table of ['rotapark_staff_role_permissions','rotapark_staff_user_permissions','rotapark_staff_permission_audit']){
-  const status=await tableRead(token,table);
-  if(status>=200&&status<300){console.error(role+': direct table SELECT unexpectedly succeeded on '+table);failures++}
+  const result=await tableRead(token,table);
+  if(!denied(result)){console.error(role+': direct table SELECT did not return an authorization denial on '+table);failures++}
  }
  // Intentionally do not invoke any mutating RPC, even with an unauthorized token.
  console.log(role+': read-only checks completed');
