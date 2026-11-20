@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { checkStaffPermission } from '../functions/_lib/staff-permissions.mjs';
-const env = { SUPABASE_URL: 'https://example.supabase.co', SUPABASE_ANON_KEY: 'public-key' };
+const env = { SUPABASE_URL: 'https://example.supabase.co', SUPABASE_ANON_KEY: 'sb_publishable_test_key' };
 const request = (token = 'valid') => new Request('https://staging.example/api', {
   headers: token ? { Authorization: 'Bearer ' + token } : {},
 });
@@ -35,4 +35,13 @@ test('fails closed on upstream exception or missing config', async () => {
 });
 test('allows verified user with explicit true permission', async () => {
   assert.deepEqual(await checkStaffPermission(request(), env, 'support.read', mock()), { ok: true, userId: 'user-123' });
+});
+
+test('rejects secret or service-role API key before contacting upstream', async () => {
+  let called = false;
+  for (const key of ['sb_secret_never_forward', 'not-a-public-key']) {
+    const result = await checkStaffPermission(request(), { ...env, SUPABASE_ANON_KEY: key }, 'support.read', async () => { called = true; });
+    assert.equal(result.status, 503);
+  }
+  assert.equal(called, false);
 });
