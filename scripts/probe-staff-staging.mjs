@@ -14,11 +14,14 @@ const parsedUrl=new URL(url);
 if(!projectRef||!/^[a-z0-9]{20}$/.test(projectRef)||parsedUrl.hostname!==projectRef+'.supabase.co'||parsedUrl.pathname!=='/'){
  console.error('Staging URL must exactly match the explicitly supplied Supabase staging project ref. No requests made.');process.exit(2)
 }
+const testSubjects=new Set();
 for(const [role,token] of Object.entries(tokens)){
  try{
   const payload=JSON.parse(Buffer.from(token.split('.')[1],'base64url').toString('utf8'));
   if(payload.iss!==url+'/auth/v1'||payload.role!=='authenticated'||!payload.sub||payload.exp*1000<=Date.now())throw Error('invalid token context');
- }catch{console.error(role+': JWT issuer, expiry, or authenticated role does not match staging project. No requests made.');process.exit(2)}
+  if(testSubjects.has(payload.sub))throw Error('duplicate test account');
+  testSubjects.add(payload.sub);
+ }catch{console.error(role+': invalid JWT context or duplicate staging account. No requests made.');process.exit(2)}
 }
 if(process.env.STAGING_TEST_CONFIRMED!=='yes'){console.error('Set STAGING_TEST_CONFIRMED=yes only after verifying this is a separate staging project. No requests made.');process.exit(2)}
 const call=async(token,fn,args={})=>{
