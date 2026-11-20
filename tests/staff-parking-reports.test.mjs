@@ -49,13 +49,17 @@ test('read-only permission cannot approve reports',async()=>{
   assert.equal(response.status,403);
  }finally{globalThis.fetch=original}
 });
-test('moderator can approve pending report using a parameterized update',async()=>{
- const original=globalThis.fetch;let sql='',values=[];
+test('moderator decision and audit are submitted in a single D1 batch',async()=>{
+ const original=globalThis.fetch;const statements=[];let batched=[];
  globalThis.fetch=async(url)=>String(url).endsWith('/auth/v1/user')?Response.json({id:'user-123'}):Response.json(true);
  try {
-  const DB={prepare(query){sql=query;return {bind(...args){values=args;return {async run(){return {meta:{changes:1}}}}}}}};
+  const DB={prepare(sql){return {bind(...args){const stmt={sql,args};statements.push(stmt);return stmt}}},async batch(items){batched=items;return [{meta:{changes:1}},{meta:{changes:1}}]}};
   const response=await onRequestPatch({request:patchReq({id:7,status:'approved'}),env:{...env,DB}});
-  assert.equal(response.status,200);assert.match(sql,/status='pending'/);assert.deepEqual(values,['approved',7]);
+  assert.equal(response.status,200);assert.equal(batched.length,2);
+  assert.match(statements[0].sql,/status='pending'/);
+  assert.deepEqual(statements[0].args,['approved',7]);
+  assert.match(statements[1].sql,/parking_report_review_audit/);
+  assert.deepEqual(statements[1].args,[7,'user-123','approved']);
  }finally{globalThis.fetch=original}
 });
 test('invalid moderation input does not write to DB',async()=>{
@@ -72,8 +76,16 @@ test('previously reviewed report cannot be approved twice',async()=>{
  const original=globalThis.fetch;
  globalThis.fetch=async(url)=>String(url).endsWith('/auth/v1/user')?Response.json({id:'user-123'}):Response.json(true);
  try{
-  const DB={prepare(){return {bind(){return {async run(){return {meta:{changes:0}}}}}}}};
+  const DB={prepare(sql){return {bind(...args){return {sql,args}}}},async batch(){return [{meta:{changes:0}},{meta:{changes:0}}]}};
   const response=await onRequestPatch({request:patchReq({id:7,status:'rejected'}),env:{...env,DB}});
   assert.equal(response.status,404);
+ }finally{globalThis.fetch=original}
+});
+test('moderation fails closed when atomic audit batch is unavailable',async()=>{
+ const original=globalThis.fetch;
+ globalThis.fetch=async(url)=>String(url).endsWith('/auth/v1/user')?Response.json({id:'user-123'}):Response.json(true);
+ try{
+  const response=await onRequestPatch({request:patchReq({id:7,status:'approved'}),env:{...env,DB:{prepare(){throw Error('should not write')}}}});
+  assert.equal(response.status,503);
  }finally{globalThis.fetch=original}
 });
