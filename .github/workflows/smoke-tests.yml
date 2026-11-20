@@ -15,5 +15,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: Verify staff permission gate (fail-closed)\n        run: node --test tests/staff-permissions-gate.test.mjs\n      - name: Validate parking API and app startup syntax
+      - name: Verify staff permission gate (fail-closed)
+        run: node --test tests/staff-permissions-gate.test.mjs
+      - name: Validate parking API and app startup syntax
         run: node --test tests/parking-api.test.mjs tests/business-parking.test.mjs tests/app-smoke.test.mjs
