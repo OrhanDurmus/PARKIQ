@@ -39,6 +39,8 @@ for(const [role,token] of Object.entries(tokens)){
  }else if(list.status>=200&&list.status<300){console.error(role+': unauthorized founder read succeeded');failures++}
  const allowed=await call(token,'rotapark_staff_has_permission',{p_permission:'support.read'});
  if(allowed.status!==200||typeof allowed.body!=='boolean'){console.error(role+': effective permission check failed');failures++}
+ if(role==='user'&&allowed.body!==false){console.error('user: ordinary account unexpectedly received staff permission');failures++}
+ if(role==='founder'&&allowed.body!==true){console.error('founder: known permission unexpectedly denied');failures++}
  for(const table of ['rotapark_staff_role_permissions','rotapark_staff_user_permissions','rotapark_staff_permission_audit']){
   const status=await tableRead(token,table);
   if(status>=200&&status<300){console.error(role+': direct table SELECT unexpectedly succeeded on '+table);failures++}
