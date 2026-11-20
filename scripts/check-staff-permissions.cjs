@@ -13,7 +13,8 @@ for(const [page,source] of [['staff',staff],['founder permissions',permissions]]
 const home = fs.readFileSync('index.html','utf8');
 const verify = fs.readFileSync('supabase/verify_staff_permissions.sql','utf8');
 const probe = fs.readFileSync('scripts/probe-staff-staging.mjs','utf8');
-assert.equal((sql.match(/\$\$/g)||[]).length,8,'SQL function bodies must be dollar-quoted');
+assert.equal((sql.match(/\$\$/g)||[]).length,6,'Core SQL function bodies must be dollar-quoted');
+assert.match(sql,/as \$audit\$[\s\S]*?end; \$audit\$;/,'Audit RPC must have valid named dollar quoting');
 for (const table of ['rotapark_staff_role_permissions','rotapark_staff_user_permissions','rotapark_staff_permission_audit']) {
  assert.match(sql,new RegExp('alter table public\\.'+table+' enable row level security;'));
  assert.match(sql,new RegExp('revoke all on public\\.'+table+' from public, anon, authenticated;'));
@@ -21,7 +22,7 @@ for (const table of ['rotapark_staff_role_permissions','rotapark_staff_user_perm
 assert.match(sql,/public\.rotapark_my_role\(\) is distinct from 'founder'/);
 // Authorization must be checked inside every privileged RPC, not only in the UI.
 for(const rpc of ['rotapark_founder_set_role_permission','rotapark_founder_get_role_permissions','rotapark_founder_get_permission_audit']){
- const body=sql.split('create or replace function public.'+rpc+'(')[1]?.split('end; $;')[0];
+ const body=sql.split('create or replace function public.'+rpc+'(')[1]?.split(/end; \$(?:audit\$|\$);/)[0];
  assert.ok(body,'Missing founder RPC '+rpc);
  assert.match(body,/auth\.uid\(\) is null or public\.rotapark_my_role\(\) is distinct from 'founder'/,'Founder RPC must check current server role: '+rpc);
 }
