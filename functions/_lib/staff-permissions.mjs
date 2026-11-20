@@ -5,6 +5,16 @@ const PERMISSIONS = new Set([
   'support.reply', 'users.block', 'announcements.publish',
   'staff.moderators.manage', 'parking_records.edit',
 ]);
+// Never forward a service-role or secret key to Supabase as the public API key.
+function isPublicSupabaseKey(key) {
+  if (/^sb_publishable_[A-Za-z0-9_-]+$/.test(key)) return true;
+  const jwt = /^[A-Za-z0-9_-]+\.([A-Za-z0-9_-]+)\.[A-Za-z0-9_-]+$/.exec(key);
+  if (!jwt) return false;
+  try {
+    const payload = JSON.parse(atob(jwt[1].replace(/-/g, '+').replace(/_/g, '/')));
+    return payload?.role === 'anon';
+  } catch { return false; }
+}
 const deny = (status, error) => ({
   ok: false, status, error,
 });
@@ -14,7 +24,7 @@ export async function checkStaffPermission(request, env, permission, fetcher = f
   if (!match) return deny(401, 'authentication_required');
   const url = String(env?.SUPABASE_URL || '').trim().replace(/\/$/, '');
   const key = String(env?.SUPABASE_ANON_KEY || '').trim();
-  if (!/^https:\/\/[a-z0-9-]+\.supabase\.co$/i.test(url) || !key) {
+  if (!/^https:\/\/[a-z0-9-]+\.supabase\.co$/i.test(url) || !isPublicSupabaseKey(key)) {
     return deny(503, 'authorization_unavailable');
   }
   const headers = { apikey: key, Authorization: 'Bearer ' + match[1] };
