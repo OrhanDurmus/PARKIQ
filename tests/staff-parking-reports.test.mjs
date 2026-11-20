@@ -16,7 +16,7 @@ test('granted permission reads at most 50 reports with bound status', async () =
   let query='', bound='';
   globalThis.fetch=async url => String(url).endsWith('/auth/v1/user')?Response.json({id:'user-123'}):Response.json(true);
   try {
-    const DB={prepare(sql){query=sql;return {bind(status){bound=status;return {async all(){return {results:[{id:1,status}]}}}}}}};
+    const DB={prepare(sql){query=sql;return {bind(status){bound=status;return {async all(){return {results:[{id:1,status:'approved'}]}}}}}}};
     const result=await onRequestGet({request:req('approved'),env:{...env,DB}});
     assert.equal(result.status,200);
     assert.equal(result.headers.get('Cache-Control'),'no-store');
