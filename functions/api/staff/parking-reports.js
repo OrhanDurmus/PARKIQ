@@ -2,7 +2,7 @@ import { checkStaffPermission } from '../../_lib/staff-permissions.mjs';
 const reply = (body, status = 200) => Response.json(body, { status, headers: {
   'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff',
 } });
-// Isolated, read-only staff task endpoint. Existing admin mutation routes are unchanged.
+// Isolated staff task endpoint. Existing admin mutation routes are unchanged.
 export async function onRequestGet({ request, env }) {
   const gate = await checkStaffPermission(request, env, 'parking_reports.read');
   if (!gate.ok) return reply({ error: gate.error }, gate.status);
@@ -40,10 +40,18 @@ export async function onRequestPatch({ request, env }) {
     return reply({ error: 'invalid_request' }, 400);
   }
   try {
-    const result = await env.DB.prepare(
+    // D1 batch executes statements in one transaction: a failed audit must roll back the decision.
+    // The audit insert is conditional on a successful pending->reviewed transition.
+    if (typeof env.DB.batch !== 'function') return reply({ error: 'audit_unavailable' }, 503);
+    const decision = env.DB.prepare(
       "UPDATE parking_accuracy_reports SET status=? WHERE id=? AND status='pending' AND archived_at IS NULL"
-    ).bind(status, id).run();
-    if (!result.meta?.changes) return reply({ error: 'pending_report_not_found' }, 404);
+    ).bind(status, id);
+    const audit = env.DB.prepare(
+      "INSERT INTO parking_report_review_audit (report_id, actor_user_id, decision, reviewed_at) SELECT ?, ?, ?, datetime('now') WHERE changes() > 0"
+    ).bind(id, gate.userId, status);
+    const results = await env.DB.batch([decision, audit]);
+    if (!results?.[0]?.meta?.changes) return reply({ error: 'pending_report_not_found' }, 404);
+    if (results?.[1]?.meta?.changes !== 1) return reply({ error: 'audit_unavailable' }, 503);
     return reply({ ok: true, id, status });
   } catch { return reply({ error: 'storage_unavailable' }, 503); }
 }
