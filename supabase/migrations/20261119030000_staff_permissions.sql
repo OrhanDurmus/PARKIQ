@@ -134,7 +134,7 @@ end; $$;
 -- No direct table access is granted to browser clients.
 create or replace function public.rotapark_founder_get_permission_audit(p_limit integer default 30)
 returns table(actor_id uuid,target_role text,permission_key text,previous_enabled boolean,new_enabled boolean,created_at timestamptz)
-language plpgsql security definer set search_path = '' as $
+language plpgsql security definer set search_path = '' as $audit$
 begin
   if auth.uid() is null or public.rotapark_my_role() is distinct from 'founder' then
     raise exception 'permission_denied' using errcode='42501';
@@ -145,7 +145,7 @@ begin
   return query select a.actor_id,a.target_role,a.permission_key,a.previous_enabled,a.new_enabled,a.created_at
     from public.rotapark_staff_permission_audit a
     order by a.created_at desc,a.id desc limit p_limit;
-end; $;
+end; $audit$;
 revoke all on function public.rotapark_founder_get_permission_audit(integer) from public,anon;
 grant execute on function public.rotapark_founder_get_permission_audit(integer) to authenticated;
 
