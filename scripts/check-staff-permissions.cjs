@@ -43,7 +43,7 @@ assert.match(verify,/public\.rotapark_my_role\(\)/);
 assert.match(probe,/const testSubjects=new Set\(\)/,'Staging probe must track distinct account IDs');
 assert.match(probe,/testSubjects\.has\(payload\.sub\)/,'Staging probe must reject duplicate users');
 assert.match(probe,/STAGING_TEST_CONFIRMED.*'yes'/,'Staging probe must require explicit project confirmation');
-assert.match(probe,/parsedUrl\.hostname!==projectRef\+'\\.supabase\\.co'/,'Staging probe must bind the URL to a project reference');
+assert.ok(probe.includes("parsedUrl.hostname!==projectRef+'.supabase.co'"),'Staging probe must bind the URL to a project reference');
 assert.match(probe,/role==='user'&&allowed\.body!==false/,'Ordinary user must have no staff permission');
 assert.match(probe,/role==='founder'&&allowed\.body!==true/,'Founder must have a recognized permission');
 console.log('Staff permissions static security checks passed');
