@@ -27,6 +27,7 @@ for(const rpc of ['rotapark_founder_set_role_permission','rotapark_founder_get_r
 }
 assert.match(sql,/insert into public\.rotapark_staff_permission_audit\(/,'Permission changes must be audited');
 assert.match(sql,/p_role is null or p_permission is null/,'Null permission arguments must be rejected explicitly');
+assert.match(sql,/pg_advisory_xact_lock\(pg_catalog\.hashtextextended\(p_role \|\| ':' \|\| p_permission, 0\)\)/,'Concurrent permission writes must be serialized');
 assert.match(sql,/revoke all on function public\.rotapark_founder_set_role_permission\(text,text,boolean\) from public,anon;/);
 assert.match(sql,/revoke all on function public\.rotapark_founder_get_role_permissions\(\) from public,anon;/);
 assert.match(sql,/revoke all on function public\.rotapark_staff_has_permission\(text\) from public,anon;/);
