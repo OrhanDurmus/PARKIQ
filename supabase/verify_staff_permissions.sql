@@ -28,6 +28,7 @@ begin
   foreach fn in array array[
     'rotapark_founder_set_role_permission(text,text,boolean)',
     'rotapark_founder_get_role_permissions()',
+    'rotapark_founder_get_permission_audit(integer)',
     'rotapark_staff_has_permission(text)'
   ] loop
     if to_regprocedure('public.'||fn) is null then
