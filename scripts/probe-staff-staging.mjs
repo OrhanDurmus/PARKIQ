@@ -31,7 +31,19 @@ const call=async(token,fn,args={})=>{
 };
 const denied=r=>r.status===401||r.status===403||(r.status===400&&r.body&&typeof r.body==='object'&&r.body.code==='42501');
 const tableRead=async(token,table)=>{const response=await fetch(url+'/rest/v1/'+table+'?select=*&limit=1',{headers:{apikey:key,Authorization:'Bearer '+token},signal:AbortSignal.timeout(12000)});const raw=await response.text();let body;try{body=JSON.parse(raw)}catch{body=raw}return {status:response.status,body}};
+// Anonymous checks must use only the public staging anon key, never an authenticated JWT.
+const anonymousCall=async(fn,args={})=>{
+ const response=await fetch(url+'/rest/v1/rpc/'+fn,{method:'POST',headers:{apikey:key,Authorization:'Bearer '+key,'Content-Type':'application/json'},body:JSON.stringify(args),signal:AbortSignal.timeout(12000)});
+ const raw=await response.text();let body;try{body=JSON.parse(raw)}catch{body=raw}
+ return {status:response.status,body};
+};
 let failures=0;
+for(const fn of ['rotapark_founder_get_role_permissions','rotapark_founder_get_permission_audit']){
+ const result=await anonymousCall(fn);
+ if(!denied(result)){console.error('anonymous: protected RPC did not return authorization denial: '+fn);failures++}
+}
+const anonymousPermission=await anonymousCall('rotapark_staff_has_permission',{p_permission:'support.read'});
+if(!(denied(anonymousPermission)||(anonymousPermission.status===200&&anonymousPermission.body===false))){console.error('anonymous: effective permission check was not denied or false');failures++}
 for(const [role,token] of Object.entries(tokens)){
  const current=await call(token,'rotapark_my_role');
  if(current.status!==200||current.body!==role){console.error(role+': role mismatch / unavailable');failures++;continue}
