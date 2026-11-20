@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="tr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ROTAPARK • Yetki Kontrolü</title>
+<style>body{margin:0;background:#090909;color:#f4f0e7;font:16px system-ui}main{max-width:680px;margin:36px auto;padding:20px}section{background:#171512;border:1px solid #6c562a;border-radius:16px;padding:22px}h1{color:#e9c77e}a{color:#e9c77e}li{padding:8px 0;border-bottom:1px solid #413826}.muted{color:#c5bbab}</style></head>
+<body><main><p><a href="/staff/">← Yönetim Merkezi</a></p><section><h1>🛡️ Yetki Kontrolü</h1><p class="muted">Bu sayfa yalnızca hesabının mevcut izinlerini sorgular; hiçbir yönetim işlemi yapmaz.</p><p id="status" role="status">Oturum doğrulanıyor…</p><ul id="results"></ul></section></main>
+<script type="module">
+const labels={
+'parking_reports.read':'Park bildirimlerini görüntüle',
+'parking_reports.moderate':'Park bildirimlerini yönet',
+'support.read':'Destek taleplerini görüntüle',
+'support.reply':'Destek taleplerini yanıtla',
+'users.block':'Kullanıcı engelle',
+'announcements.publish':'Toplu duyuru yayınla',
+'staff.moderators.manage':'Moderatör ata',
+'parking_records.edit':'Otopark bilgilerini düzenle'
+};
+const status=document.getElementById('status');
+const results=document.getElementById('results');
+try {
+  const response=await fetch('/api/auth-config',{cache:'no-store'});
+  if(!response.ok)throw Error('Giriş ayarları alınamadı.');
+  const cfg=await response.json();
+  if(!cfg.configured||!cfg.url||!cfg.anonKey)throw Error('Staging girişi yapılandırılmamış.');
+  const {createClient}=await import('https://esm.sh/@supabase/supabase-js@2');
+  const client=createClient(cfg.url,cfg.anonKey,{auth:{flowType:'pkce',detectSessionInUrl:false}});
+  const {data:{session},error:sessionError}=await client.auth.getSession();
+  if(sessionError||!session?.access_token)throw Error('Önce hesabına giriş yapmalısın.');
+  const {data:{user},error:userError}=await client.auth.getUser();
+  if(userError||!user||user.id!==session.user.id)throw Error('Oturum doğrulanamadı.');
+  let count=0;
+  for(const [permission,label] of Object.entries(labels)){
+    const check=await fetch('/api/staff/capability?permission='+encodeURIComponent(permission),{
+      headers:{Authorization:'Bearer '+session.access_token},cache:'no-store'
+    });
+    if(check.status===401)throw Error('Oturum geçersiz veya süresi dolmuş.');
+    if(check.status===503)throw Error('Yetki servisi kullanılamıyor. Erişim güvenlik nedeniyle kapalı.');
+    if(check.status!==200&&check.status!==403)throw Error('Yetki doğrulaması tamamlanamadı.');
+    const li=document.createElement('li');
+    li.textContent=(check.status===200?'✓ ':'— ')+label;
+    results.appendChild(li);
+    if(check.status===200)count++;
+  }
+  status.textContent='Kontrol tamamlandı. Etkin izin: '+count+'/8.';
+} catch(error){
+  results.replaceChildren();
+  status.textContent=error.message||'Yetkiler doğrulanamadı.';
+}
+</script></body></html>
