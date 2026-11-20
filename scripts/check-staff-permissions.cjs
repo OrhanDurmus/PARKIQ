@@ -5,6 +5,11 @@ const assert = require('node:assert/strict');
 const sql = fs.readFileSync('supabase/migrations/20261119030000_staff_permissions.sql','utf8');
 const staff = fs.readFileSync('staff/index.html','utf8');
 const permissions = fs.readFileSync('staff/permissions/index.html','utf8');
+for(const [page,source] of [['staff',staff],['founder permissions',permissions]]){
+ assert.match(source,/\.auth\.getUser\(\)/,'Auth server must verify user on '+page);
+ assert.match(source,/user\.id!==session\.user\.id/,'Verified user must match session on '+page);
+}
+
 const home = fs.readFileSync('index.html','utf8');
 const verify = fs.readFileSync('supabase/verify_staff_permissions.sql','utf8');
 const probe = fs.readFileSync('scripts/probe-staff-staging.mjs','utf8');
