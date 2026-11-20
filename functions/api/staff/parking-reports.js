@@ -19,3 +19,31 @@ export async function onRequestGet({ request, env }) {
     return reply({ error: 'storage_unavailable' }, 503);
   }
 }
+
+/**
+ * Staging-only review action. The caller needs a separate moderation grant;
+ * read permission alone is never sufficient to change a report.
+ */
+export async function onRequestPatch({ request, env }) {
+  const gate = await checkStaffPermission(request, env, 'parking_reports.moderate');
+  if (!gate.ok) return reply({ error: gate.error }, gate.status);
+  if (!env.DB) return reply({ error: 'storage_unavailable' }, 503);
+  let payload;
+  try {
+    const raw = await request.text();
+    if (raw.length > 2048) return reply({ error: 'invalid_request' }, 400);
+    payload = JSON.parse(raw);
+  } catch { return reply({ error: 'invalid_request' }, 400); }
+  const id = payload?.id;
+  const status = payload?.status;
+  if (!Number.isSafeInteger(id) || id < 1 || !['approved', 'rejected'].includes(status)) {
+    return reply({ error: 'invalid_request' }, 400);
+  }
+  try {
+    const result = await env.DB.prepare(
+      "UPDATE parking_accuracy_reports SET status=? WHERE id=? AND status='pending' AND archived_at IS NULL"
+    ).bind(status, id).run();
+    if (!result.meta?.changes) return reply({ error: 'pending_report_not_found' }, 404);
+    return reply({ ok: true, id, status });
+  } catch { return reply({ error: 'storage_unavailable' }, 503); }
+}
