@@ -42,6 +42,10 @@ for(const fn of ['rotapark_founder_get_role_permissions','rotapark_founder_get_p
  const result=await anonymousCall(fn);
  if(!denied(result)){console.error('anonymous: protected RPC did not return authorization denial: '+fn);failures++}
 }
+for(const table of ['rotapark_staff_role_permissions','rotapark_staff_user_permissions','rotapark_staff_permission_audit']){
+ const result=await tableRead(key,table);
+ if(!denied(result)){console.error('anonymous: direct table SELECT did not return authorization denial on '+table);failures++}
+}
 const anonymousPermission=await anonymousCall('rotapark_staff_has_permission',{p_permission:'support.read'});
 if(!(denied(anonymousPermission)||(anonymousPermission.status===200&&anonymousPermission.body===false))){console.error('anonymous: effective permission check was not denied or false');failures++}
 for(const [role,token] of Object.entries(tokens)){
