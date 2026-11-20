@@ -26,6 +26,7 @@ for(const rpc of ['rotapark_founder_set_role_permission','rotapark_founder_get_r
  assert.match(body,/auth\.uid\(\) is null or public\.rotapark_my_role\(\) is distinct from 'founder'/,'Founder RPC must check current server role: '+rpc);
 }
 assert.match(sql,/insert into public\.rotapark_staff_permission_audit\(/,'Permission changes must be audited');
+assert.match(sql,/p_role is null or p_permission is null/,'Null permission arguments must be rejected explicitly');
 assert.match(sql,/revoke all on function public\.rotapark_founder_set_role_permission\(text,text,boolean\) from public,anon;/);
 assert.match(sql,/revoke all on function public\.rotapark_founder_get_role_permissions\(\) from public,anon;/);
 assert.match(sql,/revoke all on function public\.rotapark_staff_has_permission\(text\) from public,anon;/);
