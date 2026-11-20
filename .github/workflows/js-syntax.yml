@@ -13,5 +13,5 @@ jobs:
           node-version: '22'
       - name: Validate inline and external JavaScript
         run: node scripts/check-js-syntax.cjs
-      - name: Verify public authentication configuration
-        run: node --test tests/auth-config.test.mjs
+      - name: Verify authentication configuration and OTP preflight
+        run: node --test tests/auth-config.test.mjs tests/otp-preflight.test.mjs
