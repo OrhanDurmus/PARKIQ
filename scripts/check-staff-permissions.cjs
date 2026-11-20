@@ -38,6 +38,7 @@ assert.match(staff,/getElementById\('rolesLink'\)\.hidden=role!=='founder'/,'Fou
 assert.match(permissions,/role!=='founder'/);
 assert.match(permissions,/let saving=false/,'Permission changes must be serialized');
 assert.match(permissions,/lockControls\(true\)/,'Permission controls must lock during saves');
+assert.match(permissions,/input\.disabled=saving/,'Re-rendered toggles must stay locked during saves');
 assert.match(permissions,/await reload\(\)/,'Permission state must be refreshed from server');
 assert.match(permissions,/\$\('panel'\)\.hidden=true/,'Permission panel must close on uncertain save state');
 assert.match(verify,/has_function_privilege\('anon'/);
