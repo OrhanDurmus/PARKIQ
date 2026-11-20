@@ -7,8 +7,8 @@ const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'rotapark-staff-check-'));
 try {
   for (const page of pages) {
     const html = fs.readFileSync(page, 'utf8');
-    const scripts = [...html.matchAll(/<script\\b([^>]*)>([\\s\\S]*?)<\\/script>/gi)]
-      .filter(([, attrs, body]) => !/\\bsrc\\s*=/.test(attrs) && body.trim());
+    const scripts = [...html.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script>/gi)]
+      .filter(([, attrs, body]) => !/\bsrc\s*=/.test(attrs) && body.trim());
     if (!scripts.length) throw new Error(page + ': no inline scripts found');
     scripts.forEach(([, , body], index) => {
       const file = path.join(dir, 'staff-' + index + '.mjs');
