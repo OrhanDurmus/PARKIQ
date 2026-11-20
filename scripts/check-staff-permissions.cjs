@@ -28,6 +28,8 @@ for(const rpc of ['rotapark_founder_set_role_permission','rotapark_founder_get_r
 }
 assert.match(sql,/insert into public\.rotapark_staff_permission_audit\(/,'Permission changes must be audited');
 assert.match(sql,/p_limit is null or p_limit < 1 or p_limit > 100/,'Audit history queries must have bounded limits');
+assert.match(permissions,/rotapark_founder_get_permission_audit/,'Founder UI must load audit history through protected RPC');
+assert.match(permissions,/item\.textContent=time/,'Audit history must render user data as text, not HTML');
 assert.match(sql,/revoke all on function public\.rotapark_founder_get_permission_audit\(integer\) from public,anon/,'Audit RPC must reject anonymous access');
 assert.match(sql,/p_role is null or p_permission is null/,'Null permission arguments must be rejected explicitly');
 assert.match(sql,/pg_advisory_xact_lock\(pg_catalog\.hashtextextended\(p_role \|\| ':' \|\| p_permission, 0\)\)/,'Concurrent permission writes must be serialized');
