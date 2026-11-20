@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { checkStaffPermission } from '../functions/_lib/staff-permissions.js';
+import { checkStaffPermission } from '../functions/_lib/staff-permissions.mjs';
 const env = { SUPABASE_URL: 'https://example.supabase.co', SUPABASE_ANON_KEY: 'public-key' };
 const request = (token = 'valid') => new Request('https://staging.example/api', {
   headers: token ? { Authorization: 'Bearer ' + token } : {},
