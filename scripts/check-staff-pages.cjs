@@ -2,7 +2,7 @@ const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
 const { execFileSync } = require('node:child_process');
-const pages = ['staff/index.html', 'staff/permissions/index.html', 'staff/capabilities/index.html'];
+const pages = ['staff/index.html', 'staff/permissions/index.html', 'staff/capabilities/index.html', 'staff/parking-reports/index.html'];
 const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'rotapark-staff-check-'));
 try {
   for (const page of pages) {
