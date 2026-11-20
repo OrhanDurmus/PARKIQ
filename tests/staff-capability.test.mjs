@@ -14,7 +14,7 @@ test('does not reveal permission to anonymous clients', async () => {
   assert.deepEqual(await response.json(), { error: 'authentication_required' });
 });
 
-const env = { SUPABASE_URL: 'https://staging-test.supabase.co', SUPABASE_ANON_KEY: 'test-public-key' };
+const env = { SUPABASE_URL: 'https://staging-test.supabase.co', SUPABASE_ANON_KEY: 'sb_publishable_test_key' };
 const request = () => new Request('https://staging.example/api/staff/capability?permission=support.read', {
   headers: { Authorization: 'Bearer test-user-token' },
 });
