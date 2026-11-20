@@ -7,6 +7,7 @@ const staff = fs.readFileSync('staff/index.html','utf8');
 const permissions = fs.readFileSync('staff/permissions/index.html','utf8');
 const home = fs.readFileSync('index.html','utf8');
 const verify = fs.readFileSync('supabase/verify_staff_permissions.sql','utf8');
+const probe = fs.readFileSync('scripts/probe-staff-staging.mjs','utf8');
 assert.equal((sql.match(/\$\$/g)||[]).length,6,'SQL function bodies must be dollar-quoted');
 for (const table of ['rotapark_staff_role_permissions','rotapark_staff_user_permissions','rotapark_staff_permission_audit']) {
  assert.match(sql,new RegExp('alter table public\\.'+table+' enable row level security;'));
@@ -39,4 +40,10 @@ assert.match(verify,/has_function_privilege\('anon'/);
 assert.match(verify,/has_function_privilege\('authenticated'/);
 assert.match(verify,/p\.prosecdef/);
 assert.match(verify,/public\.rotapark_my_role\(\)/);
+assert.match(probe,/const testSubjects=new Set\(\)/,'Staging probe must track distinct account IDs');
+assert.match(probe,/testSubjects\.has\(payload\.sub\)/,'Staging probe must reject duplicate users');
+assert.match(probe,/STAGING_TEST_CONFIRMED.*'yes'/,'Staging probe must require explicit project confirmation');
+assert.match(probe,/parsedUrl\.hostname!==projectRef\+'\\.supabase\\.co'/,'Staging probe must bind the URL to a project reference');
+assert.match(probe,/role==='user'&&allowed\.body!==false/,'Ordinary user must have no staff permission');
+assert.match(probe,/role==='founder'&&allowed\.body!==true/,'Founder must have a recognized permission');
 console.log('Staff permissions static security checks passed');
