@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { onRequestGet } from '../functions/api/staff/parking-reports.js';
+import { onRequestGet, onRequestPatch } from '../functions/api/staff/parking-reports.js';
 const env = { SUPABASE_URL:'https://test.supabase.co', SUPABASE_ANON_KEY:'sb_publishable_test_key' };
 const req = (status='pending', token='test-token') => new Request('https://staging.example/api/staff/parking-reports?status='+status, { headers: token ? { Authorization:'Bearer '+token } : {} });
 test('anonymous staff report request returns 401 before touching storage', async () => {
@@ -32,4 +32,48 @@ test('denied permission never reads database', async () => {
     const result=await onRequestGet({request:req(),env:{...env,DB:{prepare(){throw Error('DB accessed')}}}});
     assert.equal(result.status,403);
   } finally {globalThis.fetch=original}
+});
+
+const patchReq=(body,token='test-token')=>new Request('https://staging.example/api/staff/parking-reports',{
+ method:'PATCH',headers:{'Content-Type':'application/json',...(token?{Authorization:'Bearer '+token}:{})},body:JSON.stringify(body)
+});
+test('anonymous moderation fails before DB access',async()=>{
+ const response=await onRequestPatch({request:patchReq({id:1,status:'approved'},null),env:{DB:{prepare(){throw Error('accessed')}}}});
+ assert.equal(response.status,401);
+});
+test('read-only permission cannot approve reports',async()=>{
+ const original=globalThis.fetch;
+ globalThis.fetch=async(url,options)=>String(url).endsWith('/auth/v1/user')?Response.json({id:'user-123'}):Response.json(JSON.parse(options.body).p_permission==='parking_reports.read');
+ try {
+  const response=await onRequestPatch({request:patchReq({id:1,status:'approved'}),env:{...env,DB:{prepare(){throw Error('accessed')}}}});
+  assert.equal(response.status,403);
+ }finally{globalThis.fetch=original}
+});
+test('moderator can approve pending report using a parameterized update',async()=>{
+ const original=globalThis.fetch;let sql='',values=[];
+ globalThis.fetch=async(url)=>String(url).endsWith('/auth/v1/user')?Response.json({id:'user-123'}):Response.json(true);
+ try {
+  const DB={prepare(query){sql=query;return {bind(...args){values=args;return {async run(){return {meta:{changes:1}}}}}}}};
+  const response=await onRequestPatch({request:patchReq({id:7,status:'approved'}),env:{...env,DB}});
+  assert.equal(response.status,200);assert.match(sql,/status='pending'/);assert.deepEqual(values,['approved',7]);
+ }finally{globalThis.fetch=original}
+});
+test('invalid moderation input does not write to DB',async()=>{
+ const original=globalThis.fetch;
+ globalThis.fetch=async(url)=>String(url).endsWith('/auth/v1/user')?Response.json({id:'user-123'}):Response.json(true);
+ try {
+  for(const payload of [{id:0,status:'approved'},{id:1,status:'archived'},{id:'1',status:'rejected'}]){
+   const response=await onRequestPatch({request:patchReq(payload),env:{...env,DB:{prepare(){throw Error('accessed')}}}});
+   assert.equal(response.status,400);
+  }
+ }finally{globalThis.fetch=original}
+});
+test('previously reviewed report cannot be approved twice',async()=>{
+ const original=globalThis.fetch;
+ globalThis.fetch=async(url)=>String(url).endsWith('/auth/v1/user')?Response.json({id:'user-123'}):Response.json(true);
+ try{
+  const DB={prepare(){return {bind(){return {async run(){return {meta:{changes:0}}}}}}}};
+  const response=await onRequestPatch({request:patchReq({id:7,status:'rejected'}),env:{...env,DB}});
+  assert.equal(response.status,404);
+ }finally{globalThis.fetch=original}
 });
