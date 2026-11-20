@@ -46,7 +46,9 @@ for(const [role,token] of Object.entries(tokens)){
   if(audit.status!==200||!Array.isArray(audit.body)){console.error(role+': founder audit read failed');failures++}
  }else if(!denied(audit)){console.error(role+': audit history did not return an authorization denial');failures++}
  const invalidAudit=await call(token,'rotapark_founder_get_permission_audit',{p_limit:101});
- if(role==='founder'&&!(invalidAudit.status===400&&invalidAudit.body?.code==='22023')){console.error(role+': oversized audit query must return invalid_limit');failures++}
+ if(role==='founder'){
+  if(!(invalidAudit.status===400&&invalidAudit.body?.code==='22023')){console.error(role+': oversized audit query must return invalid_limit');failures++}
+ }else if(!denied(invalidAudit)){console.error(role+': oversized audit query bypassed founder authorization');failures++}
  const allowed=await call(token,'rotapark_staff_has_permission',{p_permission:'support.read'});
  if(allowed.status!==200||typeof allowed.body!=='boolean'){console.error(role+': effective permission check failed');failures++}
  if(role==='user'&&allowed.body!==false){console.error('user: ordinary account unexpectedly received staff permission');failures++}
