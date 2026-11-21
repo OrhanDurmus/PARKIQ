@@ -12,3 +12,12 @@ test('preflight is read-only and checks essential schema',()=>{
   assert.match(sql,/case when present then 'PASS' else 'STOP' end/);
   assert.doesNotMatch(sql,/\b(?:insert|update|delete|alter|drop|create|truncate|grant|revoke)\s+(?:into\s+|table\s+|function\s+|on\s+)?(?:public\.|auth\.)/i);
 });
+
+const strictPreflight=readFileSync(new URL('../supabase/verification/staging-member-unblock-preflight.sql',import.meta.url),'utf8');
+test('strict staging preflight uses matched PL/pgSQL dollar delimiters and rolls back',()=>{
+  assert.match(strictPreflight,/\bdo \$\$/i);
+  assert.match(strictPreflight,/\bend \$\$;/i);
+  assert.doesNotMatch(strictPreflight,/\bend \$;/i);
+  assert.match(strictPreflight,/^begin read only;/m);
+  assert.match(strictPreflight,/^rollback;/m);
+});
