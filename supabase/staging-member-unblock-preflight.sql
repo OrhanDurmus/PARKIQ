@@ -8,7 +8,7 @@ with requirements(kind, object_name, present) as (
   ('function','public.rotapark_member_blocked()',to_regprocedure('public.rotapark_member_blocked()') is not null),
   ('function','public.rotapark_staff_has_permission(text)',to_regprocedure('public.rotapark_staff_has_permission(text)') is not null),
   ('column','public.rotapark_member_bans.user_id',exists(select 1 from information_schema.columns where table_schema='public' and table_name='rotapark_member_bans' and column_name='user_id' and udt_name='uuid')),
-  ('column','public.rotapark_member_bans.reason',exists(select 1 from information_schema.columns where table_schema='public' and table_name='rotapark_member_bans' and column_name='reason' and data_type='text')),
+  ('column','public.rotapark_member_bans.reason',exists(select 1 from information_schema.columns where table_schema='public' and table_name='rotapark_member_bans' and column_name='reason' and data_type in ('text','character varying'))),
   ('column','public.rotapark_staff_roles.user_id',exists(select 1 from information_schema.columns where table_schema='public' and table_name='rotapark_staff_roles' and column_name='user_id' and udt_name='uuid')),
   ('column','auth.users.id',exists(select 1 from information_schema.columns where table_schema='auth' and table_name='users' and column_name='id' and udt_name='uuid')),
   ('column','auth.users.email',exists(select 1 from information_schema.columns where table_schema='auth' and table_name='users' and column_name='email'))
