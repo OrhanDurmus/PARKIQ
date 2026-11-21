@@ -49,5 +49,5 @@ begin
   ) then
     raise exception 'Staging unblock preflight: incompatible audit table';
   end if;
-end $;
+end $$;
 rollback;
