@@ -823,7 +823,7 @@ async function fetchParkingRegion(request){
  const receive=(key,{points,partial})=>{
   if(partial){
    incomplete=true;
-   if(!sources[key])sources[key]={points,at:0,center};
+   if(!sources[key]?.points.length)sources[key]={points,at:Date.now(),center};
   }else{
    sources[key]={points,at:Date.now(),center};
   }

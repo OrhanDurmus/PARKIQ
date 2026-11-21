@@ -373,4 +373,9 @@ test('operator refresh keeps last complete sources through delayed, failed and p
  assert.deepEqual(app.renders,[expected]);
  await request(app,Response.json({points:[]}));
  assert.deepEqual(app.renders.at(-1),['ispark:1'],'A complete source can intentionally remove records');
+ storage.clear();
+ app=makeContext();
+ await request(app,Response.json({points:[primary]},{headers:{'X-Parking-Partial':'1'}}));
+ await request(app,new Response(null,{status:503}));
+ assert.deepEqual(app.renders,[expected,expected],'A verified subset also survives when no complete response has arrived');
 });
