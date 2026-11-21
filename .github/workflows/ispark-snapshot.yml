@@ -1,12 +1,17 @@
 name: ROTAPARK automated ISPARK snapshots
 on:
   schedule:
-    - cron: '7,37 * * * *'
+    - cron: '*/5 * * * *'
   workflow_dispatch:
+    inputs:
+      preview_origin:
+        description: Branch-specific Cloudflare Pages preview origin
+        required: false
+        type: string
 permissions:
   contents: read
 concurrency:
-  group: ispark-snapshot-collector
+  group: ispark-snapshot-collector-${{ github.ref }}
   cancel-in-progress: false
 jobs:
   collect:
@@ -19,5 +24,7 @@ jobs:
           python-version: '3.12'
       - name: Fetch and upload ISPARK snapshot
         env:
-          ISPARK_UPLOAD_TOKEN: ${{ secrets.ISPARK_UPLOAD_TOKEN }}
+          ISPARK_UPLOAD_TOKEN: ${{ github.ref == 'refs/heads/main' && secrets.ISPARK_UPLOAD_TOKEN || '' }}
+          ISPARK_PREVIEW_UPLOAD_TOKEN: ${{ github.ref != 'refs/heads/main' && secrets.ISPARK_PREVIEW_UPLOAD_TOKEN || '' }}
+          ISPARK_PREVIEW_ORIGIN: ${{ inputs.preview_origin }}
         run: python scripts/collect_ispark_snapshot.py

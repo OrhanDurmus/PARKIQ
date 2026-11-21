@@ -1,15 +1,13 @@
 // ROTAPARK: authenticated, size-limited İSPARK snapshot ingestion from iOS Shortcuts.
 // Required Cloudflare Pages bindings: KV ISPARK_SNAPSHOTS; secret ISPARK_UPLOAD_TOKEN.
-// Never treat upstream counts as verified live: the source lacks per-record update timestamps.
+import { measurementTime, repairName, SNAPSHOT_WINDOW_MS } from '../_shared/ispark.js';
 const json=(body,status=200)=>Response.json(body,{status,headers:{'Cache-Control':'no-store','X-Content-Type-Options':'nosniff'}});
-const cp1252={8364:128,8218:130,402:131,8222:132,8230:133,8224:134,8225:135,710:136,8240:137,352:138,8249:139,338:140,381:142,8216:145,8217:146,8220:147,8221:148,8226:149,8211:150,8212:151,732:152,8482:153,353:154,8250:155,339:156,382:158,376:159};
-const repairName=name=>{if(typeof name!=='string'||!/[ÃÄÅ]/.test(name))return name;const bytes=[];for(const ch of name){const code=ch.codePointAt(0),byte=code<=255?code:cp1252[code];if(byte===undefined)return name;bytes.push(byte);}try{return new TextDecoder('utf-8',{fatal:true}).decode(new Uint8Array(bytes));}catch{return name;}};
 const KEY='latest';
-const isNum=v=>Number.isFinite(Number(v))&&v!==null&&v!==''&&v!==undefined;
+const isNum=v=>(typeof v==='number'||(typeof v==='string'&&v.trim()!==''))&&Number.isFinite(Number(v));
 export async function onRequestPost({request,env}){
   // Report only binding presence, never secret values or request credentials.
   const kv=env?.ISPARK_SNAPSHOTS;
-  const hasKv=typeof kv?.put==='function';
+  const hasKv=typeof kv?.put==='function'&&typeof kv?.get==='function';
   const hasToken=typeof env?.ISPARK_UPLOAD_TOKEN==='string'&&env.ISPARK_UPLOAD_TOKEN.length>0;
   if(!hasKv||!hasToken)return json({ok:false,error:'not_configured',diagnostic:{kvBinding:hasKv?'present':kv==null?'missing':'invalid',kvBindingType:typeof kv,kvPutType:typeof kv?.put,uploadToken:hasToken?'present':'missing'}},503);
   const auth=request.headers.get('Authorization')||'';
@@ -29,11 +27,12 @@ export async function onRequestPost({request,env}){
     while(true){const {done,value}=await reader.read();if(done)break;size+=value.byteLength;if(size>1500000){await reader.cancel();return json({ok:false,error:'too_large'},413);}chunks.push(value);}
     raw=new Uint8Array(size);let pos=0;for(const c of chunks){raw.set(c,pos);pos+=c.byteLength;}
   }catch{return json({ok:false,error:'invalid_body'},400);}
-  let rows;
+  let rows, collectedAt;
   try{
     // iOS Shortcuts may send the source JSON as text, a JSON list,
     // or wrap it in a dictionary when using its request-body editor.
     let parsed=JSON.parse(new TextDecoder().decode(raw));
+    collectedAt=parsed?.collectedAt;
     for(let depth=0;depth<3;depth++){
       if(Array.isArray(parsed))break;
       if(typeof parsed==='string'){parsed=JSON.parse(parsed);continue;}
@@ -57,7 +56,17 @@ export async function onRequestPost({request,env}){
     }catch{}
     return json({ok:false,error:'invalid_rows',diagnostic:{parsedType,topKeys,arrayLength,bodyBytes:raw.length,firstChar:decoded.trim().slice(0,1)}},400);
   }
+  const now=Date.now();
+  const receivedAt=new Date(now).toISOString();
+  const automated=collectedAt!==undefined;
+  if(automated){
+    const stamp=typeof collectedAt==='string'&&collectedAt.endsWith('Z')?Date.parse(measurementTime(collectedAt)??''):NaN;
+    if(!Number.isFinite(stamp)||stamp>now||now-stamp>5*60*1000)
+      return json({ok:false,error:'invalid_collection_time'},400);
+    collectedAt=new Date(stamp).toISOString();
+  }
   const points=[];
+  const ids=new Set();
   for(const item of rows){
     if(!item||typeof item!=='object')continue;
     const id=item.parkID??item.parkId;
@@ -66,15 +75,29 @@ export async function onRequestPost({request,env}){
     const capacity=isNum(item.capacity)?Number(item.capacity):null;
     const free=isNum(item.emptyCapacity)?Number(item.emptyCapacity):null;
     if(id==null||typeof name!=='string'||!name.trim()||name.length>160||!isNum(item.lat)||!isNum(item.lng)||lat<40||lat>42.5||lng<26||lng>31)continue;
-    points.push({id:String(id).slice(0,32),name:repairName(name.trim()),lat,lng,
+    const parkId=String(id).trim().slice(0,32);
+    if(!parkId||ids.has(parkId))continue;
+    ids.add(parkId);
+    const measuredAt=measurementTime(item.lastUpdate??item.LastUpdate??item.updatedAt??item.UpdatedAt??item.occupancyUpdatedAt??item.updateDate??item.UpdateDate);
+    points.push({id:parkId,name:repairName(name.trim()),lat,lng,
       capacity:Number.isInteger(capacity)&&capacity>0?capacity:null,
       freeSpaces:Number.isInteger(free)&&free>=0&&(capacity===null||free<=capacity)?free:null,
-      occupancyUpdatedAt:null,verifiedLive:false,sourceSnapshot:true});
+      measuredAt,occupancyUpdatedAt:null,verifiedLive:false,sourceSnapshot:true});
   }
   if(points.length===0)return json({ok:false,error:'no_valid_parks'},400);
-  const receivedAt=new Date().toISOString();
-  const snapshot={source:'IBB İSPARK',receivedAt,points,liveCount:0,verifiedLive:false,sourceSnapshot:true};
-  try{await env.ISPARK_SNAPSHOTS.put(KEY,JSON.stringify(snapshot),{expirationTtl:86400});}
+  if(automated&&points.length<100)return json({ok:false,error:'incomplete_snapshot'},400);
+  const snapshot={source:'IBB İSPARK',receivedAt,...(automated?{collectedAt}:{}),points,sourceSnapshot:true};
+  try{
+    const previous=await kv.get(KEY,'json');
+    const previousTime=Date.parse(previous?.collectedAt??previous?.receivedAt??'');
+    if(Number.isFinite(previousTime)&&now-previousTime<SNAPSHOT_WINDOW_MS){
+      if(Date.parse(collectedAt??receivedAt)<=previousTime)
+        return json({ok:false,error:'older_snapshot'},409);
+      if(points.length<Math.ceil((previous.points?.length??0)*0.8))
+        return json({ok:false,error:'incomplete_snapshot'},409);
+    }
+    await kv.put(KEY,JSON.stringify(snapshot),{expirationTtl:86400});
+  }
   catch{return json({ok:false,error:'storage_unavailable'},503);}
   return json({ok:true,accepted:points.length,receivedAt});
 }
