@@ -20,7 +20,7 @@ jobs:
       - name: Verify staging D1 migrations (isolated SQLite)
         run: node --test tests/staging-d1-migrations.test.mjs
       - name: Verify staging member unblock SQL contract (static checks)
-        run: node --test tests/staging-member-unblock-contract.test.mjs
+        run: node --test tests/staging-member-unblock-contract.test.mjs tests/staging-member-unblock-ui.test.mjs
       - name: Validate staff center and permission pages
         run: node scripts/check-staff-pages.cjs
       - name: Validate parking API and app startup syntax
