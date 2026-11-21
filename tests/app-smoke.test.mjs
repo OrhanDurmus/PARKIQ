@@ -261,21 +261,34 @@ test('municipal shortcuts select the operator and load its city at 30 km', () =>
  assert.ok(source);
  const asset=readFileSync(new URL('../themes/rotapark-premium-home.js',import.meta.url),'utf8');
  assert.match(asset,/\['İSPARK','ANPARK','İZELMAN'\]\.includes\(a\[1\]\)/);
- const elements={q:{value:'previous search'},searchRadius:{value:'10'},mapWrap:{scrollIntoView(){}}};
+ const elements={q:{value:'previous search'},searchRadius:{value:'10'},mapWrap:{classList:{contains:()=>false},scrollIntoView(){}}};
  const loads=[];
- let center;
+ let center,zoom,finish;
  const context={
-  window:{},$:(id)=>elements[id],selectedParkingOperator:null,
-  map:{setView(position){center=Array.from(position);}},
+  window:{matchMedia:()=>({matches:false})},$:(id)=>elements[id],selectedParkingOperator:null,
+  routeWatch:null,parkingTimer:null,clearTimeout,
+  map:{
+   stop(){},getZoom:()=>zoom,getCenter:()=>center,distance:()=>100,
+   once(event,callback){assert.equal(event,'moveend');finish=callback;},
+   off(event,callback){assert.equal(event,'moveend');assert.equal(finish,callback);finish=null;},
+   flyTo(position,level,options){center=Array.from(position);zoom=level;assert.ok(options.duration>0);}
+  },
   resetParkingFilterValues(){context.selectedParkingOperator=null;},showParking(){},
-  loadParking(){loads.push([context.selectedParkingOperator,center,elements.searchRadius.value,elements.q.value]);}
+  loadParking(){loads.push([context.selectedParkingOperator,center,zoom,elements.searchRadius.value,elements.q.value]);}
  };
  runInNewContext(source,context);
- for(const operator of ['İSPARK','ANPARK','İZELMAN'])assert.equal(context.window.rotaparkFilterOperator(operator),true);
+ assert.equal(context.window.rotaparkFilterOperator('İSPARK'),true);
+ assert.equal(context.window.rotaparkFilterOperator('ANPARK'),true);
+ assert.equal(loads.length,0);
+ finish();
+ for(const operator of ['İZELMAN','İSPARK']){
+  assert.equal(context.window.rotaparkFilterOperator(operator),true);
+  finish();
+ }
  assert.deepEqual(loads,[
-  ['İSPARK',[41.0082,28.9784],'30',''],
-  ['ANPARK',[39.9334,32.8597],'30',''],
-  ['İZELMAN',[38.4237,27.1428],'30','']
+  ['ANPARK',[39.9334,32.8597],13,'30',''],
+  ['İZELMAN',[38.4237,27.1428],13,'30',''],
+  ['İSPARK',[41.0082,28.9784],13,'30','']
  ]);
  assert.equal(context.window.rotaparkFilterOperator('toString'),false);
  assert.match(html,/allParking\.filter\(p=>\(!selectedParkingOperator\|\|corporateOperator\(p\)===selectedParkingOperator\)/);

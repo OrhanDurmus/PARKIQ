@@ -445,17 +445,37 @@ const parkingOperatorCenters={
  ANPARK:[39.9334,32.8597],
  'İZELMAN':[38.4237,27.1428]
 };
+let finishParkingOperatorMove=null;
 window.rotaparkFilterOperator=function(operator){
  if(!Object.hasOwn(parkingOperatorCenters,operator))return false;
- const target=parkingOperatorCenters[operator];
+ const mapWrap=$('mapWrap');
+ if(routeWatch!==null||mapWrap.classList.contains('navigation-active'))return false;
+ const target=parkingOperatorCenters[operator],zoom=13;
+ const reduceMotion=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+ if(finishParkingOperatorMove)map.off('moveend',finishParkingOperatorMove);
+ finishParkingOperatorMove=null;
+ map.stop();
+ clearTimeout(parkingTimer);
  resetParkingFilterValues();
  selectedParkingOperator=operator;
  $('q').value='';
  $('searchRadius').value='30';
- map.setView(target,11,{animate:false});
- showParking();
- $('mapWrap').scrollIntoView({behavior:'smooth',block:'center'});
- loadParking();
+ mapWrap.scrollIntoView({behavior:reduceMotion?'instant':'smooth',block:'center'});
+ if(reduceMotion||map.getZoom()===zoom&&map.distance(map.getCenter(),target)<1){
+  map.setView(target,zoom,{animate:false});
+  showParking();
+  loadParking();
+ }else{
+  finishParkingOperatorMove=()=>{
+   finishParkingOperatorMove=null;
+   clearTimeout(parkingTimer);
+   if(routeWatch!==null||mapWrap.classList.contains('navigation-active'))return;
+   showParking();
+   loadParking();
+  };
+  map.once('moveend',finishParkingOperatorMove);
+  map.flyTo(target,zoom,{duration:.65});
+ }
  return true;
 };
 window.rotaparkFocusLocation=function(){
