@@ -37,7 +37,12 @@ async function load(state){
   try{
     const response=await fetch('/api/staff/parking-reports?status='+encodeURIComponent(state),{headers:{Authorization:'Bearer '+token},cache:'no-store'});
     if(response.status===401)throw Error('Oturum sona erdi. Yeniden giriş yapın.');
-    if(response.status===403)throw Error('Park bildirimlerini görüntüleme yetkiniz yok.');
+    if(response.status===403){
+      setModerationAccess(false);
+      filters.hidden=true;
+      refresh.hidden=true;
+      throw Error('Park bildirimlerini görüntüleme yetkiniz yok.');
+    }
     if(response.status===503)throw Error('Yetki veya veri servisi kullanılamıyor.');
     if(!response.ok)throw Error('Bildirimler yüklenemedi.');
     const data=await response.json();
