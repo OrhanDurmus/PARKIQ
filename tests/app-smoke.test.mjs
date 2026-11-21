@@ -199,23 +199,28 @@ test('navigation sends the same text to phone TTS with the Turkish voice', async
 
 test('parking uses one shared İSPARK request and reuses it for late live occupancy', async () => {
  const load = html.split('function loadIsparkOccupancy(){')[1]?.split(" window.addEventListener('online'")[0];
- const refresh = html.match(/async function refreshIsparkOccupancy\(seq,occupancyPromise,render=true\)\{.*?\}(?=const parkingOperatorAssets)/)?.[0];
+ const refresh = html.match(/function currentIsparkLive\(point\)\{[\s\S]*?(?=const parkingOperatorAssets)/)?.[0];
  assert.ok(load && refresh, 'Expected parking data loading functions');
  assert.equal(load.match(/fetch\('\/api\/ispark-occupancy'/g)?.length, 1);
  assert.match(load, /refreshIsparkOccupancy\(seq,occupancyPromise,false\)/);
 
  const point = {name: 'İSPARK Test', lat: 41, lng: 29};
  let renders = 0;
- const context = {parkingSeq: 2, allParking: [point], showParking: () => renders++};
+ const context = {parkingSeq: 2, allParking: [point], showParking: () => renders++,clearTimeout,setTimeout:()=>1,dist:()=>0};
  const apply = runInNewContext(refresh + ';refreshIsparkOccupancy', context);
  await apply(1, Promise.resolve({points: [{...point, verifiedLive: true, freeSpaces: 5}]}));
  assert.equal(renders, 0);
  await apply(2, Promise.resolve({points: [{...point, sourceSnapshot: true, freeSpaces: 5}]}));
  assert.equal(renders, 0);
- const live = {...point, verifiedLive: true, freeSpaces: 5};
+ const live = {...point, verifiedLive: true, freeSpaces: 5,occupancyUpdatedAt:new Date().toISOString()};
  await apply(2, Promise.resolve({points: [live]}));
  assert.equal(point.isparkLive, live);
  assert.equal(renders, 1);
+ await apply(2, Promise.resolve({upstreamUnavailable:true,points:[live]}));
+ assert.equal(point.isparkLive,null);
+ assert.equal(renders,2);
+ await apply(2, Promise.resolve({points:[{...live,occupancyUpdatedAt:new Date(Date.now()-901000).toISOString()}]}));
+ assert.equal(point.isparkLive,null);
 });
 
 test('parking publishes map data before slow business data and coalesces repeated searches', async () => {
@@ -292,4 +297,25 @@ test('municipal shortcuts select the operator and load its city at 30 km', () =>
  ]);
  assert.equal(context.window.rotaparkFilterOperator('toString'),false);
  assert.match(html,/allParking\.filter\(p=>\(!selectedParkingOperator\|\|corporateOperator\(p\)===selectedParkingOperator\)/);
+});
+
+test('reviewed İSPARK aliases preserve catalog and OSM coordinates without merging unconfirmed neighbors',()=>{
+ const source=html.match(/const reviewedIsparkOsm=\{[\s\S]*?(?=function matchesParkingRegion)/)?.[0];
+ assert.ok(source);
+ const api=runInNewContext(source+';({mergeReviewedOsm,mergeMunicipalParking})',{corporateOperator:()=> 'İSPARK',dist:()=>0});
+ const way={osmType:'way',osmId:'719661158',name:'Merter',fee:'yes',lat:41.01,lng:28.88};
+ const node={osmType:'node',osmId:'7592484269',name:'Merter',fee:'unknown',lat:41.011,lng:28.881};
+ const other={osmType:'node',osmId:'4876032103',name:'Bostancı Vergi Dairesi',fee:'yes',lat:40.96,lng:29.1};
+ const catalog={id:'ispark:2793',operator:'İSPARK',isparkParkID:'2793',name:'İspark Merter Katlı Otoparkı',fee:'unknown',lat:41.012,lng:28.882};
+ const bostanci={id:'ispark:2150',operator:'İSPARK',isparkParkID:'2150',name:'Bostancı Vergi Dairesi Açık Otoparkı',fee:'unknown',lat:40.961,lng:29.101};
+ const result=api.mergeMunicipalParking(api.mergeReviewedOsm([node,way,other]),[catalog,bostanci],'İSPARK');
+ assert.equal(result.length,3);
+ assert.equal(result[0].id,catalog.id);
+ assert.equal(result[0].osmId,way.osmId);
+ assert.equal(result[0].osmAliases[0].osmId,node.osmId);
+ assert.equal(result[0].fee,'yes');
+ assert.equal(result[0].lat,way.lat);
+ assert.equal(result[0].catalogCoordinates.lat,catalog.lat);
+ assert.strictEqual(result[1],other);
+ assert.equal(result[2].id,bostanci.id);
 });

@@ -138,15 +138,7 @@ async function readParkingAsset(env,origin,path){
    if(!asset.ok)return entry.data;
    const parsed=await asset.json();
    if(!Array.isArray(parsed?.points))return entry.data;
-   // Bucket by latitude and preserve source order for duplicate identities.
-   const bands=new Map();
-   parsed.points.forEach((point,index)=>{
-    if(!point||!validPoint(point))return;
-    const band=Math.floor(point.lat*20);
-    if(!bands.has(band))bands.set(band,[]);
-    bands.get(band).push({point,index});
-   });
-   entry.data={source:parsed.source,updatedAt:parsed.updatedAt,bands};
+   entry.data=parsed;
    entry.expires=Date.now()+60000;
    return entry.data;
   }catch{return entry.data}
@@ -156,15 +148,6 @@ async function readParkingAsset(env,origin,path){
   entry.pending=null;
   if(!entry.data)parkingAssetCache.delete(path);
  }
-}
-function nearbyAssetRows(asset,lat,radius){
- const rows=[];
- const delta=radius/111195;
- for(let band=Math.floor((lat-delta)*20);band<=Math.floor((lat+delta)*20);band++){
-  const candidates=asset?.bands.get(band);
-  if(candidates)rows.push(...candidates);
- }
- return rows.sort((a,b)=>a.index-b.index);
 }
 export async function onRequestGet({request,env}){
  const url=new URL(request.url),lat=Number(url.searchParams.get('lat')),lng=Number(url.searchParams.get('lng'));
@@ -182,7 +165,8 @@ export async function onRequestGet({request,env}){
  const longitudeScale=111195*Math.cos(lat*Math.PI/180);
  // Nationwide first; Istanbul curated records override matching OSM identities.
  for(const asset of [national,istanbul]){
-  for(const {point} of nearbyAssetRows(asset,lat,radiusKm*1000)){
+  for(const point of asset?.points||[]){
+   if(!point||!validPoint(point))continue;
    const dy=(point.lat-lat)*111195,dx=(point.lng-lng)*longitudeScale;
    const distance=dx*dx+dy*dy;
    if(distance>radiusSq||!publicParking(point)||(point.geographicStatus==='confirmed_outside_istanbul'&&point.geographicReviewVerified===true))continue;
