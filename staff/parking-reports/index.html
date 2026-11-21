@@ -5,22 +5,25 @@
 body{margin:0;background:#090909;color:#f4f0e7;font:16px system-ui}main{max-width:850px;margin:28px auto;padding:18px}
 section{background:#171512;border:1px solid #6c562a;border-radius:16px;padding:20px}
 h1{color:#e9c77e}a{color:#e9c77e}button{background:#302617;color:#f4f0e7;border:1px solid #94743d;border-radius:8px;padding:10px;cursor:pointer}
-button:focus-visible,a:focus-visible{outline:2px solid #e9c77e;outline-offset:3px}
+button:disabled{opacity:.55;cursor:not-allowed}button:focus-visible,a:focus-visible{outline:2px solid #e9c77e;outline-offset:3px}
 nav{display:flex;gap:8px;flex-wrap:wrap}article{border-top:1px solid #453923;padding:12px 0;overflow-wrap:anywhere}
 small,.muted{color:#c7bdab}#list{margin-top:12px}pre{white-space:pre-wrap}
 </style></head>
 <body><main><p><a href="/staff/">← Yönetim Merkezi</a></p><section>
 <h1>🅿️ Park Bildirimleri</h1>
 <p class="muted">Yetkisi olan personel bekleyen bildirimleri onaylayabilir veya reddedebilir. Arşivleme etkin değil.</p>
-<p id="status" role="status">Yetki doğrulanıyor…</p>
+<p id="status" role="status">Yetki doğrulanıyor…</p><p id="access" class="muted" role="status"></p><button type="button" id="refresh" hidden>Listeyi yenile</button>
 <nav id="filters" hidden><button type="button" data-status="pending">Bekleyenler</button><button type="button" data-status="approved">Onaylananlar</button><button type="button" data-status="rejected">Reddedilenler</button></nav>
 <div id="list" aria-live="polite"></div>
 </section></main>
 <script type="module">
 const status=document.getElementById('status'),list=document.getElementById('list'),filters=document.getElementById('filters');
 let token='',canModerate=false,currentStatus='pending',busy=false;
+const refresh=document.getElementById('refresh'),access=document.getElementById('access');
+refresh.addEventListener('click',()=>{if(!busy)void load(currentStatus)});
 async function load(state){
   currentStatus=state;
+  refresh.disabled=true;
   status.textContent='Bildirimler yükleniyor…';
   list.replaceChildren();
   try{
@@ -54,6 +57,7 @@ async function load(state){
     }
     status.textContent=data.reports.length+' kayıt listelendi (en fazla 50).';
   }catch(error){list.replaceChildren();status.textContent=error.message||'Bildirimler yüklenemedi.'}
+  finally{refresh.disabled=false;}
 }
 async function decide(id,decision){
   if(!canModerate||busy||currentStatus!=='pending')return;
@@ -88,7 +92,9 @@ try{
   token=session.access_token;
   const moderateResponse=await fetch('/api/staff/capability?permission=parking_reports.moderate',{headers:{Authorization:'Bearer '+token},cache:'no-store'});
   canModerate=moderateResponse.status===200;
+  access.textContent=canModerate?'İşlem yetkisi: Onaylama ve reddetme açık.':'Salt görüntüleme: Onaylama ve reddetme kapalı.';
   filters.hidden=false;
+  refresh.hidden=false;
   filters.addEventListener('click',event=>{const state=event.target.closest('button[data-status]')?.dataset.status;if(state)void load(state)});
   await load('pending');
 }catch(error){status.textContent=error.message||'Giriş doğrulanamadı.'}
