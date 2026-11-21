@@ -1,0 +1,31 @@
+{
+  "retrievedOn": "2026-11-21",
+  "sources": [
+    "https://www.anpark.com.tr/wp-json/anpark/v1/parks"
+  ],
+  "points": [
+    {"id": "anpark:1095","name": "ALSANCAK YOL BOYU OTOPARKI","operator": "ANPARK","lat": 39.941284,"lng": 32.855654,"kind": "street_side","address": "Alsancak Mahallesi, Altındağ/Ankara","capacity": 16,"fee": "unknown","publicAccessStatus": "public"},
+    {"id": "anpark:1105","name": "BATIKENT REKREASYON ALANI","operator": "ANPARK","lat": 39.965459,"lng": 32.710895,"kind": "unknown","address": "Batıkent Rekreasyon Alanı, Yenimahalle/Ankara","capacity": 0,"fee": "unknown","publicAccessStatus": "public"},
+    {"id": "anpark:1101","name": "ÇUBUK-1 BARAJI OTOPARKI","operator": "ANPARK","lat": 40.0032113,"lng": 32.9265717,"kind": "unknown","address": "Çubuk-1 Barajı, Altındağ/Ankara","capacity": 0,"fee": "unknown","publicAccessStatus": "public"},
+    {"id": "anpark:1099","name": "DEMİRTEPE AÇIK OTOPARKI","operator": "ANPARK","lat": 39.923778,"lng": 32.849556,"kind": "surface","address": "Demirtepe Mahallesi, Çankaya/Ankara","capacity": 30,"fee": "unknown","publicAccessStatus": "public"},
+    {"id": "anpark:1111","name": "DIŞKAPI AÇIK OTOPARKI","operator": "ANPARK","lat": 39.951653,"lng": 32.857095,"kind": "surface","address": "Dışkapı Mahallesi, Altındağ/Ankara","capacity": 147,"fee": "unknown","publicAccessStatus": "public"},
+    {"id": "anpark:1098","name": "GÖKSU PARKI OTOPARKI","operator": "ANPARK","lat": 39.988505,"lng": 32.647731,"kind": "unknown","address": "Göksu Parkı, Etimesgut/Ankara","capacity": 0,"fee": "unknown","publicAccessStatus": "public"},
+    {"id": "anpark:1117","name": "HANIMELİ AÇIK OTOPARKI","operator": "ANPARK","lat": 39.926431,"lng": 32.852785,"kind": "surface","address": "Hanımeli Sokak, Çankaya/Ankara","capacity": 106,"fee": "unknown","publicAccessStatus": "public"},
+    {"id": "anpark:1110","name": "KALE YOL BOYU OTOPARKI","operator": "ANPARK","lat": 39.937984,"lng": 32.865275,"kind": "street_side","address": "Kale Mahallesi, Altındağ/Ankara","capacity": 34,"fee": "unknown","publicAccessStatus": "public"},
+    {"id": "anpark:1104","name": "KIZILCAHAMAM SOĞUK SU MİLLİ PARKI","operator": "ANPARK","lat": 40.468634,"lng": 32.630351,"kind": "unknown","address": "Soğuksu Milli Parkı, Kızılcahamam/Ankara","capacity": 0,"fee": "unknown","publicAccessStatus": "public"},
+    {"id": "anpark:1109","name": "KOLEJ AÇIK OTOPARKI","operator": "ANPARK","lat": 39.922722,"lng": 32.862333,"kind": "surface","address": "Kolej Mahallesi, Çankaya/Ankara","capacity": 85,"fee": "unknown","publicAccessStatus": "public"},
+    {"id": "anpark:1107","name": "MAİDAN YOL BOYU","operator": "ANPARK","lat": 39.909377,"lng": 32.765033,"kind": "street_side","address": "Maidan Bölgesi, Çankaya/Ankara","capacity": 122,"fee": "unknown","publicAccessStatus": "public"},
+    {"id": "anpark:1116","name": "MAVİ GÖL REKREASYON ALANI","operator": "ANPARK","lat": 39.915044,"lng": 32.987089,"kind": "unknown","address": "Mavi Göl, Mamak/Ankara","capacity": 0,"fee": "unknown","publicAccessStatus": "public"},
+    {"id": "anpark:1100","name": "MOGAN REKREASYON ALANI","operator": "ANPARK","lat": 39.779457,"lng": 32.7881,"kind": "unknown","address": "Mogan Gölü, Gölbaşı/Ankara","capacity": 0,"fee": "unknown","publicAccessStatus": "public"},
+    {"id": "anpark:1108","name": "NECATİBEY YOL BOYU OTOPARK","operator": "ANPARK","lat": 39.926057,"lng": 32.854509,"kind": "street_side","address": "Necatibey Caddesi, Çankaya/Ankara","capacity": 108,"fee": "unknown","publicAccessStatus": "public"},
+    {"id": "anpark:1106","name": "PANORA AVM YOL BOYU OTOPARKI","operator": "ANPARK","lat": 39.8489625,"lng": 32.8341122,"kind": "street_side","address": "Panora AVM Yanı, Çankaya/Ankara","capacity": 323,"fee": "unknown","publicAccessStatus": "public"},
+    {"id": "anpark:1115","name": "RÜZGARLI CADDESİ YOL BOYU OTOPARKI","operator": "ANPARK","lat": 39.9425703,"lng": 32.8501007,"kind": "street_side","address": "Rüzgarlı Caddesi, Altındağ/Ankara","capacity": 60,"fee": "unknown","publicAccessStatus": "public"},
+    {"id": "anpark:1112","name": "RÜZGARLI ÇOK KATLI OTOPARKI","operator": "ANPARK","lat": 39.944798,"lng": 32.851739,"kind": "unknown","address": "Rüzgarlı Sokak, Altındağ/Ankara","capacity": 185,"fee": "unknown","publicAccessStatus": "public"},
+    {"id": "anpark:1102","name": "RÜZGARLI YOL BOYU OTOPARKI","operator": "ANPARK","lat": 39.945445,"lng": 32.850876,"kind": "street_side","address": "Rüzgarlı Sokak, Altındağ/Ankara","capacity": 209,"fee": "unknown","publicAccessStatus": "public"},
+    {"id": "anpark:1118","name": "SIHHIYE ÇOK KATLI OTOPARKI","operator": "ANPARK","lat": 39.926417,"lng": 32.859245,"kind": "unknown","address": "Sıhhiye Meydanı, Çankaya/Ankara","capacity": 186,"fee": "unknown","publicAccessStatus": "public"},
+    {"id": "anpark:1103","name": "TANDOĞAN AÇIK OTOPARKI","operator": "ANPARK","lat": 39.9345,"lng": 32.837278,"kind": "surface","address": "Tandoğan Meydanı, Çankaya/Ankara","capacity": 17,"fee": "unknown","publicAccessStatus": "public"},
+    {"id": "anpark:1097","name": "ULUS 100.YIL KAPALI OTOPARKI","operator": "ANPARK","lat": 39.940857,"lng": 32.853291,"kind": "unknown","address": "Ulus 100. Yıl, Altındağ/Ankara","capacity": 200,"fee": "unknown","publicAccessStatus": "public"},
+    {"id": "anpark:1114","name": "YDA KAPALI OTOPARKI","operator": "ANPARK","lat": 39.909949,"lng": 32.8085532,"kind": "unknown","address": "YDA Center, Çankaya/Ankara","capacity": 400,"fee": "unknown","publicAccessStatus": "public"},
+    {"id": "anpark:1113","name": "YDA YOL BOYU","operator": "ANPARK","lat": 39.910356,"lng": 32.808125,"kind": "street_side","address": "YDA Center Yanı, Çankaya/Ankara","capacity": 69,"fee": "unknown","publicAccessStatus": "public"}
+  ]
+}

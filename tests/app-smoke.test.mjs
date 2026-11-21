@@ -199,7 +199,7 @@ test('navigation sends the same text to phone TTS with the Turkish voice', async
 
 test('parking uses one shared İSPARK request and reuses it for late live occupancy', async () => {
  const load = html.split('function loadIsparkOccupancy(){')[1]?.split(" window.addEventListener('online'")[0];
- const refresh = html.match(/async function refreshIsparkOccupancy\(seq,occupancyPromise,render=true\)\{.*?\}(?=window.rotaparkFilterOperator)/)?.[0];
+ const refresh = html.match(/async function refreshIsparkOccupancy\(seq,occupancyPromise,render=true\)\{.*?\}(?=const parkingOperatorAssets)/)?.[0];
  assert.ok(load && refresh, 'Expected parking data loading functions');
  assert.equal(load.match(/fetch\('\/api\/ispark-occupancy'/g)?.length, 1);
  assert.match(load, /refreshIsparkOccupancy\(seq,occupancyPromise,false\)/);
@@ -230,7 +230,7 @@ test('parking publishes map data before slow business data and coalesces repeate
  const elements={searchRadius:{value:'10'},parking:{}};
  const context={
   navigator:{onLine:true},map:{getCenter:()=>center,distance:()=>0},
-  allParking:[],parkingAbort:null,parkingSeq:0,parkingDataStale:false,lastParkingFetchCenter:null,lastParkingSuccessAt:0,
+  allParking:[],parkingAbort:null,parkingSeq:0,parkingDataStale:false,selectedParkingOperator:null,lastParkingFetchCenter:null,lastParkingSuccessAt:0,
   AbortController,setTimeout,clearTimeout,
   $:id=>elements[id],status(){},updateParkingFreshness(){},
   showParking:()=>renders.push(context.allParking.map(p=>p.name)),
@@ -254,4 +254,29 @@ test('parking publishes map data before slow business data and coalesces repeate
  assert.deepEqual(Array.from(renders[1]), ['Map parking','Verified parking']);
  await load();
  assert.deepEqual(requests,['/api/parking','/api/business-parking','/api/ispark-occupancy']);
+});
+
+test('municipal shortcuts select the operator and load its city at 30 km', () => {
+ const source=html.match(/const parkingOperatorCenters=\{[\s\S]*?(?=window.rotaparkFocusLocation)/)?.[0];
+ assert.ok(source);
+ const asset=readFileSync(new URL('../themes/rotapark-premium-home.js',import.meta.url),'utf8');
+ assert.match(asset,/\['İSPARK','ANPARK','İZELMAN'\]\.includes\(a\[1\]\)/);
+ const elements={q:{value:'previous search'},searchRadius:{value:'10'},mapWrap:{scrollIntoView(){}}};
+ const loads=[];
+ let center;
+ const context={
+  window:{},$:(id)=>elements[id],selectedParkingOperator:null,
+  map:{setView(position){center=Array.from(position);}},
+  resetParkingFilterValues(){context.selectedParkingOperator=null;},showParking(){},
+  loadParking(){loads.push([context.selectedParkingOperator,center,elements.searchRadius.value,elements.q.value]);}
+ };
+ runInNewContext(source,context);
+ for(const operator of ['İSPARK','ANPARK','İZELMAN'])assert.equal(context.window.rotaparkFilterOperator(operator),true);
+ assert.deepEqual(loads,[
+  ['İSPARK',[41.0082,28.9784],'30',''],
+  ['ANPARK',[39.9334,32.8597],'30',''],
+  ['İZELMAN',[38.4237,27.1428],'30','']
+ ]);
+ assert.equal(context.window.rotaparkFilterOperator('toString'),false);
+ assert.match(html,/allParking\.filter\(p=>\(!selectedParkingOperator\|\|corporateOperator\(p\)===selectedParkingOperator\)/);
 });
