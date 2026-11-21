@@ -48,3 +48,17 @@ test('Staging D1 replay detects a pre-existing incompatible support table instea
     assert.throws(() => db.prepare("INSERT INTO contact_support_requests(id,email,topic,message,created_at) VALUES ('new','new@example.invalid','t','m',1)").run(), /no column named topic/);
   } finally { db.close(); }
 });
+
+test('Staging D1 rejects an incompatible legacy audit table without dropping its records', () => {
+  const db = new DatabaseSync(':memory:');
+  try {
+    db.exec("CREATE TABLE parking_report_review_audit (id INTEGER PRIMARY KEY, report_id INTEGER NOT NULL)");
+    db.exec("INSERT INTO parking_report_review_audit(id,report_id) VALUES (7,42)");
+    // The audit migration requires reviewed_at for its index; IF NOT EXISTS
+    // cannot upgrade an existing table and must not silently erase records.
+    assert.throws(() => db.exec(audit), /no such column: reviewed_at/);
+    assert.equal(db.prepare('SELECT report_id FROM parking_report_review_audit WHERE id=7').get().report_id, 42);
+    const columns = db.prepare('PRAGMA table_info(parking_report_review_audit)').all().map(row => row.name);
+    assert.equal(columns.includes('reviewed_at'), false);
+  } finally { db.close(); }
+});
