@@ -37,8 +37,6 @@ async function execute(action) {
   panel.disabled=true;
   try { await action(); }
   catch (error) {
-    panel.replaceChildren();
-    panel.hidden=true;
     status.textContent=error.message || 'İşlem tamamlanamadı. Sayfayı yenileyin.';
   } finally { panel.disabled=false; }
 }
@@ -162,6 +160,7 @@ function renderAction() {
       if (error) throw Error(error.code==='42501'?'Bu işlem için yetkiniz yok.':error.code==='22023'?'Hedef hesap veya engel nedeni uygun değil.':'Üye işlemi tamamlanamadı. Staging yapılandırmasını kontrol edin.');
     }
     node.reset();status.textContent='İşlem kaydedildi.';
+    if (block) await renderBlockedMembers();
   });
   let message,type,duration,email,reason,operation;
   if (announce) {
