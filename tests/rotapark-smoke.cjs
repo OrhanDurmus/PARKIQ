@@ -21,9 +21,10 @@ console.log('PASS Old business email removed');
 // Guard the map refresh and parking filtering optimizations against regressions.
 assert.match(html, /map\.on\('moveend',[\s\S]*?clearTimeout\(pinViewportTimer\)/, 'Map move must debounce marker redraw');
 assert.match(html, /map\.on\('zoomend',\(\)=>\{if\(!allParking\.length\)return;clearTimeout\(pinViewportTimer\)/, 'Map zoom must share the move debounce timer');
-assert.match(html, /if\(parkingLayer\)parkingLayer\.clearLayers\(\);else parkingLayer=L\.layerGroup\(\)\.addTo\(map\)/, 'Parking marker layer must be reused');
-assert.match(html, /const points=allParking\.filter\(p=>/, 'Parking filtering must use a single array pass');
-assert.match(html, /if\(zoom>=16\)\{key=p\.lat\+'\,'\+p\.lng\}else\{const pixel=map\.project/, 'High zoom must avoid unnecessary projection');
+assert.match(html, /if\(!parkingLayer\)parkingLayer=L\.layerGroup\(\)\.addTo\(map\)/, 'Parking marker layer must be reused');
+assert.match(html, /const points=scopedParking\.filter\(p=>/, 'Parking filtering must use a single array pass');
+assert.match(html, /if\(zoom>=16\)\{groups\.set\(point,\[point\]\);continue\}\s*const pixel=map\.project/, 'High zoom must avoid unnecessary projection');
+assert.doesNotMatch(html, /parkingLayer\.clearLayers\(/, 'Visible parking markers must survive a redraw');
 console.log('PASS Map and parking performance regression checks');
 
 // Preserve navigation guard and popup metadata behavior during future refactors.

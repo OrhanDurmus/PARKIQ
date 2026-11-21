@@ -24,4 +24,4 @@ jobs:
       - name: Validate staff center and permission pages
         run: node scripts/check-staff-pages.cjs
       - name: Validate parking API and app startup syntax
-        run: node --test tests/parking-api.test.mjs tests/business-parking.test.mjs tests/app-smoke.test.mjs
+        run: node --test tests/parking-api.test.mjs tests/business-parking.test.mjs tests/ispark-occupancy.test.mjs tests/app-smoke.test.mjs

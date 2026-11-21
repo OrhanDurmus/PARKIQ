@@ -197,23 +197,213 @@ test('navigation sends the same text to phone TTS with the Turkish voice', async
   }
 });
 
-test('parking uses one İSPARK request per search and reuses it for late live occupancy', async () => {
- const load = html.split('async function loadParking(){')[1]?.split(" window.addEventListener('online'")[0];
- const refresh = html.match(/async function refreshIsparkOccupancy\(seq,occupancyPromise\)\{.*?\}(?=window.rotaparkFilterOperator)/)?.[0];
+test('parking uses one shared İSPARK request and reuses it for late live occupancy', async () => {
+ const load = html.split('function loadIsparkOccupancy(){')[1]?.split(" window.addEventListener('online'")[0];
+ const refresh = html.match(/function currentIsparkLive\(point\)\{[\s\S]*?(?=const parkingOperatorAssets)/)?.[0];
  assert.ok(load && refresh, 'Expected parking data loading functions');
  assert.equal(load.match(/fetch\('\/api\/ispark-occupancy'/g)?.length, 1);
- assert.match(load, /refreshIsparkOccupancy\(seq,occupancyPromise\)/);
+ assert.match(load, /refreshIsparkOccupancy\(seq,occupancyPromise,false\)/);
 
  const point = {name: 'İSPARK Test', lat: 41, lng: 29};
  let renders = 0;
- const context = {parkingSeq: 2, allParking: [point], showParking: () => renders++};
+ const context = {parkingSeq: 2, allParking: [point], showParking: () => renders++,clearTimeout,setTimeout:()=>1,dist:()=>0};
  const apply = runInNewContext(refresh + ';refreshIsparkOccupancy', context);
  await apply(1, Promise.resolve({points: [{...point, verifiedLive: true, freeSpaces: 5}]}));
  assert.equal(renders, 0);
  await apply(2, Promise.resolve({points: [{...point, sourceSnapshot: true, freeSpaces: 5}]}));
  assert.equal(renders, 0);
- const live = {...point, verifiedLive: true, freeSpaces: 5};
+ const live = {...point, verifiedLive: true, freeSpaces: 5,occupancyUpdatedAt:new Date().toISOString()};
  await apply(2, Promise.resolve({points: [live]}));
  assert.equal(point.isparkLive, live);
  assert.equal(renders, 1);
+ await apply(2, Promise.resolve({upstreamUnavailable:true,points:[live]}));
+ assert.equal(point.isparkLive,null);
+ assert.equal(renders,2);
+ await apply(2, Promise.resolve({points:[{...live,occupancyUpdatedAt:new Date(Date.now()-901000).toISOString()}]}));
+ assert.equal(point.isparkLive,null);
+});
+
+test('parking publishes map data before slow business data and coalesces repeated searches', async () => {
+ const source = html.split('const parkingCacheMs=')[1]?.split(" window.addEventListener('online'")[0];
+ assert.ok(source);
+ const center={lat:41.0082,lng:28.9784};
+ const osmPoint={...center,name:'Map parking'};
+ const businessPoint={lat:41.01,lng:28.98,name:'Verified parking'};
+ const responses=new Map();
+ const requests=[];
+ const renders=[];
+ const elements={searchRadius:{value:'10'},parking:{}};
+ const context={
+  navigator:{onLine:true},map:{getCenter:()=>center,distance:()=>0},
+  allParking:[],parkingAbort:null,parkingSeq:0,parkingDataStale:false,selectedParkingOperator:null,lastParkingFetchCenter:null,lastParkingSuccessAt:0,displayedParkingRegion:null,
+  AbortController,setTimeout,clearTimeout,
+  $:id=>elements[id],status(){},updateParkingFreshness(){},
+  showParking:()=>renders.push(context.allParking.map(p=>p.name)),
+  fetch(url){
+   const path=url.split('?')[0];
+   requests.push(path);
+   return new Promise(resolve=>responses.set(path,points=>resolve({ok:true,json:async()=>({points})})));
+  }
+ };
+ const load=runInNewContext('const parkingCacheMs='+source+';loadParking',context);
+ const first=load();
+ const repeated=load();
+ responses.get('/api/parking')([osmPoint]);
+ await new Promise(resolve=>setImmediate(resolve));
+ assert.deepEqual(Array.from(renders[0]), ['Map parking']);
+ assert.equal(renders.length,1);
+ responses.get('/api/business-parking')([businessPoint]);
+ responses.get('/api/ispark-occupancy')([]);
+ context.refreshIsparkOccupancy=async()=>false;
+ await Promise.all([first,repeated]);
+ assert.deepEqual(Array.from(renders[1]), ['Map parking','Verified parking']);
+ await load();
+ assert.deepEqual(requests,['/api/parking','/api/business-parking','/api/ispark-occupancy']);
+});
+
+test('municipal shortcuts select the operator and load its city at 30 km', () => {
+ const source=html.match(/const parkingOperatorCenters=\{[\s\S]*?(?=window.rotaparkFocusLocation)/)?.[0];
+ assert.ok(source);
+ const asset=readFileSync(new URL('../themes/rotapark-premium-home.js',import.meta.url),'utf8');
+ assert.match(asset,/\['İSPARK','ANPARK','İZELMAN'\]\.includes\(a\[1\]\)/);
+ const elements={q:{value:'previous search'},searchRadius:{value:'10'},mapWrap:{classList:{contains:()=>false},scrollIntoView(){}}};
+ const loads=[];
+ let center,zoom,finish;
+ const context={
+  window:{matchMedia:()=>({matches:false})},$:(id)=>elements[id],selectedParkingOperator:null,
+  routeWatch:null,parkingTimer:null,clearTimeout,
+  map:{
+   stop(){},getZoom:()=>zoom,getCenter:()=>center,distance:()=>100,
+   once(event,callback){assert.equal(event,'moveend');finish=callback;},
+   off(event,callback){assert.equal(event,'moveend');assert.equal(finish,callback);finish=null;},
+   flyTo(position,level,options){center=Array.from(position);zoom=level;assert.ok(options.duration>0);}
+  },
+  resetParkingFilterValues(){context.selectedParkingOperator=null;},showParking(){},
+  loadParking(){loads.push([context.selectedParkingOperator,center,zoom,elements.searchRadius.value,elements.q.value]);}
+ };
+ runInNewContext(source,context);
+ assert.equal(context.window.rotaparkFilterOperator('İSPARK'),true);
+ assert.equal(context.window.rotaparkFilterOperator('ANPARK'),true);
+ assert.equal(loads.length,0);
+ finish();
+ for(const operator of ['İZELMAN','İSPARK']){
+  assert.equal(context.window.rotaparkFilterOperator(operator),true);
+  finish();
+ }
+ assert.deepEqual(loads,[
+  ['ANPARK',[39.9334,32.8597],13,'30',''],
+  ['İZELMAN',[38.4237,27.1428],13,'30',''],
+  ['İSPARK',[41.0082,28.9784],13,'30','']
+ ]);
+ assert.equal(context.window.rotaparkFilterOperator('toString'),false);
+ assert.match(html,/scopedParking\.filter\(p=>\(!selectedParkingOperator\|\|corporateOperator\(p\)===selectedParkingOperator\)/);
+});
+
+test('reviewed İSPARK aliases preserve catalog and OSM coordinates without merging unconfirmed neighbors',()=>{
+ const source=html.match(/const reviewedIsparkOsm=\{[\s\S]*?(?=function matchesParkingRegion)/)?.[0];
+ assert.ok(source);
+ const api=runInNewContext(source+';({mergeReviewedOsm,mergeMunicipalParking})',{corporateOperator:()=> 'İSPARK',dist:()=>0});
+ const way={osmType:'way',osmId:'719661158',name:'Merter',fee:'yes',lat:41.01,lng:28.88};
+ const node={osmType:'node',osmId:'7592484269',name:'Merter',fee:'unknown',lat:41.011,lng:28.881};
+ const other={osmType:'node',osmId:'4876032103',name:'Bostancı Vergi Dairesi',fee:'yes',lat:40.96,lng:29.1};
+ const catalog={id:'ispark:2793',operator:'İSPARK',isparkParkID:'2793',name:'İspark Merter Katlı Otoparkı',fee:'unknown',lat:41.012,lng:28.882};
+ const bostanci={id:'ispark:2150',operator:'İSPARK',isparkParkID:'2150',name:'Bostancı Vergi Dairesi Açık Otoparkı',fee:'unknown',lat:40.961,lng:29.101};
+ const result=api.mergeMunicipalParking(api.mergeReviewedOsm([node,way,other]),[catalog,bostanci],'İSPARK');
+ assert.equal(result.length,3);
+ assert.equal(result[0].id,catalog.id);
+ assert.equal(result[0].osmId,way.osmId);
+ assert.equal(result[0].osmAliases[0].osmId,node.osmId);
+ assert.equal(result[0].fee,'yes');
+ assert.equal(result[0].lat,way.lat);
+ assert.equal(result[0].catalogCoordinates.lat,catalog.lat);
+ assert.strictEqual(result[1],other);
+ assert.equal(result[2].id,bostanci.id);
+});
+
+test('operator refresh keeps last complete sources through delayed, failed and partial replies',async()=>{
+ const source=html.split('const parkingCacheMs=')[1]?.split(" window.addEventListener('online'")[0];
+ const classifier=html.match(/function isOfficialIspark\(p\)\{[\s\S]*?(?=function corporateOperator)/)?.[0];
+ assert.ok(source&&classifier);
+ const center={lat:41.0082,lng:28.9784};
+ const catalog={...center,id:'ispark:1',isparkParkID:'1',operator:'İSPARK',name:'Official site',sourceSnapshot:true};
+ const primary={lat:41.02,lng:28.98,osmId:'node/7',operator:'İSPARK',name:'Tagged site'};
+ const unsupported={lat:41.03,lng:28.98,osmId:'node/8',name:'Kartal İspark'};
+ const storage=new Map();
+ const makeContext=()=>{
+  const responses=new Map(),renders=[];
+  const ctx={
+   sessionStorage:{getItem:key=>storage.get(key)??null,setItem:(key,value)=>storage.set(key,value)},
+   navigator:{onLine:true},map:{getCenter:()=>center,distance:()=>0},
+   allParking:[],parkingAbort:null,parkingSeq:0,parkingDataStale:false,selectedParkingOperator:'İSPARK',lastParkingFetchCenter:null,lastParkingSuccessAt:0,displayedParkingRegion:null,
+   parkingOperatorAssets:{'İSPARK':'/data/catalog.json'},
+   AbortController,setTimeout,clearTimeout,
+   $:id=>id==='searchRadius'?{value:'30'}:{},status(){},updateParkingFreshness(){},refreshIsparkOccupancy:async()=>false,
+   corporateOperator:p=>operator(p)?'İSPARK':null,dist:()=>999,
+   showParking:()=>renders.push(Array.from(ctx.allParking).filter(operator).map(p=>p.id||p.osmId).sort()),
+   fetch(url){
+    const path=url.split('?')[0];
+    if(path==='/api/ispark-occupancy')return Promise.resolve(Response.json({points:[]}));
+    return new Promise(resolve=>responses.set(path,resolve));
+   }
+  };
+  const {load,operator}=runInNewContext(classifier+';const parkingCacheMs='+source+';({load:loadParking,operator:isOfficialIspark})',ctx);
+  return {responses,renders,load,operator};
+ };
+ async function request(app,osm,catalogResponse=Response.json({points:[catalog]})){
+  const loading=app.load({force:true});
+  app.responses.get('/data/catalog.json')(catalogResponse);
+  app.responses.get('/api/business-parking')(Response.json({points:[]}));
+  const renderCount=app.renders.length;
+  await new Promise(resolve=>setImmediate(resolve));
+  assert.equal(app.renders.length,renderCount,'Do not publish a transient catalog-only result');
+  app.responses.get('/api/parking')(osm);
+  await loading;
+ }
+ let app=makeContext();
+ assert.equal(app.operator(unsupported),false);
+ assert.equal(app.operator({...primary,operator:'Bağcılar Belediyesi İspark'}),true);
+ const expected=['ispark:1','node/7'];
+ await request(app,Response.json({points:[primary,unsupported]}));
+ await request(app,new Response(null,{status:503}));
+ await request(app,Response.json({points:[]},{headers:{'X-Parking-Partial':'1'}}));
+ await request(app,Response.json({points:[primary]}),new Response(null,{status:503}));
+ assert.deepEqual(app.renders,[expected,expected,expected,expected]);
+ app=makeContext();
+ await request(app,new Response(null,{status:503}));
+ assert.deepEqual(app.renders,[expected]);
+ await request(app,Response.json({points:[]}));
+ assert.deepEqual(app.renders.at(-1),['ispark:1'],'A complete source can intentionally remove records');
+ storage.clear();
+ app=makeContext();
+ await request(app,Response.json({points:[primary]},{headers:{'X-Parking-Partial':'1'}}));
+ await request(app,new Response(null,{status:503}));
+ assert.deepEqual(app.renders,[expected,expected],'A verified subset also survives when no complete response has arrived');
+});
+
+test('show all clears operator and discovery filters before a regional general search',()=>{
+ const reset=html.match(/function resetParkingFilterValues\(\)\{[\s\S]*?(?=\$\('navSearch'\)\.onclick)/)?.[0];
+ assert.ok(reset);
+ assert.match(html,/\$\('mapFitParking'\)\.onclick=resetParkingFilters/);
+ const ids=['q','searchRadius','feeFilter','kindFilter','sortParking','parkingNameSearch'];
+ const elements=Object.fromEntries(ids.map(id=>[id,{value:'preset'}]));
+ elements.searchRadius.value='20';
+ elements.mapWrap={classList:{contains:()=>false}};
+ const ctx={
+  $:id=>elements[id],document:{querySelectorAll:()=>[]},
+  selectedParkingOperator:'ANPARK',routeWatch:null,finishParkingOperatorMove:null,
+  parkingListLimit:120,quickMode:'verified',showParking(){},
+  loadParking(){
+   assert.equal(ctx.selectedParkingOperator,null);
+   assert.equal(ctx.quickMode,'all');
+   assert.equal(ctx.parkingListLimit,60);
+   assert.equal(elements.searchRadius.value,'20');
+   assert.equal(elements.q.value,'');
+   assert.equal(elements.parkingNameSearch.value,'');
+   assert.equal(elements.feeFilter.value,'all');
+   assert.equal(elements.kindFilter.value,'all');
+   return 'general';
+  }
+ };
+ const apply=runInNewContext(reset+';resetParkingFilters',ctx);
+ assert.equal(apply(),'general');
 });

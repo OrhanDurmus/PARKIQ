@@ -29,55 +29,91 @@ const normalize=(item)=>{
   const stamp=iso?Date.parse(iso):NaN;
   // The public endpoint exposes capacity counts but no per-parking update timestamp.
   // Never call these figures verified live; expose as source-reported snapshots only.
-  const fresh=Number.isFinite(stamp)&&Math.abs(Date.now()-stamp)<=15*60*1000;
+  const fresh=Number.isFinite(stamp)&&Math.abs(Date.now()-stamp)<=freshWindow;
   if(!name||lat===null||lng===null||lat<40||lat>42.5||lng<26||lng>31)return null;
   return {id:id==null?null:String(id),name:repairName(String(name)).slice(0,160),lat,lng,capacity:Number.isInteger(capacity)&&capacity>0?capacity:null,freeSpaces:Number.isInteger(free)&&free>=0&&(capacity===null||free<=capacity)?free:null,occupancyUpdatedAt:fresh?new Date(stamp).toISOString():null,verifiedLive:fresh&&Number.isInteger(free)&&free>=0&&(capacity===null||free<=capacity),sourceSnapshot:true};
 };
-// Cache only successful snapshots; never cache an unavailable response.
-export async function onRequestGet({request,context,env}){
-  const cache=typeof caches!=='undefined'?caches.default:null;
-  const cacheKey=new Request(new URL('/api/ispark-occupancy',request.url).toString(),{method:'GET'});
-  if(cache){
-    try{const hit=await cache.match(cacheKey);if(hit)return hit;}catch(error){console.warn('ispark cache read failed',error?.name);}
-  }
-  let upstreamStatus=null;
-  let stage='fetch';
-  let attempts=0;
+const freshWindow=15*60*1000;
+const snapshotWindow=24*60*60*1000;
+const pending=new Map();
+
+function applyFreshness(snapshot,allowLive){
+  const now=Date.now();
+  const points=snapshot.points.map(point=>{
+    const stamp=Date.parse(point.occupancyUpdatedAt||'');
+    const verifiedLive=allowLive&&point.verifiedLive===true&&Number.isInteger(point.freeSpaces)&&Math.abs(now-stamp)<=freshWindow;
+    return {...point,verifiedLive,occupancyUpdatedAt:verifiedLive?point.occupancyUpdatedAt:null};
+  });
+  return {...snapshot,points,liveCount:points.filter(point=>point.verifiedLive).length};
+}
+async function readCache(cache,key){
+  try{return await (await cache?.match(key))?.json()}
+  catch{return null}
+}
+async function writeCache(cache,key,snapshot,seconds){
+  try{await cache?.put(key,Response.json(snapshot,{headers:{'Cache-Control':'public, max-age='+seconds}}))}
+  catch(error){console.warn('ispark cache write failed',error?.name)}
+}
+function snapshotTime(snapshot){
+  const received=Date.parse(snapshot?.receivedAt||''),age=Date.now()-received;
+  return Array.isArray(snapshot?.points)&&snapshot.points.length&&age>=0&&age<snapshotWindow?received:0;
+}
+
+async function fetchOccupancy(cache,keys,env){
+  const recent=await readCache(cache,keys.recent);
+  if(Array.isArray(recent?.points)&&(!recent.upstreamUnavailable||snapshotTime(recent)))return recent;
+  let upstreamStatus=null,stage='fetch';
   try{
-    // Bound upstream latency so iPhone clients receive the KV fallback promptly.
-    attempts=1;
     const response=await fetch(SOURCE,{headers:{Accept:'application/json'},signal:AbortSignal.timeout(4500)});
     upstreamStatus=response.status;
-    if(!response?.ok)throw Error('Source HTTP '+upstreamStatus);
+    if(!response.ok)throw Error('Source HTTP '+upstreamStatus);
     stage='parse';
     const payload=await response.json();
     stage='shape';
-    const rows=Array.isArray(payload)?payload:Array.isArray(payload?.data)?payload.data:Array.isArray(payload?.parks)?payload.parks:null;
-    if(!rows)throw Error('Unknown source response');
+    const rows=Array.isArray(payload)?payload:Array.isArray(payload?.data)?payload.data:payload?.parks;
+    if(!Array.isArray(rows))throw Error('Unknown source response');
     stage='normalize';
     const points=rows.slice(0,2000).map(normalize).filter(Boolean);
-    if(rows.length===0||points.length===0){stage='normalize';throw Error('No valid parking records');}
-    const result=Response.json({source:'IBB İSPARK',points,sourceRecordCount:rows.length,receivedAt:new Date().toISOString(),liveCount:points.filter(p=>p.verifiedLive).length},{headers:{'Cache-Control':'public, max-age=60'}});
-    if(cache){
-      const write=cache.put(cacheKey,result.clone()).catch(error=>console.warn('ispark cache write failed',error?.name));
-      if(context?.waitUntil)context.waitUntil(write);else await write;
-    }
-    return result;
+    if(!points.length)throw Error('No valid parking records');
+    const snapshot={source:'IBB İSPARK',points,sourceRecordCount:rows.length,receivedAt:new Date(Date.now()).toISOString()};
+    await Promise.all([writeCache(cache,keys.recent,snapshot,60),writeCache(cache,keys.lastGood,snapshot,snapshotWindow/1000)]);
+    return snapshot;
   }catch(error){
     const errorName=error instanceof Error?error.name:'UnknownError';
-    const reason=upstreamStatus!==null&&upstreamStatus>=400?'upstream_http_'+upstreamStatus:stage==='fetch'?(errorName==='TimeoutError'?'timeout':'network_error'):stage==='parse'?'invalid_json':stage==='shape'?'unexpected_payload':stage==='normalize'?'no_valid_parking_records':'processing_error';
-    console.error('ispark-occupancy upstream failure',{stage,reason,upstreamStatus,errorName,attempts});
-    // Upstream unavailable: serve an explicitly non-live KV snapshot, if present.
-    if(typeof env?.ISPARK_SNAPSHOTS?.get==='function'){
-      try{
-        const snapshot=await env.ISPARK_SNAPSHOTS.get('latest','json');
-        const received=Date.parse(snapshot?.receivedAt||'');
-        const age=Date.now()-received;
-        if(Array.isArray(snapshot?.points)&&snapshot.points.length>0&&Number.isFinite(received)&&age>=0&&age<86400000){
-          return Response.json({...snapshot,liveCount:0,verifiedLive:false,sourceSnapshot:true,upstreamUnavailable:true,diagnostic:{stage,reason,upstreamStatus,attempts},snapshotAgeMinutes:Math.floor(age/60000),points:snapshot.points.map(p=>({...p,name:repairName(p.name),verifiedLive:false,occupancyUpdatedAt:null,sourceSnapshot:true}))},{headers:{'Cache-Control':'no-store','X-Content-Type-Options':'nosniff'}});
-        }
-      }catch(kvError){console.warn('ispark KV fallback read failed',kvError?.name);}
-    }
-    return Response.json({source:'IBB İSPARK',points:[],liveCount:0,unavailable:true,diagnostic:{stage,reason,upstreamStatus,attempts}},{headers:{'Cache-Control':'no-store'}});
+    const reason=upstreamStatus!==null&&upstreamStatus>=400?'upstream_http_'+upstreamStatus:stage==='fetch'?(errorName==='TimeoutError'?'timeout':'network_error'):stage==='parse'?'invalid_json':stage==='shape'?'unexpected_payload':'no_valid_parking_records';
+    const diagnostic={stage,reason,upstreamStatus,attempts:1};
+    console.warn('ispark-occupancy upstream failure',{...diagnostic,errorName});
+    const cached=await readCache(cache,keys.lastGood);
+    let stored=null;
+    try{stored=await env?.ISPARK_SNAPSHOTS?.get('latest','json')}catch(error){console.warn('ispark KV fallback read failed',error?.name)}
+    const snapshot=snapshotTime(stored)>snapshotTime(cached)?stored:cached;
+    const timestamp=snapshotTime(snapshot);
+    const fallback=timestamp?{
+      ...snapshot,points:snapshot.points.filter(point=>point&&typeof point==='object').map(point=>({...point,name:repairName(point.name),sourceSnapshot:true})),
+      verifiedLive:false,sourceSnapshot:true,upstreamUnavailable:true,diagnostic,snapshotAgeMinutes:Math.floor((Date.now()-timestamp)/60000)
+    }:{source:'IBB İSPARK',points:[],unavailable:true,diagnostic};
+    // Keep the retry window internal. Never cache a failed fetch in the last-good slot.
+    await writeCache(cache,keys.recent,applyFreshness(fallback,false),30);
+    return fallback;
   }
+}
+export async function onRequestGet({request,env}){
+  const cache=typeof caches!=='undefined'?caches.default:null;
+  const url=new URL('/api/ispark-occupancy',request.url);
+  url.search='?cache=v2';
+  const recent=new Request(url);
+  url.search='?cache=v2-last-good';
+  const lastGood=new Request(url);
+  // In-flight sharing is scoped to this deployment's host.
+  let task=pending.get(recent.url);
+  if(!task){
+    task=fetchOccupancy(cache,{recent,lastGood},env).finally(()=>pending.delete(recent.url));
+    pending.set(recent.url,task);
+  }
+  const snapshot=await task;
+  const degraded=snapshot.upstreamUnavailable===true||snapshot.unavailable===true;
+  const result=applyFreshness(snapshot,!degraded);
+  // Re-evaluate per-record timestamps on every serve, including edge cache hits.
+  const headers={'Cache-Control':'no-store','X-Content-Type-Options':'nosniff'};
+  return Response.json(result,{headers});
 }

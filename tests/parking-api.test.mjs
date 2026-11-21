@@ -162,5 +162,27 @@ test('a failed national asset read still serves available curated Istanbul cover
  }}};
  const result = await onRequestGet({request: new Request(origin + '/api/parking?lat=40.9&lng=29.2'), env});
  assert.equal(result.status, 200);
+ assert.equal(result.headers.get('X-Parking-Partial'),'1');
  assert.deepEqual((await result.json()).points.map(p => p.name), ['curated']);
+});
+
+test('concurrent searches share each static download and JSON parse', async () => {
+ const reads = new Map();
+ const parses = new Map();
+ const env = {ASSETS: {async fetch(input) {
+  const path = new URL(input).pathname;
+  if (path.endsWith('parking-entrances-approved.json')) return new Response(null, {status: 404});
+  reads.set(path, (reads.get(path) || 0) + 1);
+  return {ok: true, async json() {
+   parses.set(path, (parses.get(path) || 0) + 1);
+   return {points: [point('shared', {osmType: 'way', osmId: '412'})]};
+  }};
+ }}};
+ const request = new Request(origin + '/api/parking?lat=40.9&lng=29.2');
+ const responses = await Promise.all(Array.from({length: 5}, () => onRequestGet({request, env})));
+ for (const response of responses) {
+  assert.deepEqual((await response.json()).points.map(p => p.name), ['shared']);
+ }
+ assert.deepEqual([...reads.values()], [1, 1]);
+ assert.deepEqual([...parses.values()], [1, 1]);
 });
