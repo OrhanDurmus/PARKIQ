@@ -197,12 +197,12 @@ test('navigation sends the same text to phone TTS with the Turkish voice', async
   }
 });
 
-test('parking uses one İSPARK request per search and reuses it for late live occupancy', async () => {
- const load = html.split('async function loadParking(){')[1]?.split(" window.addEventListener('online'")[0];
- const refresh = html.match(/async function refreshIsparkOccupancy\(seq,occupancyPromise\)\{.*?\}(?=window.rotaparkFilterOperator)/)?.[0];
+test('parking uses one shared İSPARK request and reuses it for late live occupancy', async () => {
+ const load = html.split('function loadIsparkOccupancy(){')[1]?.split(" window.addEventListener('online'")[0];
+ const refresh = html.match(/async function refreshIsparkOccupancy\(seq,occupancyPromise,render=true\)\{.*?\}(?=window.rotaparkFilterOperator)/)?.[0];
  assert.ok(load && refresh, 'Expected parking data loading functions');
  assert.equal(load.match(/fetch\('\/api\/ispark-occupancy'/g)?.length, 1);
- assert.match(load, /refreshIsparkOccupancy\(seq,occupancyPromise\)/);
+ assert.match(load, /refreshIsparkOccupancy\(seq,occupancyPromise,false\)/);
 
  const point = {name: 'İSPARK Test', lat: 41, lng: 29};
  let renders = 0;
@@ -216,4 +216,42 @@ test('parking uses one İSPARK request per search and reuses it for late live oc
  await apply(2, Promise.resolve({points: [live]}));
  assert.equal(point.isparkLive, live);
  assert.equal(renders, 1);
+});
+
+test('parking publishes map data before slow business data and coalesces repeated searches', async () => {
+ const source = html.split('const parkingCacheMs=')[1]?.split(" window.addEventListener('online'")[0];
+ assert.ok(source);
+ const center={lat:41.0082,lng:28.9784};
+ const osmPoint={...center,name:'Map parking'};
+ const businessPoint={lat:41.01,lng:28.98,name:'Verified parking'};
+ const responses=new Map();
+ const requests=[];
+ const renders=[];
+ const elements={searchRadius:{value:'10'},parking:{}};
+ const context={
+  navigator:{onLine:true},map:{getCenter:()=>center,distance:()=>0},
+  allParking:[],parkingAbort:null,parkingSeq:0,parkingDataStale:false,lastParkingFetchCenter:null,lastParkingSuccessAt:0,
+  AbortController,setTimeout,clearTimeout,
+  $:id=>elements[id],status(){},updateParkingFreshness(){},
+  showParking:()=>renders.push(context.allParking.map(p=>p.name)),
+  fetch(url){
+   const path=url.split('?')[0];
+   requests.push(path);
+   return new Promise(resolve=>responses.set(path,points=>resolve({ok:true,json:async()=>({points})})));
+  }
+ };
+ const load=runInNewContext('const parkingCacheMs='+source+';loadParking',context);
+ const first=load();
+ const repeated=load();
+ responses.get('/api/parking')([osmPoint]);
+ await new Promise(resolve=>setImmediate(resolve));
+ assert.deepEqual(Array.from(renders[0]), ['Map parking']);
+ assert.equal(renders.length,1);
+ responses.get('/api/business-parking')([businessPoint]);
+ responses.get('/api/ispark-occupancy')([]);
+ context.refreshIsparkOccupancy=async()=>false;
+ await Promise.all([first,repeated]);
+ assert.deepEqual(Array.from(renders[1]), ['Map parking','Verified parking']);
+ await load();
+ assert.deepEqual(requests,['/api/parking','/api/business-parking','/api/ispark-occupancy']);
 });

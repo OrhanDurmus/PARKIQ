@@ -12,8 +12,8 @@ new vm.Script(fs.readFileSync('sw.js', 'utf8'), {filename: 'sw.js'});
 if (!count) throw new Error('No inline JavaScript was checked');
 const checks = [
   ['Parking loader must be asynchronous', /async function loadParking\s*\(/],
-  ['Parking search must use both data sources', /fetch\('\/api\/parking'/],
-  ['Business parking source must be requested', /fetch\('\/api\/business-parking'/],
+  ['Parking search must use both data sources', /getPoints\('\/api\/parking'/],
+  ['Business parking source must be requested', /getPoints\('\/api\/business-parking'/],
   ['Parking list must render result cards', /for\s*\(const p of points\.slice\(0,parkingListLimit\)\)/],
   ['Load-more control must exist', /parkingListLimit\s*\+=\s*60/],
   ['Data freshness indicator must exist', /id="parkingDataFreshness"/],

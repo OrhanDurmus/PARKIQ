@@ -127,16 +127,44 @@ async function readParkingAsset(env,origin,path){
  // Cache per ASSETS binding, never share one tenant/test fixture's dataset with another.
  let parkingAssetCache=parkingAssetCaches.get(env.ASSETS);
  if(!parkingAssetCache){parkingAssetCache=new Map();parkingAssetCaches.set(env.ASSETS,parkingAssetCache)}
- const now=Date.now(),cached=parkingAssetCache.get(path);
- if(cached&&cached.expires>now)return cached.data;
- try{
-  const asset=await env.ASSETS.fetch(new URL(path,origin).toString());
-  if(!asset.ok)return cached?.data||null;
-  const parsed=await asset.json();
-  if(!Array.isArray(parsed?.points))return cached?.data||null;
-  parkingAssetCache.set(path,{data:parsed,expires:Date.now()+60000});
-  return parsed;
- }catch{return cached?.data||null}
+ const cached=parkingAssetCache.get(path);
+ if(cached?.pending)return cached.pending;
+ if(cached?.expires>Date.now())return cached.data;
+ const entry={data:cached?.data||null,expires:0};
+ parkingAssetCache.set(path,entry);
+ entry.pending=(async()=>{
+  try{
+   const asset=await env.ASSETS.fetch(new URL(path,origin).toString());
+   if(!asset.ok)return entry.data;
+   const parsed=await asset.json();
+   if(!Array.isArray(parsed?.points))return entry.data;
+   // Bucket by latitude and preserve source order for duplicate identities.
+   const bands=new Map();
+   parsed.points.forEach((point,index)=>{
+    if(!point||!validPoint(point))return;
+    const band=Math.floor(point.lat*20);
+    if(!bands.has(band))bands.set(band,[]);
+    bands.get(band).push({point,index});
+   });
+   entry.data={source:parsed.source,updatedAt:parsed.updatedAt,bands};
+   entry.expires=Date.now()+60000;
+   return entry.data;
+  }catch{return entry.data}
+ })();
+ try{return await entry.pending}
+ finally{
+  entry.pending=null;
+  if(!entry.data)parkingAssetCache.delete(path);
+ }
+}
+function nearbyAssetRows(asset,lat,radius){
+ const rows=[];
+ const delta=radius/111195;
+ for(let band=Math.floor((lat-delta)*20);band<=Math.floor((lat+delta)*20);band++){
+  const candidates=asset?.bands.get(band);
+  if(candidates)rows.push(...candidates);
+ }
+ return rows.sort((a,b)=>a.index-b.index);
 }
 export async function onRequestGet({request,env}){
  const url=new URL(request.url),lat=Number(url.searchParams.get('lat')),lng=Number(url.searchParams.get('lng'));
@@ -150,14 +178,20 @@ export async function onRequestGet({request,env}){
   inIstanbul(lat,lng)?readParkingAsset(env,url.origin,'/data/parking.json'):null,
  ]);
  if(!national&&!istanbul)return Response.json({error:'Otopark veri dosyaları yüklenemedi'},{status:503});
- const valid=p=>validPoint(p)&&publicParking(p)&&!excluded.has(parkingOsmKey(p))&&!confirmedNotParking.has(parkingOsmKey(p))&&distanceSq(p,lat,lng)<=radiusSq;
  const combined=new Map();
+ const longitudeScale=111195*Math.cos(lat*Math.PI/180);
  // Nationwide first; Istanbul curated records override matching OSM identities.
- const eligible=p=>valid(p)&&!(p.geographicStatus==='confirmed_outside_istanbul'&&p.geographicReviewVerified===true);
- const keyFor=p=>parkingOsmKey(p)||'unidentified:'+JSON.stringify(p);
- for(const p of national?.points||[]){if(eligible(p))combined.set(keyFor(p),p)}
- for(const p of istanbul?.points||[]){if(eligible(p))combined.set(keyFor(p),p)}
- const points=[...combined.values()].sort((a,b)=>distanceSq(a,lat,lng)-distanceSq(b,lat,lng));
+ for(const asset of [national,istanbul]){
+  for(const {point} of nearbyAssetRows(asset,lat,radiusKm*1000)){
+   const dy=(point.lat-lat)*111195,dx=(point.lng-lng)*longitudeScale;
+   const distance=dx*dx+dy*dy;
+   if(distance>radiusSq||!publicParking(point)||(point.geographicStatus==='confirmed_outside_istanbul'&&point.geographicReviewVerified===true))continue;
+   const key=parkingOsmKey(point);
+   if(excluded.has(key)||confirmedNotParking.has(key))continue;
+   combined.set(key||'unidentified:'+JSON.stringify(point),{point,distance});
+  }
+ }
+ const points=[...combined.values()].sort((a,b)=>a.distance-b.distance).map(row=>row.point);
  const enriched=await attachApprovedEntrances(points,env,url.origin);
  return response((await attachOfficialIsparkNames(enriched,env)).map(enrichName).map(labelParkingAccess),istanbul&&national?'İstanbul + Türkiye OSM':istanbul?.source||national?.source,Math.max(Date.parse(istanbul?.updatedAt||0)||0,Date.parse(national?.updatedAt||0)||0)?new Date(Math.max(Date.parse(istanbul?.updatedAt||0)||0,Date.parse(national?.updatedAt||0)||0)).toISOString():null);
 }
