@@ -23,3 +23,19 @@ Temiz bir Staging kurulumunda destek listeleri için `migrations/staging-staff-s
 - **Otopark** — Onaylı test işletmesinin adını ve adres metnini düzenleyin. Önceden açılmış ikinci sekmedeki eski form çakışma bildirmelidir. Girilen adres metni harita koordinatlarını değiştirmez.
 - **Duyuru** — Yalnızca Staging'e ait olduğu doğrulanmış KV ile kısa süreli test duyurusu yayınlayın. Staging uygulamasındaki duyuruyu ve yönetici geçmişini kontrol edin.
 - **Üye engelleme ve moderatör yönetimi** — Yalnızca test hesapları kullanın. Engel nedeni zorunludur. Kurucu, yönetici ve işlemi yapan hesap korunur. Yönetici ancak ilgili izni varsa moderatör atayabilir veya kaldırabilir. Kurucu mevcut tam yönetim ekranlarını da kullanabilir.
+
+
+## Engelli üyeler / Engeli Kaldır — yalnızca izole Staging
+
+**Ön koşul:** Staging Supabase proje kimliği ve URL'sini Production'dan bağımsız olarak doğrulayın. Bu kontrol başarısızsa durun. GitHub'a SQL dosyası eklenmesi migrasyonun uygulandığı anlamına gelmez.
+
+1. Staging Supabase'de `public.rotapark_member_bans` tablosunun `user_id` ve `reason` sütunlarını; `public.rotapark_staff_roles`, `rotapark_member_blocked()` ve `rotapark_staff_has_permission(text)` imzalarını salt okunur sorgularla doğrulayın. Eşleşmiyorsa migrasyonu uygulamayın.
+2. `supabase/migrations/20261121150000_staging_member_unblock.sql` dosyasını yalnızca doğrulanmış Staging projesinde, kontrollü SQL editöründen uygulayın. Audit tablosunun `anon` ve `authenticated` rollerine açık olmadığını; RPC'lerin sadece `authenticated` için çalıştırılabildiğini kontrol edin.
+3. Ayrı Staging test hesapları kullanın: yetkisiz kullanıcı, `users.block` izni olmayan personel, izinli personel ve engellenecek sıradan test üyesi. Gerçek kullanıcı hesabını kullanmayın.
+4. Yetkisiz kullanıcı ve izinsiz personel `rotapark_staff_blocked_members()` ve `rotapark_staff_unblock_member(text,text)` çağrılarında `42501` almalı. Anonim istekler de erişememeli.
+5. İzinli test personeliyle `/staff/tasks/?task=block` sayfasını açın. Test üyesini gerekçe girerek engelleyin; listede e-posta ve engel nedeni görünsün. İşlemi iptal edin: engel devam etmeli.
+6. Aynı test üyesinin engelini en az üç karakterlik açıklamayla kaldırın. Onay penceresi hedef e-postayı göstermeli. Üye listeden kalkmalı, tekrar oturum açabilmeli ve `rotapark_member_unblock_audit` tablosunda aktör, hedef, eski neden, yeni gerekçe ve zaman kaydı oluşmalı.
+7. Tekrar engel kaldırma denemesi `not_blocked` ile reddedilmeli. Kurucu/personel ve işlemi yapan hesabın hedef seçilmesi reddedilmeli. Aynı test üyeyi yeniden engellemek gerekiyorsa yalnızca Staging'de yapın.
+8. Migrasyon, RPC veya audit kontrolünde hata olursa kabulü durdurun; Production'dan gizli anahtar veya veri kopyalamayın.
+
+**Kabul ölçütü:** UI, yetki reddi, işlem iptali, engelleme, engel kaldırma, audit kaydı ve test hesabının yeniden girişinin tamamı Staging üzerinde doğrulanmadan özelliği tamamlandı olarak işaretlemeyin.
