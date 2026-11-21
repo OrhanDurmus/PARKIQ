@@ -21,12 +21,7 @@ def upload_target():
         sys.exit("Set ISPARK_PREVIEW_ORIGIN to a branch-specific Cloudflare Pages preview origin")
     return origin.rstrip("/") + "/api/ispark-upload"
 
-def main():
-    target=upload_target()
-    token_name="ISPARK_UPLOAD_TOKEN" if os.environ.get("GITHUB_REF") == "refs/heads/main" else "ISPARK_PREVIEW_UPLOAD_TOKEN"
-    token=os.environ.get(token_name,"")
-    if not token:
-        sys.exit(f"Missing GitHub Actions secret {token_name}")
+def collect_snapshot():
     rows=None
     collected_at=None
     for attempt in range(3):
@@ -50,7 +45,22 @@ def main():
     if collected_at is None:
         print("::warning title=ISPARK source unavailable::Source fetch failed after 3 attempts; existing snapshot retained. No upload performed.",flush=True)
         sys.exit(1)
-    body=json.dumps({"collectedAt":collected_at,"rows":rows},ensure_ascii=False,separators=(",",":")).encode("utf-8")
+    return {"collectedAt":collected_at,"rows":rows}
+
+def main():
+    if sys.argv[1:] == ["--probe"]:
+        snapshot=collect_snapshot()
+        print("Official source accessible; successful read at",snapshot["collectedAt"])
+        return
+    if sys.argv[1:]:
+        sys.exit("Usage: collect_ispark_snapshot.py [--probe]")
+    target=upload_target()
+    token_name="ISPARK_UPLOAD_TOKEN" if os.environ.get("GITHUB_REF") == "refs/heads/main" else "ISPARK_PREVIEW_UPLOAD_TOKEN"
+    token=os.environ.get(token_name,"")
+    if not token:
+        sys.exit(f"Missing GitHub Actions secret {token_name}")
+    snapshot=collect_snapshot()
+    body=json.dumps(snapshot,ensure_ascii=False,separators=(",",":")).encode("utf-8")
     if len(body)>1500000:
         sys.exit("Snapshot exceeds upload size limit")
     req=urllib.request.Request(target,data=body,method="POST",headers={"Authorization":"Bearer "+token,"Content-Type":"application/json; charset=utf-8","Accept":"application/json"})

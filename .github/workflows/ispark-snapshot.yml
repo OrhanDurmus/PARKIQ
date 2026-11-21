@@ -1,5 +1,9 @@
 name: ROTAPARK automated ISPARK snapshots
 on:
+  pull_request:
+    paths:
+      - '.github/workflows/ispark-snapshot.yml'
+      - 'scripts/collect_ispark_snapshot.py'
   schedule:
     - cron: '*/5 * * * *'
   workflow_dispatch:
@@ -15,6 +19,7 @@ concurrency:
   cancel-in-progress: false
 jobs:
   collect:
+    if: github.event_name != 'pull_request'
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
@@ -28,3 +33,15 @@ jobs:
           ISPARK_PREVIEW_UPLOAD_TOKEN: ${{ github.ref != 'refs/heads/main' && secrets.ISPARK_PREVIEW_UPLOAD_TOKEN || '' }}
           ISPARK_PREVIEW_ORIGIN: ${{ inputs.preview_origin }}
         run: python scripts/collect_ispark_snapshot.py
+  probe:
+    name: Probe official İSPARK source from GitHub Actions
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Check official source without uploading
+        run: python scripts/collect_ispark_snapshot.py --probe
