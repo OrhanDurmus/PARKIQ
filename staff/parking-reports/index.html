@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="tr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ROTAPARK • Park Bildirimleri</title>
+<style>
+body{margin:0;background:#090909;color:#f4f0e7;font:16px system-ui}main{max-width:850px;margin:28px auto;padding:18px}
+section{background:#171512;border:1px solid #6c562a;border-radius:16px;padding:20px}
+h1{color:#e9c77e}a{color:#e9c77e}button{background:#302617;color:#f4f0e7;border:1px solid #94743d;border-radius:8px;padding:10px;cursor:pointer}
+button:disabled{opacity:.55;cursor:not-allowed}button:focus-visible,a:focus-visible{outline:2px solid #e9c77e;outline-offset:3px}
+nav[hidden]{display:none}button[aria-pressed="true"]{border-color:#e9c77e;color:#e9c77e}
+nav{display:flex;gap:8px;flex-wrap:wrap}article{border-top:1px solid #453923;padding:12px 0;overflow-wrap:anywhere}
+small,.muted{color:#c7bdab}#list{margin-top:12px}pre{white-space:pre-wrap}
+</style></head>
+<body><main><p><a href="/staff/">← Yönetim Merkezi</a></p><section>
+<h1>🅿️ Park Bildirimleri</h1>
+<p class="muted">Yetkisi olan personel bekleyen bildirimleri onaylayabilir veya reddedebilir. Arşivleme etkin değil.</p>
+<p id="status" role="status">Yetki doğrulanıyor…</p><p id="access" class="muted" role="status"></p><button type="button" id="refresh" hidden>Listeyi yenile</button>
+<nav id="filters" hidden><button type="button" data-status="pending">Bekleyenler</button><button type="button" data-status="approved">Onaylananlar</button><button type="button" data-status="rejected">Reddedilenler</button></nav>
+<div id="list" aria-live="polite"></div>
+</section></main>
+<script type="module">
+const status=document.getElementById('status'),list=document.getElementById('list'),filters=document.getElementById('filters');
+let token='',canModerate=false,currentStatus='pending',busy=false;
+const refresh=document.getElementById('refresh'),access=document.getElementById('access');
+refresh.addEventListener('click',()=>{if(!busy)void load(currentStatus)});
+let latestLoad=0;
+function setModerationAccess(granted){
+  canModerate=granted;
+  access.textContent=granted?'İşlem yetkisi: Onaylama ve reddetme açık.':'Salt görüntüleme: Onaylama ve reddetme kapalı.';
+}
+async function load(state){
+  const requestId=++latestLoad;
+  currentStatus=state;
+  filters.querySelectorAll('button[data-status]').forEach(button=>button.setAttribute('aria-pressed',String(button.dataset.status===state)));
+  refresh.disabled=true;
+  status.textContent='Bildirimler yükleniyor…';
+  list.replaceChildren();
+  try{
+    const response=await fetch('/api/staff/parking-reports?status='+encodeURIComponent(state),{headers:{Authorization:'Bearer '+token},cache:'no-store'});
+    if(response.status===401)throw Error('Oturum sona erdi. Yeniden giriş yapın.');
+    if(response.status===403){
+      setModerationAccess(false);
+      filters.hidden=true;
+      refresh.hidden=true;
+      throw Error('Park bildirimlerini görüntüleme yetkiniz yok.');
+    }
+    if(response.status===503)throw Error('Yetki veya veri servisi kullanılamıyor.');
+    if(!response.ok)throw Error('Bildirimler yüklenemedi.');
+    const data=await response.json();
+    if(requestId!==latestLoad)return;
+    if(!Array.isArray(data.reports))throw Error('Beklenmeyen sunucu yanıtı.');
+    for(const item of data.reports){
+      const article=document.createElement('article');
+      const title=document.createElement('strong');
+      title.textContent=String(item.name||'İsimsiz bildirim')+' · #'+String(item.id);
+      const detail=document.createElement('p');
+      detail.textContent='Neden: '+String(item.reason||'—')+' · Konum: '+String(item.lat??'—')+', '+String(item.lng??'—');
+      const note=document.createElement('small');
+      note.textContent=String(item.note||'Not eklenmemiş.');
+      article.append(title,detail,note);
+      if(canModerate&&state==='pending'){
+        const actions=document.createElement('p');
+        for(const [decision,label] of [['approved','Onayla'],['rejected','Reddet']]){
+          const button=document.createElement('button');
+          button.type='button';button.textContent=label;button.dataset.decision=decision;
+          button.addEventListener('click',()=>void decide(item.id,decision));
+          actions.appendChild(button);
+        }
+        article.appendChild(actions);
+      }
+      list.appendChild(article);
+    }
+    status.textContent=data.reports.length+' kayıt listelendi (en fazla 50).';
+  }catch(error){
+    if(requestId!==latestLoad)return;
+    list.replaceChildren();
+    status.textContent=error.message||'Bildirimler yüklenemedi.';
+  }finally{
+    if(requestId===latestLoad)refresh.disabled=false;
+  }
+}
+async function decide(id,decision){
+  if(!canModerate||busy||currentStatus!=='pending')return;
+  if(!Number.isSafeInteger(id)||id<1)return;
+  if(!confirm('Bu bildirimi '+(decision==='approved'?'onaylamak':'reddetmek')+' istediğinize emin misiniz?'))return;
+  busy=true;
+  refresh.disabled=true;
+  filters.querySelectorAll('button').forEach(button=>button.disabled=true);
+  list.querySelectorAll('button').forEach(button=>button.disabled=true);
+  status.textContent='Karar kaydediliyor…';
+  try{
+    const response=await fetch('/api/staff/parking-reports',{
+      method:'PATCH',headers:{Authorization:'Bearer '+token,'Content-Type':'application/json'},
+      body:JSON.stringify({id,status:decision}),cache:'no-store'
+    });
+    if(response.status===401)throw Error('Oturum sona erdi. Yeniden giriş yapın.');
+    if(response.status===403){
+      setModerationAccess(false);
+      list.querySelectorAll('button[data-decision]').forEach(button=>button.remove());
+      throw Error('Moderasyon yetkisi bulunmuyor veya kaldırılmış.');
+    }
+    if(response.status===404)throw Error('Bildirim daha önce değerlendirilmiş.');
+    if(!response.ok)throw Error('Karar kaydedilemedi.');
+    await load(currentStatus);
+  }catch(error){status.textContent=error.message||'İşlem başarısız.';list.querySelectorAll('button').forEach(button=>button.disabled=false);}
+  finally{
+    busy=false;
+    refresh.disabled=false;
+    filters.querySelectorAll('button').forEach(button=>button.disabled=false);
+  }
+}
+try{
+  const cfgResponse=await fetch('/api/auth-config',{cache:'no-store'});
+  if(!cfgResponse.ok)throw Error('Giriş ayarları alınamadı.');
+  const cfg=await cfgResponse.json();
+  if(!cfg.configured||!cfg.url||!cfg.anonKey)throw Error('Giriş yapılandırılmamış.');
+  const {createClient}=await import('https://esm.sh/@supabase/supabase-js@2');
+  const client=createClient(cfg.url,cfg.anonKey,{auth:{flowType:'pkce',detectSessionInUrl:false}});
+  const {data:{session},error:sessionError}=await client.auth.getSession();
+  if(sessionError||!session?.access_token)throw Error('Önce ROTAPARK hesabına giriş yapın.');
+  const {data:{user},error:userError}=await client.auth.getUser();
+  if(userError||!user||user.id!==session.user.id)throw Error('Oturum doğrulanamadı.');
+  token=session.access_token;
+  const moderateResponse=await fetch('/api/staff/capability?permission=parking_reports.moderate',{headers:{Authorization:'Bearer '+token},cache:'no-store'});
+  setModerationAccess(moderateResponse.status===200);
+  filters.hidden=false;
+  refresh.hidden=false;
+  filters.addEventListener('click',event=>{const state=event.target.closest('button[data-status]')?.dataset.status;if(state)void load(state)});
+  await load('pending');
+}catch(error){status.textContent=error.message||'Giriş doğrulanamadı.'}
+</script></body></html>
