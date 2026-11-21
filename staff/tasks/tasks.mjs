@@ -62,12 +62,12 @@ async function allowed(key) {
   ensure(res);
   return true;
 }
-function form(parent, label, action) {
+function form(parent, label, action, confirmation=label+' işlemini onaylıyor musunuz?') {
   const node=element('form'), submit=element('button',label);
   submit.type='submit';
   node.onsubmit=event=>{
     event.preventDefault();
-    if (confirm(label+' işlemini onaylıyor musunuz?')) void execute(action);
+    if (confirm(confirmation)) void execute(action);
   };
   parent.append(node);
   return {node,submit};
@@ -140,7 +140,7 @@ async function renderBlockedMembers() {
       if (error) throw Error(error.code==='42501'?'Engel kaldırma yetkiniz yok.':error.code==='22023'?'Hesap engelli değil veya işlem yapılamıyor.':'Engel kaldırılamadı. Staging yapılandırmasını kontrol edin.');
       status.textContent='Engel kaldırıldı ve işlem kaydedildi.';
       await renderBlockedMembers();
-    });
+    },member.email+' hesabının engelini kaldırmak istediğinizi onaylıyor musunuz?');
     const explanation=field(node,'Engel kaldırma gerekçesi','textarea',{required:true,minLength:3,maxLength:300});
     node.append(submit);
     section.append(card);
