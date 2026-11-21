@@ -14,3 +14,12 @@ This procedure does **not** deploy anything and does not require sharing tokens 
 Endpoints: `GET /api/staff/capability?permission=support.read` (requires a user Bearer token). No mutations are exposed by this endpoint.
 
 **Stop conditions:** Staging and Production Supabase URLs match, permission migration does not match existing schema, any ordinary user gets a grant, or any revoked permission remains granted. Stop deployment and investigate before enabling management actions.
+
+## Görev ekranları için Staging kabulü
+
+Temiz bir Staging kurulumunda destek listeleri için `migrations/staging-staff-support.sql` Staging D1'de, üye işlemleri için `supabase/migrations/20261121090000_staff_member_tasks.sql` Staging Supabase'de gerekir. Üye RPC'si mevcut rol, rol denetimi, engel ve görev izni migration'larına dayanır. Bir GitHub commit'i bu SQL dosyalarını uygulamaz.
+
+- **Destek** — Genel talep ve engel itirazı listelerini açın. Salt okuma hesabında yanıt formu gizlenir. Okuma ve yanıt yetkili hesapla bir test talebini yanıtlayın. Aynı yanıtı arşivde ve talebin özgün takip ekranında kontrol edin.
+- **Otopark** — Onaylı test işletmesinin adını ve adres metnini düzenleyin. Önceden açılmış ikinci sekmedeki eski form çakışma bildirmelidir. Girilen adres metni harita koordinatlarını değiştirmez.
+- **Duyuru** — Yalnızca Staging'e ait olduğu doğrulanmış KV ile kısa süreli test duyurusu yayınlayın. Staging uygulamasındaki duyuruyu ve yönetici geçmişini kontrol edin.
+- **Üye engelleme ve moderatör yönetimi** — Yalnızca test hesapları kullanın. Engel nedeni zorunludur. Kurucu, yönetici ve işlemi yapan hesap korunur. Yönetici ancak ilgili izni varsa moderatör atayabilir veya kaldırabilir. Kurucu mevcut tam yönetim ekranlarını da kullanabilir.
