@@ -35,4 +35,4 @@ jobs:
         with:
           node-version: '22'
       - name: Run all Node test files
-        run: node --test --test-isolation=none tests/*.test.mjs
+        run: node --test --experimental-test-isolation=none tests/*.test.mjs
