@@ -319,3 +319,58 @@ test('reviewed İSPARK aliases preserve catalog and OSM coordinates without merg
  assert.strictEqual(result[1],other);
  assert.equal(result[2].id,bostanci.id);
 });
+
+test('operator refresh keeps last complete sources through delayed, failed and partial replies',async()=>{
+ const source=html.split('const parkingCacheMs=')[1]?.split(" window.addEventListener('online'")[0];
+ const classifier=html.match(/function isOfficialIspark\(p\)\{[\s\S]*?(?=function corporateOperator)/)?.[0];
+ assert.ok(source&&classifier);
+ const center={lat:41.0082,lng:28.9784};
+ const catalog={...center,id:'ispark:1',isparkParkID:'1',operator:'İSPARK',name:'Official site',sourceSnapshot:true};
+ const primary={lat:41.02,lng:28.98,osmId:'node/7',operator:'İSPARK',name:'Tagged site'};
+ const unsupported={lat:41.03,lng:28.98,osmId:'node/8',name:'Kartal İspark'};
+ const storage=new Map();
+ const makeContext=()=>{
+  const responses=new Map(),renders=[];
+  const ctx={
+   sessionStorage:{getItem:key=>storage.get(key)??null,setItem:(key,value)=>storage.set(key,value)},
+   navigator:{onLine:true},map:{getCenter:()=>center,distance:()=>0},
+   allParking:[],parkingAbort:null,parkingSeq:0,parkingDataStale:false,selectedParkingOperator:'İSPARK',lastParkingFetchCenter:null,lastParkingSuccessAt:0,
+   parkingOperatorAssets:{'İSPARK':'/data/catalog.json'},
+   AbortController,setTimeout,clearTimeout,
+   $:id=>id==='searchRadius'?{value:'30'}:{},status(){},updateParkingFreshness(){},refreshIsparkOccupancy:async()=>false,
+   corporateOperator:p=>operator(p)?'İSPARK':null,dist:()=>999,
+   showParking:()=>renders.push(Array.from(ctx.allParking).filter(operator).map(p=>p.id||p.osmId).sort()),
+   fetch(url){
+    const path=url.split('?')[0];
+    if(path==='/api/ispark-occupancy')return Promise.resolve(Response.json({points:[]}));
+    return new Promise(resolve=>responses.set(path,resolve));
+   }
+  };
+  const {load,operator}=runInNewContext(classifier+';const parkingCacheMs='+source+';({load:loadParking,operator:isOfficialIspark})',ctx);
+  return {responses,renders,load,operator};
+ };
+ async function request(app,osm,catalogResponse=Response.json({points:[catalog]})){
+  const loading=app.load({force:true});
+  app.responses.get('/data/catalog.json')(catalogResponse);
+  app.responses.get('/api/business-parking')(Response.json({points:[]}));
+  const renderCount=app.renders.length;
+  await new Promise(resolve=>setImmediate(resolve));
+  assert.equal(app.renders.length,renderCount,'Do not publish a transient catalog-only result');
+  app.responses.get('/api/parking')(osm);
+  await loading;
+ }
+ let app=makeContext();
+ assert.equal(app.operator(unsupported),false);
+ assert.equal(app.operator({...primary,operator:'Bağcılar Belediyesi İspark'}),true);
+ const expected=['ispark:1','node/7'];
+ await request(app,Response.json({points:[primary,unsupported]}));
+ await request(app,new Response(null,{status:503}));
+ await request(app,Response.json({points:[]},{headers:{'X-Parking-Partial':'1'}}));
+ await request(app,Response.json({points:[primary]}),new Response(null,{status:503}));
+ assert.deepEqual(app.renders,[expected,expected,expected,expected]);
+ app=makeContext();
+ await request(app,new Response(null,{status:503}));
+ assert.deepEqual(app.renders,[expected]);
+ await request(app,Response.json({points:[]}));
+ assert.deepEqual(app.renders.at(-1),['ispark:1'],'A complete source can intentionally remove records');
+});

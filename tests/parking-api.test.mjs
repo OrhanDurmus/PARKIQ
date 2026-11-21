@@ -162,6 +162,7 @@ test('a failed national asset read still serves available curated Istanbul cover
  }}};
  const result = await onRequestGet({request: new Request(origin + '/api/parking?lat=40.9&lng=29.2'), env});
  assert.equal(result.status, 200);
+ assert.equal(result.headers.get('X-Parking-Partial'),'1');
  assert.deepEqual((await result.json()).points.map(p => p.name), ['curated']);
 });
 

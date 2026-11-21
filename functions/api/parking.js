@@ -26,7 +26,7 @@ const parkingAccess=p=>String(p.access??p['access']??p.tags?.access??p.motorVehi
 const restrictedParking=p=>['private','no','customers','residents','employees','staff','permit','delivery','destination','agricultural','forestry','military'].includes(parkingAccess(p))||p.publicAccess===false||p.isPublic===false;
 const publicParking=p=>!restrictedParking(p);
 const labelParkingAccess=p=>({...p,publicAccessStatus:p.verifiedBusiness===true||['yes','permissive'].includes(parkingAccess(p))?'public':'unverified'});
-const response=(points,source,updatedAt)=>Response.json({points,source,updatedAt},{headers:{'Cache-Control':'no-store','X-Content-Type-Options':'nosniff'}});
+const response=(points,source,updatedAt,partial)=>Response.json({points,source,updatedAt},{headers:{'Cache-Control':'no-store','X-Content-Type-Options':'nosniff',...(partial?{'X-Parking-Partial':'1'}:{})}});
 function fromOsm(el){
  const t=el.tags||{},lat=Number(el.lat??el.center?.lat),lng=Number(el.lon??el.center?.lon);
  if(!Number.isFinite(lat)||!Number.isFinite(lng))return null;
@@ -155,10 +155,11 @@ export async function onRequestGet({request,env}){
  if(!inTurkey(lat,lng))return Response.json({error:'Koordinatlar Türkiye sınırları dışında'},{status:400});
  // National coverage includes provinces inside the broad Istanbul rectangle.
  // Read independent inputs together; curated Istanbul records still win on overlap.
+ const needsIstanbul=inIstanbul(lat,lng);
  const [excluded,national,istanbul]=await Promise.all([
   approvedNonParkingIds(env),
   readParkingAsset(env,url.origin,'/data/parking-turkiye.json'),
-  inIstanbul(lat,lng)?readParkingAsset(env,url.origin,'/data/parking.json'):null,
+  needsIstanbul?readParkingAsset(env,url.origin,'/data/parking.json'):null,
  ]);
  if(!national&&!istanbul)return Response.json({error:'Otopark veri dosyaları yüklenemedi'},{status:503});
  const combined=new Map();
@@ -177,5 +178,5 @@ export async function onRequestGet({request,env}){
  }
  const points=[...combined.values()].sort((a,b)=>a.distance-b.distance).map(row=>row.point);
  const enriched=await attachApprovedEntrances(points,env,url.origin);
- return response((await attachOfficialIsparkNames(enriched,env)).map(enrichName).map(labelParkingAccess),istanbul&&national?'İstanbul + Türkiye OSM':istanbul?.source||national?.source,Math.max(Date.parse(istanbul?.updatedAt||0)||0,Date.parse(national?.updatedAt||0)||0)?new Date(Math.max(Date.parse(istanbul?.updatedAt||0)||0,Date.parse(national?.updatedAt||0)||0)).toISOString():null);
+ return response((await attachOfficialIsparkNames(enriched,env)).map(enrichName).map(labelParkingAccess),istanbul&&national?'İstanbul + Türkiye OSM':istanbul?.source||national?.source,Math.max(Date.parse(istanbul?.updatedAt||0)||0,Date.parse(national?.updatedAt||0)||0)?new Date(Math.max(Date.parse(istanbul?.updatedAt||0)||0,Date.parse(national?.updatedAt||0)||0)).toISOString():null,!national||(needsIstanbul&&!istanbul));
 }
