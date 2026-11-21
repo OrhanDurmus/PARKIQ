@@ -1,0 +1,156 @@
+-- ROTAPARK staff permission matrix, phase 2.
+-- REVIEW and run manually in Supabase SQL editor after reviewing existing role RPC.
+-- Does not change existing admin endpoints or navigation.
+begin;
+
+create table if not exists public.rotapark_staff_role_permissions (
+  staff_role text not null check (staff_role in ('admin','moderator')),
+  permission_key text not null check (permission_key in (
+    'parking_reports.read','parking_reports.moderate','support.read',
+    'support.reply','users.block','announcements.publish',
+    'staff.moderators.manage','parking_records.edit')),
+  enabled boolean not null default false,
+  updated_at timestamptz not null default now(),
+  updated_by uuid,
+  primary key (staff_role,permission_key)
+);
+
+create table if not exists public.rotapark_staff_user_permissions (
+  user_id uuid not null references auth.users(id) on delete cascade,
+  permission_key text not null check (permission_key in (
+    'parking_reports.read','parking_reports.moderate','support.read',
+    'support.reply','users.block','announcements.publish',
+    'staff.moderators.manage','parking_records.edit')),
+  enabled boolean not null,
+  updated_at timestamptz not null default now(),
+  updated_by uuid,
+  primary key (user_id,permission_key)
+);
+
+create table if not exists public.rotapark_staff_permission_audit (
+  id bigint generated always as identity primary key,
+  actor_id uuid not null,
+  target_role text,
+  target_user_id uuid,
+  permission_key text not null,
+  previous_enabled boolean,
+  new_enabled boolean not null,
+  created_at timestamptz not null default now(),
+  constraint staff_permission_audit_target_check check (
+    (target_role is not null and target_user_id is null) or
+    (target_role is null and target_user_id is not null))
+);
+
+alter table public.rotapark_staff_role_permissions enable row level security;
+alter table public.rotapark_staff_user_permissions enable row level security;
+alter table public.rotapark_staff_permission_audit enable row level security;
+revoke all on public.rotapark_staff_role_permissions from public, anon, authenticated;
+revoke all on public.rotapark_staff_user_permissions from public, anon, authenticated;
+revoke all on public.rotapark_staff_permission_audit from public, anon, authenticated;
+
+-- Require the existing role source; abort the whole transaction on schema mismatch.
+do $staff_guard$
+begin
+  if to_regprocedure('public.rotapark_my_role()') is null
+     or to_regclass('public.rotapark_staff_roles') is null then
+    raise exception 'Missing ROTAPARK authoritative role source';
+  end if;
+  if not exists (
+    select 1 from pg_proc
+    where oid='public.rotapark_my_role()'::regprocedure and prosecdef
+  ) then
+    raise exception 'ROTAPARK role RPC must be SECURITY DEFINER';
+  end if;
+end; $staff_guard$;
+
+-- Founder-only mutation, protected by existing authoritative role RPC.
+create or replace function public.rotapark_founder_set_role_permission(
+  p_role text, p_permission text, p_enabled boolean
+) returns void language plpgsql security definer set search_path = '' as $$
+declare v_old boolean;
+begin
+  if auth.uid() is null or public.rotapark_my_role() is distinct from 'founder' then
+    raise exception 'permission_denied' using errcode='42501';
+  end if;
+  if p_role is null or p_permission is null or p_role not in ('admin','moderator') or p_permission not in (
+    'parking_reports.read','parking_reports.moderate','support.read',
+    'support.reply','users.block','announcements.publish',
+    'staff.moderators.manage','parking_records.edit') or p_enabled is null then
+    raise exception 'invalid_permission' using errcode='22023';
+  end if;
+  -- Serialize even the first write, when no permission row exists yet.
+  perform pg_catalog.pg_advisory_xact_lock(pg_catalog.hashtextextended(p_role || ':' || p_permission, 0));
+  select enabled into v_old from public.rotapark_staff_role_permissions
+    where staff_role=p_role and permission_key=p_permission for update;
+  insert into public.rotapark_staff_role_permissions(staff_role,permission_key,enabled,updated_by)
+    values(p_role,p_permission,p_enabled,auth.uid())
+    on conflict (staff_role,permission_key) do update set
+      enabled=excluded.enabled,updated_at=now(),updated_by=excluded.updated_by;
+  insert into public.rotapark_staff_permission_audit(
+    actor_id,target_role,permission_key,previous_enabled,new_enabled)
+    values(auth.uid(),p_role,p_permission,v_old,p_enabled);
+end; $$;
+
+-- Per-user override writes are intentionally withheld until the authoritative
+-- user-to-role lookup and revocation behavior are verified against production schema.
+-- The table exists with RLS and no authenticated grants, so overrides cannot be
+-- edited from the client.
+
+create or replace function public.rotapark_founder_get_role_permissions()
+returns table(staff_role text,permission_key text,enabled boolean)
+language plpgsql security definer set search_path = '' as $$
+begin
+  if auth.uid() is null or public.rotapark_my_role() is distinct from 'founder' then
+    raise exception 'permission_denied' using errcode='42501';
+  end if;
+  return query select p.staff_role,p.permission_key,p.enabled
+    from public.rotapark_staff_role_permissions p order by p.staff_role,p.permission_key;
+end; $$;
+
+revoke all on function public.rotapark_founder_set_role_permission(text,text,boolean) from public,anon;
+revoke all on function public.rotapark_founder_get_role_permissions() from public,anon;
+grant execute on function public.rotapark_founder_set_role_permission(text,text,boolean) to authenticated;
+grant execute on function public.rotapark_founder_get_role_permissions() to authenticated;
+
+create or replace function public.rotapark_staff_has_permission(p_permission text)
+returns boolean language plpgsql security definer set search_path = '' as $$
+declare v_role text;
+begin
+  if auth.uid() is null or p_permission is null or p_permission not in (
+    'parking_reports.read','parking_reports.moderate','support.read',
+    'support.reply','users.block','announcements.publish',
+    'staff.moderators.manage','parking_records.edit'
+  ) then return false; end if;
+  v_role := public.rotapark_my_role();
+  if v_role = 'founder' then return true; end if;
+  if v_role not in ('admin','moderator') then return false; end if;
+  return coalesce((
+    select p.enabled from public.rotapark_staff_role_permissions p
+    where p.staff_role=v_role and p.permission_key=p_permission
+  ),false);
+end; $$;
+
+-- Founder-only read access to the latest permission audit entries.
+-- No direct table access is granted to browser clients.
+create or replace function public.rotapark_founder_get_permission_audit(p_limit integer default 30)
+returns table(actor_id uuid,target_role text,permission_key text,previous_enabled boolean,new_enabled boolean,created_at timestamptz)
+language plpgsql security definer set search_path = '' as $audit$
+begin
+  if auth.uid() is null or public.rotapark_my_role() is distinct from 'founder' then
+    raise exception 'permission_denied' using errcode='42501';
+  end if;
+  if p_limit is null or p_limit < 1 or p_limit > 100 then
+    raise exception 'invalid_limit' using errcode='22023';
+  end if;
+  return query select a.actor_id,a.target_role,a.permission_key,a.previous_enabled,a.new_enabled,a.created_at
+    from public.rotapark_staff_permission_audit a
+    order by a.created_at desc,a.id desc limit p_limit;
+end; $audit$;
+revoke all on function public.rotapark_founder_get_permission_audit(integer) from public,anon;
+grant execute on function public.rotapark_founder_get_permission_audit(integer) to authenticated;
+
+revoke all on function public.rotapark_staff_has_permission(text) from public,anon;
+grant execute on function public.rotapark_staff_has_permission(text) to authenticated;
+
+-- Start with all role permissions disabled. Existing privileged endpoints remain unchanged.
+commit;
