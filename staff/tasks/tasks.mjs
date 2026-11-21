@@ -114,6 +114,40 @@ async function renderList() {
   button(panel,'Yenile',renderList);
   status.textContent=items.length?(offset+1)+'–'+(offset+items.length)+' arası gösteriliyor.':'Bu listede kayıt yok.';
 }
+async function renderBlockedMembers() {
+  const section=document.querySelector('#blocked-members');
+  if (!section) return;
+  section.replaceChildren(element('p','Engelli üyeler yükleniyor…'));
+  const {data,error}=await client.rpc('rotapark_staff_blocked_members');
+  if (error) {
+    section.replaceChildren(element('p',error.code==='42501'?'Engelli üyeleri görüntüleme yetkiniz yok.':'Engelli üyeler alınamadı. Staging SQL migrasyonunu kontrol edin.'));
+    return;
+  }
+  section.replaceChildren(element('h2','Engelli üyeler'));
+  if (!Array.isArray(data) || !data.length) {
+    section.append(element('p','Engelli üye bulunmuyor.'));
+    return;
+  }
+  for (const member of data) {
+    const card=element('article');
+    card.append(element('strong',member.email),element('p','Engel nedeni: '+member.reason));
+    const {node,submit}=form(card,'Engeli kaldır',async()=>{
+      const reason=explanation.value.trim();
+      if (reason.length<3 || reason.length>300) {
+        status.textContent='Engel kaldırma gerekçesi 3–300 karakter olmalı.';
+        return;
+      }
+      await token();
+      const {error}=await client.rpc('rotapark_staff_unblock_member',{p_email:member.email,p_reason:reason});
+      if (error) throw Error(error.code==='42501'?'Engel kaldırma yetkiniz yok.':error.code==='22023'?'Hesap engelli değil veya işlem yapılamıyor.':'Engel kaldırılamadı. Staging yapılandırmasını kontrol edin.');
+      status.textContent='Engel kaldırıldı ve işlem kaydedildi.';
+      await renderBlockedMembers();
+    });
+    const explanation=field(node,'Engel kaldırma gerekçesi','textarea',{required:true,minLength:3,maxLength:300});
+    node.append(submit);
+    section.append(card);
+  }
+}
 function renderAction() {
   const announce=task==='announce', block=task==='block';
   const label=announce?'Duyuruyu yayınla':block?'Üyeyi engelle':'Rol değişikliğini kaydet';
@@ -140,6 +174,13 @@ function renderAction() {
     else operation=select(node,'İşlem',[['appoint','Moderatör ata'],['remove','Moderatörlüğü kaldır']],'appoint');
   }
   node.append(submit);
+  if (block) {
+    const blocked=element('section');
+    blocked.id='blocked-members';
+    panel.append(blocked);
+    button(panel,'Engelli üyeleri yenile',renderBlockedMembers);
+    void renderBlockedMembers();
+  }
   status.textContent='';
 }
 await execute(async()=>{
