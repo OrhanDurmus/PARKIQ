@@ -17,7 +17,8 @@ test('blocked list and unblock use distinct server RPCs',()=>{
 });
 test('unblock requires reason and explicit confirmation',()=>{
   assert.match(ui,/form\(card,'Engeli kaldır'/);
-  assert.match(ui,/confirm\(label\+' işlemini onaylıyor musunuz\?'\)/);
+  assert.match(ui,/confirm\(confirmation\)/);
+  assert.match(ui,/member\.email\+' hesabının engelini kaldırmak istediğinizi onaylıyor musunuz\?'\)/);
   assert.match(ui,/required:true,minLength:3,maxLength:300/);
   assert.match(ui,/reason\.length<3 \|\| reason\.length>300/);
 });
