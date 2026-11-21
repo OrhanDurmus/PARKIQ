@@ -1,8 +1,8 @@
 <!doctype html>
 <html lang="tr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>ROTAPARK • Yetki Kontrolü</title>
-<style>body{margin:0;background:#090909;color:#f4f0e7;font:16px system-ui}main{max-width:680px;margin:36px auto;padding:20px}section{background:#171512;border:1px solid #6c562a;border-radius:16px;padding:22px}h1{color:#e9c77e}a{color:#e9c77e}li{padding:8px 0;border-bottom:1px solid #413826}.muted{color:#c5bbab}</style></head>
-<body><main><p><a href="/staff/">← Yönetim Merkezi</a></p><section><h1>🛡️ Yetki Kontrolü</h1><p class="muted">Bu sayfa yalnızca hesabının mevcut izinlerini sorgular; hiçbir yönetim işlemi yapmaz.</p><p id="status" role="status">Oturum doğrulanıyor…</p><ul id="results"></ul></section></main>
+<style>body{margin:0;background:#090909;color:#f4f0e7;font:16px system-ui}main{max-width:680px;margin:36px auto;padding:20px}section{background:#171512;border:1px solid #6c562a;border-radius:16px;padding:22px}h1{color:#e9c77e}a{color:#e9c77e}button{font:inherit;background:#302617;color:#f4f0e7;border:1px solid #94743d;border-radius:8px;padding:12px;cursor:pointer}button:focus-visible{outline:2px solid #e9c77e;outline-offset:3px}li{padding:8px 0;border-bottom:1px solid #413826}.muted{color:#c5bbab}</style></head>
+<body><main><p><a href="/staff/">← Yönetim Merkezi</a></p><section><h1>🛡️ Yetki Kontrolü</h1><p class="muted">Bu sayfa yalnızca hesabının mevcut izinlerini sorgular; hiçbir yönetim işlemi yapmaz.</p><p id="status" role="status">Oturum doğrulanıyor…</p><ul id="results"></ul><h2>Güvenlik testi</h2><p class="muted">Bu test geçersiz bir bildirim numarasıyla sunucuya istek gönderir. Hiçbir kaydı onaylamaz veya değiştirmez.</p><button type="button" id="testModeration" disabled>İşlem yetkisini sunucuda test et</button><p id="testResult" role="status"></p></section></main>
 <script type="module">
 const labels={
 'parking_reports.read':'Park bildirimlerini görüntüle',
@@ -28,6 +28,24 @@ try {
   const {data:{user},error:userError}=await client.auth.getUser();
   if(userError||!user||user.id!==session.user.id)throw Error('Oturum doğrulanamadı.');
   let count=0;
+  const testButton=document.getElementById('testModeration');
+  const testResult=document.getElementById('testResult');
+  testButton.disabled=false;
+  testButton.addEventListener('click',async()=>{
+    testButton.disabled=true;
+    testResult.textContent='Sunucu kontrol ediliyor…';
+    try{
+      const response=await fetch('/api/staff/parking-reports',{
+        method:'PATCH',headers:{Authorization:'Bearer '+session.access_token,'Content-Type':'application/json'},
+        body:JSON.stringify({id:0,status:'approved'}),cache:'no-store'
+      });
+      if(response.status===403)testResult.textContent='✓ Sunucu işlemi engelledi (HTTP 403). Moderasyon izni yok.';
+      else if(response.status===400)testResult.textContent='✓ Sunucu geçersiz isteği reddetti (HTTP 400). Bu hesap moderasyon kontrolünü geçti; gerçek işlem yapılmadı.';
+      else if(response.status===401)testResult.textContent='Oturum sona erdi (HTTP 401). Tekrar giriş yap.';
+      else testResult.textContent='Beklenmeyen yanıt: HTTP '+response.status+'. İnceleme gerekli.';
+    }catch(error){testResult.textContent='Bağlantı hatası: '+(error.message||'İstek tamamlanamadı.');}
+    finally{testButton.disabled=false;}
+  });
   for(const [permission,label] of Object.entries(labels)){
     const check=await fetch('/api/staff/capability?permission='+encodeURIComponent(permission),{
       headers:{Authorization:'Bearer '+session.access_token},cache:'no-store'
