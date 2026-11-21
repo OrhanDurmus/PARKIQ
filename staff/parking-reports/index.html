@@ -6,6 +6,7 @@ body{margin:0;background:#090909;color:#f4f0e7;font:16px system-ui}main{max-widt
 section{background:#171512;border:1px solid #6c562a;border-radius:16px;padding:20px}
 h1{color:#e9c77e}a{color:#e9c77e}button{background:#302617;color:#f4f0e7;border:1px solid #94743d;border-radius:8px;padding:10px;cursor:pointer}
 button:disabled{opacity:.55;cursor:not-allowed}button:focus-visible,a:focus-visible{outline:2px solid #e9c77e;outline-offset:3px}
+nav[hidden]{display:none}button[aria-pressed="true"]{border-color:#e9c77e;color:#e9c77e}
 nav{display:flex;gap:8px;flex-wrap:wrap}article{border-top:1px solid #453923;padding:12px 0;overflow-wrap:anywhere}
 small,.muted{color:#c7bdab}#list{margin-top:12px}pre{white-space:pre-wrap}
 </style></head>
@@ -21,8 +22,15 @@ const status=document.getElementById('status'),list=document.getElementById('lis
 let token='',canModerate=false,currentStatus='pending',busy=false;
 const refresh=document.getElementById('refresh'),access=document.getElementById('access');
 refresh.addEventListener('click',()=>{if(!busy)void load(currentStatus)});
+let latestLoad=0;
+function setModerationAccess(granted){
+  canModerate=granted;
+  access.textContent=granted?'İşlem yetkisi: Onaylama ve reddetme açık.':'Salt görüntüleme: Onaylama ve reddetme kapalı.';
+}
 async function load(state){
+  const requestId=++latestLoad;
   currentStatus=state;
+  filters.querySelectorAll('button[data-status]').forEach(button=>button.setAttribute('aria-pressed',String(button.dataset.status===state)));
   refresh.disabled=true;
   status.textContent='Bildirimler yükleniyor…';
   list.replaceChildren();
@@ -33,6 +41,7 @@ async function load(state){
     if(response.status===503)throw Error('Yetki veya veri servisi kullanılamıyor.');
     if(!response.ok)throw Error('Bildirimler yüklenemedi.');
     const data=await response.json();
+    if(requestId!==latestLoad)return;
     if(!Array.isArray(data.reports))throw Error('Beklenmeyen sunucu yanıtı.');
     for(const item of data.reports){
       const article=document.createElement('article');
@@ -56,14 +65,22 @@ async function load(state){
       list.appendChild(article);
     }
     status.textContent=data.reports.length+' kayıt listelendi (en fazla 50).';
-  }catch(error){list.replaceChildren();status.textContent=error.message||'Bildirimler yüklenemedi.'}
-  finally{refresh.disabled=false;}
+  }catch(error){
+    if(requestId!==latestLoad)return;
+    list.replaceChildren();
+    status.textContent=error.message||'Bildirimler yüklenemedi.';
+  }finally{
+    if(requestId===latestLoad)refresh.disabled=false;
+  }
 }
 async function decide(id,decision){
   if(!canModerate||busy||currentStatus!=='pending')return;
   if(!Number.isSafeInteger(id)||id<1)return;
   if(!confirm('Bu bildirimi '+(decision==='approved'?'onaylamak':'reddetmek')+' istediğinize emin misiniz?'))return;
-  busy=true;list.querySelectorAll('button').forEach(button=>button.disabled=true);
+  busy=true;
+  refresh.disabled=true;
+  filters.querySelectorAll('button').forEach(button=>button.disabled=true);
+  list.querySelectorAll('button').forEach(button=>button.disabled=true);
   status.textContent='Karar kaydediliyor…';
   try{
     const response=await fetch('/api/staff/parking-reports',{
@@ -71,12 +88,20 @@ async function decide(id,decision){
       body:JSON.stringify({id,status:decision}),cache:'no-store'
     });
     if(response.status===401)throw Error('Oturum sona erdi. Yeniden giriş yapın.');
-    if(response.status===403){canModerate=false;throw Error('Moderasyon yetkisi bulunmuyor veya kaldırılmış.');}
+    if(response.status===403){
+      setModerationAccess(false);
+      list.querySelectorAll('button[data-decision]').forEach(button=>button.remove());
+      throw Error('Moderasyon yetkisi bulunmuyor veya kaldırılmış.');
+    }
     if(response.status===404)throw Error('Bildirim daha önce değerlendirilmiş.');
     if(!response.ok)throw Error('Karar kaydedilemedi.');
     await load(currentStatus);
   }catch(error){status.textContent=error.message||'İşlem başarısız.';list.querySelectorAll('button').forEach(button=>button.disabled=false);}
-  finally{busy=false;}
+  finally{
+    busy=false;
+    refresh.disabled=false;
+    filters.querySelectorAll('button').forEach(button=>button.disabled=false);
+  }
 }
 try{
   const cfgResponse=await fetch('/api/auth-config',{cache:'no-store'});
@@ -91,8 +116,7 @@ try{
   if(userError||!user||user.id!==session.user.id)throw Error('Oturum doğrulanamadı.');
   token=session.access_token;
   const moderateResponse=await fetch('/api/staff/capability?permission=parking_reports.moderate',{headers:{Authorization:'Bearer '+token},cache:'no-store'});
-  canModerate=moderateResponse.status===200;
-  access.textContent=canModerate?'İşlem yetkisi: Onaylama ve reddetme açık.':'Salt görüntüleme: Onaylama ve reddetme kapalı.';
+  setModerationAccess(moderateResponse.status===200);
   filters.hidden=false;
   refresh.hidden=false;
   filters.addEventListener('click',event=>{const state=event.target.closest('button[data-status]')?.dataset.status;if(state)void load(state)});
