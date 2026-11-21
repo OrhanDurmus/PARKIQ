@@ -19,6 +19,8 @@ jobs:
         run: node --test tests/staff-permissions-gate.test.mjs tests/staff-capability.test.mjs tests/staff-parking-reports.test.mjs tests/staff-tasks.test.mjs
       - name: Verify staging D1 migrations (isolated SQLite)
         run: node --test tests/staging-d1-migrations.test.mjs
+      - name: Verify staging member unblock SQL contract (static checks)
+        run: node --test tests/staging-member-unblock-contract.test.mjs
       - name: Validate staff center and permission pages
         run: node scripts/check-staff-pages.cjs
       - name: Validate parking API and app startup syntax
