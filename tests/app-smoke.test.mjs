@@ -235,7 +235,7 @@ test('parking publishes map data before slow business data and coalesces repeate
  const elements={searchRadius:{value:'10'},parking:{}};
  const context={
   navigator:{onLine:true},map:{getCenter:()=>center,distance:()=>0},
-  allParking:[],parkingAbort:null,parkingSeq:0,parkingDataStale:false,selectedParkingOperator:null,lastParkingFetchCenter:null,lastParkingSuccessAt:0,
+  allParking:[],parkingAbort:null,parkingSeq:0,parkingDataStale:false,selectedParkingOperator:null,lastParkingFetchCenter:null,lastParkingSuccessAt:0,displayedParkingRegion:null,
   AbortController,setTimeout,clearTimeout,
   $:id=>elements[id],status(){},updateParkingFreshness(){},
   showParking:()=>renders.push(context.allParking.map(p=>p.name)),
@@ -296,7 +296,7 @@ test('municipal shortcuts select the operator and load its city at 30 km', () =>
   ['İSPARK',[41.0082,28.9784],13,'30','']
  ]);
  assert.equal(context.window.rotaparkFilterOperator('toString'),false);
- assert.match(html,/allParking\.filter\(p=>\(!selectedParkingOperator\|\|corporateOperator\(p\)===selectedParkingOperator\)/);
+ assert.match(html,/scopedParking\.filter\(p=>\(!selectedParkingOperator\|\|corporateOperator\(p\)===selectedParkingOperator\)/);
 });
 
 test('reviewed İSPARK aliases preserve catalog and OSM coordinates without merging unconfirmed neighbors',()=>{
@@ -334,7 +334,7 @@ test('operator refresh keeps last complete sources through delayed, failed and p
   const ctx={
    sessionStorage:{getItem:key=>storage.get(key)??null,setItem:(key,value)=>storage.set(key,value)},
    navigator:{onLine:true},map:{getCenter:()=>center,distance:()=>0},
-   allParking:[],parkingAbort:null,parkingSeq:0,parkingDataStale:false,selectedParkingOperator:'İSPARK',lastParkingFetchCenter:null,lastParkingSuccessAt:0,
+   allParking:[],parkingAbort:null,parkingSeq:0,parkingDataStale:false,selectedParkingOperator:'İSPARK',lastParkingFetchCenter:null,lastParkingSuccessAt:0,displayedParkingRegion:null,
    parkingOperatorAssets:{'İSPARK':'/data/catalog.json'},
    AbortController,setTimeout,clearTimeout,
    $:id=>id==='searchRadius'?{value:'30'}:{},status(){},updateParkingFreshness(){},refreshIsparkOccupancy:async()=>false,
@@ -378,4 +378,32 @@ test('operator refresh keeps last complete sources through delayed, failed and p
  await request(app,Response.json({points:[primary]},{headers:{'X-Parking-Partial':'1'}}));
  await request(app,new Response(null,{status:503}));
  assert.deepEqual(app.renders,[expected,expected],'A verified subset also survives when no complete response has arrived');
+});
+
+test('show all clears operator and discovery filters before a regional general search',()=>{
+ const reset=html.match(/function resetParkingFilterValues\(\)\{[\s\S]*?(?=\$\('navSearch'\)\.onclick)/)?.[0];
+ assert.ok(reset);
+ assert.match(html,/\$\('mapFitParking'\)\.onclick=resetParkingFilters/);
+ const ids=['q','searchRadius','feeFilter','kindFilter','sortParking','parkingNameSearch'];
+ const elements=Object.fromEntries(ids.map(id=>[id,{value:'preset'}]));
+ elements.searchRadius.value='20';
+ elements.mapWrap={classList:{contains:()=>false}};
+ const ctx={
+  $:id=>elements[id],document:{querySelectorAll:()=>[]},
+  selectedParkingOperator:'ANPARK',routeWatch:null,finishParkingOperatorMove:null,
+  parkingListLimit:120,quickMode:'verified',showParking(){},
+  loadParking(){
+   assert.equal(ctx.selectedParkingOperator,null);
+   assert.equal(ctx.quickMode,'all');
+   assert.equal(ctx.parkingListLimit,60);
+   assert.equal(elements.searchRadius.value,'20');
+   assert.equal(elements.q.value,'');
+   assert.equal(elements.parkingNameSearch.value,'');
+   assert.equal(elements.feeFilter.value,'all');
+   assert.equal(elements.kindFilter.value,'all');
+   return 'general';
+  }
+ };
+ const apply=runInNewContext(reset+';resetParkingFilters',ctx);
+ assert.equal(apply(),'general');
 });

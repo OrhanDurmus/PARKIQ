@@ -40,11 +40,6 @@ header .header-brand h1 span{color:#f6bd4c!important}
  .tools{padding:10px 10px 0!important}
  .tools .search input{font-size:14px!important;min-height:47px!important;padding:11px 14px!important}
  #rpFilterToggle{min-height:47px!important;padding:3px!important}
- .tools .actions,.tools .filters,.tools .quick-filters,.sort-row{display:none!important}
- body.rp-filters-open .tools .actions{display:flex!important}
- body.rp-filters-open .tools .filters{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:5px!important}
- body.rp-filters-open .tools .quick-filters{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:5px!important}
- body.rp-filters-open .sort-row{display:flex!important}
  #rpOperatorShortcuts{gap:5px!important}
  #rpOperatorShortcuts button{min-height:65px!important;border-radius:12px!important}
  #rpOperatorShortcuts button span{font-size:20px!important}
@@ -527,16 +522,13 @@ header::before,header::after{background-image:none!important}
  }
 }
 
-/* ROTAPARK premium-only controls: retire the visible legacy blue filter panel.
-   Keep DOM elements available for the existing filtering/navigation handlers. */
-.tools #loc,
-.tools .filters,
-.tools .quick-filters,
-.tools .sort-row,
-.sort-row,
-body.rp-filters-open .tools .filters,
-body.rp-filters-open .tools .quick-filters,
-body.rp-filters-open .sort-row{display:none!important}
+#parkingFilters[hidden]{display:none}
+#parkingFilters{margin:8px 0 12px;padding:10px;background:#141008;border:1px solid #ad853c;border-radius:12px}
+#parkingFilters .filters,#parkingFilters .quick-filters{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:5px;padding:0}
+#parkingFilters .sort-row{display:flex;flex-wrap:wrap;gap:5px;padding:0}
+#parkingFilters select,#parkingFilters button{width:100%;min-width:0;background:#21190d;color:#f6dfa0;border:1px solid #a78a42}
+#parkingFilters button.active{background:#e9b540;color:#141008}
+#parkingFilters .sort-row>*{width:auto;max-width:100%}
 #rpOperatorShortcuts button{touch-action:manipulation!important;cursor:pointer!important}
 
 /* Premium hero: visible live account state and adjacent notification bell.

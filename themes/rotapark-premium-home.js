@@ -10,11 +10,23 @@
   var account=$('#rotaparkAccountLink');if(account){account.classList.add('rp-account-round');account.title='Hesabım';}
   var bell=document.createElement('button');bell.type='button';bell.id='rpNotificationShortcut';bell.innerHTML='<svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"/><path d="M10 21h4"/></svg>';bell.setAttribute('aria-label','Bildirimler');bell.title='Bildirimler';header.appendChild(bell);
   bell.addEventListener('click',function(){window.location.href='/notifications/'});
-  var search=$('.tools .search');if(search){var filterBtn=document.createElement('button');filterBtn.type='button';filterBtn.id='rpFilterToggle';filterBtn.textContent='☷';filterBtn.setAttribute('aria-label','Filtreleri aç');search.appendChild(filterBtn);filterBtn.addEventListener('click',function(){document.body.classList.toggle('rp-filters-open')});}
+  var search=$('.tools .search'),filters=$('#parkingFilters');
+  if(search&&filters){
+   var filterBtn=document.createElement('button');
+   filterBtn.type='button';filterBtn.id='rpFilterToggle';filterBtn.textContent='☷';
+   filterBtn.setAttribute('aria-label','Otopark filtreleri');
+   filterBtn.setAttribute('aria-controls',filters.id);
+   filterBtn.setAttribute('aria-expanded','false');
+   search.appendChild(filterBtn);
+   filterBtn.addEventListener('click',function(){
+    filters.hidden=!filters.hidden;
+    filterBtn.setAttribute('aria-expanded',String(!filters.hidden));
+   });
+  }
   var quick=document.createElement('nav');quick.id='rpOperatorShortcuts';quick.setAttribute('aria-label','Otopark hızlı erişim');
   [['📍','En Yakın',''],['Ⓟ','İSPARK','İSPARK'],['◆','İZELMAN','İZELMAN'],['▰','ANPARK','ANPARK'],['⚡','EV Şarj','şarj'],['♿','Engelli','engelli']].forEach(function(a){
    var b=document.createElement('button');b.type='button';b.innerHTML='<span aria-hidden="true">'+a[0]+'</span><small>'+a[1]+'</small>';
-   b.addEventListener('click',function(){if(a[1]==='EV Şarj'){if(window.rotaparkToggleEV)window.rotaparkToggleEV();return;}if(['İSPARK','ANPARK','İZELMAN'].includes(a[1])){if(window.rotaparkFilterOperator)window.rotaparkFilterOperator(a[1]);else {var notice=$('#status');if(notice)notice.textContent=a[1]+' filtresi henüz hazır değil; sayfayı yenileyin.';}return;}var q=$('#q');if(q)q.value=a[2];if(a[1]==='En Yakın'){if(window.rotaparkFocusLocation){window.rotaparkFocusLocation();return;}var loc=$('#loc');if(loc){loc.click();return;}}var searchBtn=$('#search');if(searchBtn)searchBtn.click();if(a[2])document.body.classList.add('rp-filters-open')});
+   b.addEventListener('click',function(){if(a[1]==='EV Şarj'){if(window.rotaparkToggleEV)window.rotaparkToggleEV();return;}if(['İSPARK','ANPARK','İZELMAN'].includes(a[1])){if(window.rotaparkFilterOperator)window.rotaparkFilterOperator(a[1]);else {var notice=$('#status');if(notice)notice.textContent=a[1]+' filtresi henüz hazır değil; sayfayı yenileyin.';}return;}var q=$('#q');if(q)q.value=a[2];if(a[1]==='En Yakın'){if(window.rotaparkFocusLocation){window.rotaparkFocusLocation();return;}var loc=$('#loc');if(loc){loc.click();return;}}var searchBtn=$('#search');if(searchBtn)searchBtn.click()});
    quick.appendChild(b);
   });
   if(search)search.insertAdjacentElement('afterend',quick);
