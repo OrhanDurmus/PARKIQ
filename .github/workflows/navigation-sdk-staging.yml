@@ -24,6 +24,11 @@ jobs:
       - name: Validate SDK installer JavaScript syntax
         run: node --check scripts/native/apply-navigation-sdk-staging.cjs
       - run: npm run mobile:prepare
+      - name: Use local web assets in isolated staging Android test build
+        run: |
+          node scripts/native/prepare-local-navigation-staging.cjs
+          node -e "const c=require('./capacitor.config.json');if(c.server)process.exit(1)"
+          grep -q 'requestedNativeTarget' www/index.html
       - run: npx cap add android
       - name: Install staging Navigation SDK
         run: node scripts/native/apply-navigation-sdk-staging.cjs
