@@ -3,10 +3,10 @@
   "appName": "ROTAPARK",
   "webDir": "www",
   "server": {
-    "url": "https://rotapark.com.tr",
+    "url": "https://fix-staging-route-direction.rotapark-staging.pages.dev",
     "cleartext": false,
     "allowNavigation": [
-      "rotapark.com.tr"
+      "fix-staging-route-direction.rotapark-staging.pages.dev"
     ]
   }
 }
