@@ -17,7 +17,7 @@ const wrapper=path.join(android,'gradle/wrapper/gradle-wrapper.properties');
 const required=[gradle,manifest,vars,projectGradle,wrapper];
 for(const file of required)requireFile(file);
 let g=requireFile(gradle),m=requireFile(manifest),v=requireFile(vars),pg=requireFile(projectGradle),w=requireFile(wrapper);
-if(!/com\.android\.tools\.build:gradle:8\.7\.2/.test(pg)||!/gradle-8\.11\.1-all\.zip/.test(w)||!/minSdkVersion\s*=\s*23/.test(v))throw new Error('Unexpected Capacitor Android toolchain; review versions before patching');
+const pristine=/com\.android\.tools\.build:gradle:8\.7\.2/.test(pg)&&/gradle-8\.11\.1-all\.zip/.test(w)&&/minSdkVersion\s*=\s*23/.test(v);\nconst patched=/com\.android\.tools\.build:gradle:8\.13\.2/.test(pg)&&/gradle-8\.13-all\.zip/.test(w)&&/minSdkVersion\s*=\s*24/.test(v);\nif(!pristine&&!patched)throw new Error('Unexpected Capacitor Android toolchain; review versions before patching');
 pg=pg.replace('com.android.tools.build:gradle:8.7.2','com.android.tools.build:gradle:8.13.2');
 w=w.replace('gradle-8.11.1-all.zip','gradle-8.13-all.zip');
 v=v.replace(/minSdkVersion\s*=\s*23/,'minSdkVersion = 24').replace(/(compileSdkVersion|targetSdkVersion)\s*=\s*35/g,'$1 = 36');
