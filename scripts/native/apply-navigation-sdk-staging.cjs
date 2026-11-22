@@ -29,6 +29,16 @@ g+=`\n// ROTAPARK staging-only Google Navigation SDK probe\nandroid { compileOpt
 if(!m.includes('RotaparkGuidanceActivity')){
 m=m.replace('</application>','<activity android:name="tr.com.rotapark.app.RotaparkGuidanceActivity" android:exported="false" />\n    </application>');
 }
+// Enable only explicitly configured staging test APKs. Never print or commit the key.
+const sdkKey=process.env.ROTAPARK_STAGING_GOOGLE_MAPS_API_KEY||'';
+if(sdkKey){
+ if(!/^[A-Za-z0-9_-]{20,200}$/.test(sdkKey))throw new Error('Invalid staging Google Maps API key format');
+ if(!m.includes('com.google.android.geo.API_KEY')){
+  m=m.replace('</application>','<meta-data android:name="com.google.android.geo.API_KEY" android:value="'+sdkKey+'" />\n    <meta-data android:name="rotapark.navigation.sdk.enabled" android:value="true" />\n    </application>');
+ }else if(!m.includes('rotapark.navigation.sdk.enabled')){
+  throw new Error('Existing Google Maps key without ROTAPARK SDK opt-in; inspect generated manifest');
+ }
+}
 fs.mkdirSync(javaDir,{recursive:true});
 for(const name of ['RotaparkGuidanceActivity.java','RotaparkNavigationPlugin.java']){
  const src=path.join(root,'scripts/native/android',name);
