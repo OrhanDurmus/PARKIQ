@@ -1,0 +1,51 @@
+name: Beta Android test APK
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - capacitor.config.json
+      - .github/workflows/beta-apk-test.yml
+permissions:
+  contents: read
+jobs:
+  apk:
+    if: github.head_ref == 'test/beta-mobile-origin-20261122'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+      - run: npm install
+      - run: node -e "const c=require('./capacitor.config.json'); if(c.server.url!=='https://beta.rotapark.com.tr') process.exit(1)"
+      - run: npm run mobile:prepare
+      - run: npx cap add android
+      - run: npx cap sync android
+      - name: Declare and verify foreground location permissions
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import xml.etree.ElementTree as ET
+          p = Path('android/app/src/main/AndroidManifest.xml')
+          ns = 'http://schemas.android.com/apk/res/android'
+          ET.register_namespace('android', ns)
+          tree = ET.parse(p)
+          root = tree.getroot()
+          attr = '{' + ns + '}name'
+          for permission in ('android.permission.ACCESS_COARSE_LOCATION', 'android.permission.ACCESS_FINE_LOCATION'):
+              if not any(e.get(attr) == permission for e in root.findall('uses-permission')):
+                  ET.SubElement(root, 'uses-permission', {attr: permission})
+          tree.write(p, encoding='utf-8', xml_declaration=True)
+          assert all(any(e.get(attr) == v for e in root.findall('uses-permission')) for v in ('android.permission.ACCESS_COARSE_LOCATION', 'android.permission.ACCESS_FINE_LOCATION'))
+          PY
+      - run: cd android && ./gradlew assembleDebug
+      - uses: actions/upload-artifact@v4
+        with:
+          name: rotapark-beta-debug
+          path: android/app/build/outputs/apk/debug/*.apk
+          if-no-files-found: error
+          retention-days: 7
