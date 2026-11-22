@@ -29,6 +29,8 @@ jobs:
           node scripts/native/prepare-local-navigation-staging.cjs
           node -e "const c=require('./capacitor.config.json');if(c.server)process.exit(1)"
           grep -q 'requestedNativeTarget' www/index.html
+          node -e "const fs=require('fs');const html=fs.readFileSync('www/index.html','utf8');if(!html.includes('nativeNavigation.start(')||!html.includes('getCapabilities()'))process.exit(1)"
+          node -e "const fs=require('fs');const html=fs.readFileSync('www/index.html','utf8');const config=require('./capacitor.config.json');if(config.server||!html.includes('RotaparkNavigation'))process.exit(1)"
       - run: npx cap add android
       - name: Install staging Navigation SDK
         run: node scripts/native/apply-navigation-sdk-staging.cjs
