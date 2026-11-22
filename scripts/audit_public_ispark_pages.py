@@ -17,6 +17,9 @@ PAGES = {
 }
 SIGNALS = re.compile(r"boş kapasite|emptyCapacity|freeSpaces|parkID|lastUpdate|setInterval|setTimeout|occupancy|doluluk", re.I)
 REFERENCES = re.compile(r"""["']((?:https?://[\w.-]+/|/)[\w./-]{2,180})["']""")
+REQUEST_CALL = re.compile(r"""(?:fetch|jsonRpc|rpc|ajax|getJSON)\s*\(\s*["']((?:https?://[\w.-]+/|/)[\w./-]{2,180})["']""", re.I)
+TIMER = re.compile(r"setInterval|setTimeout|lastUpdate", re.I)
+PARKING = re.compile(r"boş kapasite|emptyCapacity|freeSpaces|parkID|occupancy|otopark", re.I)
 RELATED = re.compile(r"ispark|otopark|parking|occupancy|parkdetail|parkdetay|openapi|swagger", re.I)
 OFFICIAL = re.compile(r"(?:^|\.)(?:ispark\.istanbul|ibb\.gov\.tr|ibb\.istanbul|b40cities\.org)$")
 
@@ -30,12 +33,45 @@ class Scripts(HTMLParser):
     def __init__(self):
         super().__init__()
         self.sources = []
+        self.inline = []
+        self.in_script = False
+        self.in_style = False
+        self.free_labels = 0
+        self.parking_attributes = set()
 
     def handle_starttag(self, tag, attrs):
+        self.parking_attributes.update(name for name, _ in attrs
+                                       if name.startswith("data-") and PARKING.search(name))
+        if tag == "style":
+            self.in_style = True
         if tag == "script":
+            self.in_script = True
             src = dict(attrs).get("src")
             if src:
                 self.sources.append(src)
+
+    def handle_endtag(self, tag):
+        if tag == "script":
+            self.in_script = False
+        if tag == "style":
+            self.in_style = False
+
+    def handle_data(self, data):
+        if self.in_script:
+            self.inline.append(data)
+        elif not self.in_style:
+            self.free_labels += len(re.findall("boş kapasite", data, re.I))
+
+
+def script_evidence(source):
+    safe_paths = []
+    for reference in REQUEST_CALL.findall(source):
+        parsed = urlsplit(reference)
+        if not parsed.netloc or OFFICIAL.search(parsed.hostname or ""):
+            safe_paths.append(parsed.path)
+    timers = sum(bool(PARKING.search(source[max(0, match.start()-120):match.end()+120]))
+                 for match in TIMER.finditer(source))
+    return f"literal request paths={sorted(set(safe_paths))[:12]}; timer/update markers near parking terms={timers}"
 
 
 def read(url):
@@ -65,6 +101,8 @@ def inspect(page):
     html = Scripts()
     html.feed(body)
     lines.append(f"  HTML signals: {sorted({item.lower() for item in SIGNALS.findall(body)})}")
+    lines.append(f"  Parking labels in HTML text: {html.free_labels}; parking data attributes: {sorted(html.parking_attributes)}")
+    lines.append("  Inline scripts: " + script_evidence("\n".join(html.inline)))
     references = set(REFERENCES.findall(body))
     origin = urlsplit(url).hostname
     assets = list(dict.fromkeys(urljoin(url, src) for src in html.sources))
@@ -75,6 +113,8 @@ def inspect(page):
         status, source = read(asset)
         signals = sorted({item.lower() for item in SIGNALS.findall(source)})
         lines.append(f"  Script {urlsplit(asset).path}: {status}; signals={signals}")
+        if source:
+            lines.append("    " + script_evidence(source))
         references.update(REFERENCES.findall(source))
     relevant = {urlsplit(urljoin(url, item)) for item in references}
     safe = sorted(f"{item.hostname}{item.path}" for item in relevant
