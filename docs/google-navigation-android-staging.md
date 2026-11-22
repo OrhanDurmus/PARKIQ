@@ -17,3 +17,12 @@ Official references:
 https://developers.google.com/maps/documentation/navigation/android-sdk/setup-overview
 https://developers.google.com/maps/documentation/navigation/android-sdk/android-studio-setup
 https://developers.google.com/maps/documentation/navigation/android-sdk/route
+
+## Integration status (2026-11-22)
+
+- Staging Android build installs Google Navigation SDK 7.9.0 and registers `RotaparkNavigationPlugin` in generated `MainActivity`; generated Android sources are not committed.
+- Native plugin is fail-closed by default. `rotapark.navigation.sdk.enabled` Android application manifest metadata must be explicitly set to `true` in a test build only **after** restricted Android API credentials, required Google terms, and device validation are prepared. Do not enable it in Production.
+- `getCapabilities` reports staging opt-in state; `start` validates destination and fine-location permission before opening the native guidance Activity. This is not yet wired into the web navigation button.
+- `stop` currently reports inactive but does not terminate an already opened native Activity. Do not expose stop as functional until native session lifecycle handling is implemented and tested.
+- Build success alone does not prove API-key configuration, SDK initialization, route guidance, navigation camera smoothness, rerouting, or GPS performance on a moving device.
+- Next gate: secure key injection into a staging-only Android build (never GitHub source or chat), real device smoke tests for navigation startup/stop/restart, background/foreground and denied permissions, and explicit opt-in from the web UI with web fallback.
