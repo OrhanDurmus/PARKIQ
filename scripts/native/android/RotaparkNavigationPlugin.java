@@ -25,6 +25,8 @@ public class RotaparkNavigationPlugin extends Plugin {
         } catch (PackageManager.NameNotFoundException e) { return false; }
     }
 
+    private boolean launchPending;
+
     @PluginMethod
     public void getCapabilities(PluginCall call) {
         JSObject result = new JSObject();
@@ -52,17 +54,24 @@ public class RotaparkNavigationPlugin extends Plugin {
             call.reject("Precise location permission required", "LOCATION_PERMISSION_REQUIRED");
             return;
         }
-        if (RotaparkGuidanceActivity.isActive()) {
+        if (launchPending || RotaparkGuidanceActivity.isActive()) {
             call.reject("Navigation session already active", "NAVIGATION_ALREADY_ACTIVE");
             return;
         }
         Intent intent = new Intent(getContext(), RotaparkGuidanceActivity.class);
         intent.putExtra("latitude", latitude);
         intent.putExtra("longitude", longitude);
-        getActivity().startActivity(intent);
-        JSObject result = new JSObject();
-        result.put("launched", true);
-        call.resolve(result);
+        launchPending = true;
+        try {
+            getActivity().startActivity(intent);
+            JSObject result = new JSObject();
+            result.put("launched", true);
+            call.resolve(result);
+        } catch (RuntimeException e) {
+            call.reject("Unable to open native guidance", "NATIVE_LAUNCH_FAILED");
+        } finally {
+            launchPending = false;
+        }
     }
 
     @PluginMethod
