@@ -6,6 +6,7 @@ on:
       - '.github/workflows/ispark-staging-audit.yml'
       - 'scripts/audit_ispark_staging.py'
       - 'scripts/audit_public_ispark_pages.py'
+      - 'scripts/audit_ispark_browser.mjs'
 permissions:
   contents: read
 jobs:
@@ -35,3 +36,8 @@ jobs:
           persist-credentials: false
       - name: Inspect official public pages and linked scripts
         run: python3 scripts/audit_public_ispark_pages.py
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Observe requests from a normal public MVY page load
+        run: timeout 40s node scripts/audit_ispark_browser.mjs
