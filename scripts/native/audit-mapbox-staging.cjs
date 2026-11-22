@@ -27,3 +27,33 @@ for (const file of legacy) {
   }
 }
 console.log('PASS: Mapbox staging workflow excludes legacy Google navigation installer; legacy source files remain isolated.');
+
+if (process.argv.includes('--generated-android')) {
+  const android = path.join(root, 'android');
+  const appGradle = fs.readFileSync(path.join(android, 'app/build.gradle'), 'utf8');
+  const manifest = fs.readFileSync(path.join(android, 'app/src/main/AndroidManifest.xml'), 'utf8');
+  const main = fs.readFileSync(path.join(android, 'app/src/main/java/tr/com/rotapark/app/MainActivity.java'), 'utf8');
+  const projectGradle = fs.readFileSync(path.join(android, 'build.gradle'), 'utf8');
+  if (!appGradle.includes('com.mapbox.navigationcore:android:3.34.4')) {
+    throw Error('Generated APK does not include expected Mapbox SDK dependency');
+  }
+  if (!projectGradle.includes('ROTAPARK_MAPBOX_MAVEN')) {
+    throw Error('Generated Android project missing Mapbox Maven repository');
+  }
+  if (!manifest.includes('android.permission.ACCESS_FINE_LOCATION')) {
+    throw Error('Generated Android manifest missing precise location permission');
+  }
+  if (/com\.google\.android\.libraries\.navigation|RotaparkGuidanceActivity|RotaparkNavigationPlugin/.test(
+      [appGradle, manifest, main].join('\n'))) {
+    throw Error('Legacy Google navigation wiring detected in generated Mapbox APK');
+  }
+  const javaRoot = path.join(android, 'app/src/main/java');
+  const walk = (dir) => fs.existsSync(dir) ? fs.readdirSync(dir, {withFileTypes:true}).flatMap(e =>
+    e.isDirectory() ? walk(path.join(dir,e.name)) : [path.join(dir,e.name)]) : [];
+  for (const file of walk(javaRoot).filter(f => f.endsWith('.java') || f.endsWith('.kt'))) {
+    if (/com\.google\.android\.libraries\.navigation/.test(fs.readFileSync(file,'utf8'))) {
+      throw Error('Legacy Google SDK Java/Kotlin import detected: ' + path.relative(root,file));
+    }
+  }
+  console.log('PASS: Generated Android APK wiring includes Mapbox and excludes Google Navigation SDK.');
+}
