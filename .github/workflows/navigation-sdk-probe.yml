@@ -33,4 +33,10 @@ jobs:
         run: |
           node scripts/native/apply-navigation-sdk-staging.cjs
           cd android
-          ./gradlew assembleDebug --no-daemon
+          ./gradlew assembleDebug --no-daemon --stacktrace --info
+      - name: Report disk and Android package diagnostics on failure
+        if: failure()
+        run: |
+          df -h
+          du -sh android/app/build android/.gradle ~/.gradle/caches 2>/dev/null || true
+          find android/app/build/outputs -maxdepth 3 -type f -printf '%p %s bytes\n' 2>/dev/null || true
