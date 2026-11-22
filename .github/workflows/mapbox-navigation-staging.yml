@@ -1,6 +1,12 @@
 name: ROTAPARK Mapbox SDK staging compile
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - feature/staging-mapbox-navigation-20261123
+    paths:
+      - '.github/workflows/mapbox-navigation-staging.yml'
+      - 'scripts/native/apply-mapbox-navigation-staging.cjs'
 permissions:
   contents: read
 jobs:
