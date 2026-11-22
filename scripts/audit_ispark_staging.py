@@ -14,6 +14,7 @@ from urllib.request import HTTPRedirectHandler, Request, build_opener
 
 CF_API = "https://api.cloudflare.com/client/v4"
 BRANCH = "staging/rotapark-occupancy"
+PAGES_PROJECT = "rotapark-staging"
 IBB_HOST = "api.ibb.gov.tr"
 PRODUCTION_KV = "b961f4d221e248719e76df2e9b61f31f"
 STAGING_NAME = re.compile(r"(?:^|[-_])(?:staging|preview|stage|test)(?:$|[-_])", re.I)
@@ -91,10 +92,19 @@ def project_audit(token, account, project):
         print(f"Other Staging/Preview branch deployments in latest page: {len(staging_previews)}")
         return
     deployment = matches[0]
-    stages = {key: deployment.get("latest_stage", {}).get(key) for key in ("name", "status")}
-    print(f"Latest preview deployment stage: {stages}")
     deployment_id = quote(deployment["id"], safe="")
-    logs = cf_get(token, "Pages preview build logs", f"{path}/deployments/{deployment_id}/history/logs")
+    deployment_path = f"{path}/deployments/{deployment_id}"
+    for _ in range(8):
+        if (deployment.get("latest_stage") or {}).get("status") not in {"idle", "active"}:
+            break
+        time.sleep(5)
+        updated = cf_get(token, "Pages preview deployment state", deployment_path)
+        if not updated or updated.get("environment") != "preview":
+            break
+        deployment = updated
+    stage = deployment.get("latest_stage") or {}
+    print(f"Latest preview deployment stage: {stage.get('name')}, status: {stage.get('status')}")
+    logs = cf_get(token, "Pages preview build logs", deployment_path + "/history/logs")
     if isinstance(logs, dict):
         lines = logs.get("data") or []
         errors = sum(bool(re.search(r"\b(?:error|failed|timeout)\b", str(line), re.I)) for line in lines)
@@ -112,7 +122,11 @@ def project_audit(token, account, project):
         diagnostic = status.get("diagnostic") or {}
         print("Preview occupancy diagnostic:", {key: diagnostic.get(key) for key in ("stage", "reason", "upstreamStatus")})
     except HTTPError as error:
-        print(f"Preview occupancy status: HTTP {error.code}")
+        body = error.read(8192).lower()
+        location = urlsplit(error.headers.get("Location") or "").hostname or ""
+        access_signal = location.endswith(".cloudflareaccess.com") or b"cloudflare access" in body
+        challenge_signal = error.headers.get("cf-mitigated") == "challenge"
+        print(f"Preview occupancy status: HTTP {error.code}; Cloudflare Access signal={access_signal}; challenge signal={challenge_signal}")
     except (URLError, ValueError, OSError) as error:
         print(f"Preview occupancy status: {type(error).__name__}")
 
@@ -159,8 +173,7 @@ def cloudflare():
             if account_token:
                 print(f"Cloudflare account-token active={account_token.get('status') == 'active'}")
         projects = cf_get(token, "Pages projects", account + "/pages/projects")
-        relevant = [project for project in projects or [] if "rotapark" in project.get("name", "").lower()
-                    or "parkiq" in project.get("name", "").lower()]
+        relevant = [project for project in projects or [] if project.get("name") == PAGES_PROJECT]
         print(f"Matching Pages projects: {len(relevant)}")
         for project in relevant:
             project_audit(token, account, project)
