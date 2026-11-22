@@ -29,6 +29,26 @@ jobs:
         run: node scripts/native/apply-navigation-sdk-staging.cjs
       - name: Check installer is repeatable
         run: node scripts/native/apply-navigation-sdk-staging.cjs
+      - name: Assert SDK is disabled without a staging key
+        run: |
+          if grep -q 'rotapark.navigation.sdk.enabled' android/app/src/main/AndroidManifest.xml; then
+            echo 'Unexpected SDK activation in keyless build' >&2
+            exit 1
+          fi
+          if grep -q 'com.google.android.geo.API_KEY' android/app/src/main/AndroidManifest.xml; then
+            echo 'Unexpected Google Maps key in keyless build' >&2
+            exit 1
+          fi
+      - name: Reject malformed staging key without leaking it
+        run: |
+          if ROTAPARK_STAGING_GOOGLE_MAPS_API_KEY=invalid node scripts/native/apply-navigation-sdk-staging.cjs; then
+            echo 'Invalid key was unexpectedly accepted' >&2
+            exit 1
+          fi
+          if grep -q 'rotapark.navigation.sdk.enabled' android/app/src/main/AndroidManifest.xml; then
+            echo 'Invalid key unexpectedly enabled SDK' >&2
+            exit 1
+          fi
       - name: Compile Android SDK probe
         run: cd android && ./gradlew assembleDebug --no-daemon
       - name: Verify staging-only key opt-in without publishing credentials
