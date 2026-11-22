@@ -52,6 +52,10 @@ public class RotaparkNavigationPlugin extends Plugin {
             call.reject("Precise location permission required", "LOCATION_PERMISSION_REQUIRED");
             return;
         }
+        if (RotaparkGuidanceActivity.isActive()) {
+            call.reject("Navigation session already active", "NAVIGATION_ALREADY_ACTIVE");
+            return;
+        }
         Intent intent = new Intent(getContext(), RotaparkGuidanceActivity.class);
         intent.putExtra("latitude", latitude);
         intent.putExtra("longitude", longitude);
@@ -63,6 +67,7 @@ public class RotaparkNavigationPlugin extends Plugin {
 
     @PluginMethod
     public void stop(PluginCall call) {
+        RotaparkGuidanceActivity.stopActive();
         JSObject result = new JSObject();
         result.put("active", false);
         call.resolve(result);
