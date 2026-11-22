@@ -33,7 +33,7 @@ jobs:
         run: |
           node scripts/native/apply-navigation-sdk-staging.cjs
           cd android
-          ./gradlew assembleDebug --no-daemon --stacktrace --info
+          ./gradlew assembleDebug --no-daemon --max-workers=2 -Dorg.gradle.jvmargs='-Xmx3g -XX:MaxMetaspaceSize=768m -Dfile.encoding=UTF-8' --stacktrace --info
       - name: Report disk and Android package diagnostics on failure
         if: failure()
         run: |
