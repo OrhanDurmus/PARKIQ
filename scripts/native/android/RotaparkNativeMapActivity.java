@@ -17,6 +17,7 @@ import com.mapbox.geojson.Feature;
 import com.mapbox.geojson.FeatureCollection;
 import com.mapbox.maps.extension.style.sources.generated.GeoJsonSource;
 import com.mapbox.maps.extension.style.layers.generated.CircleLayer;
+import com.mapbox.maps.extension.style.StyleExtensionImplKt;
 import java.util.ArrayList;
 import java.util.List;
 import org.json.JSONArray;
@@ -130,13 +131,13 @@ public final class RotaparkNativeMapActivity extends Activity {
                         mapView.getMapboxMap().getStyle(style -> {
                             GeoJsonSource source = new GeoJsonSource.Builder("rotapark-parking-source")
                                 .featureCollection(collection).build();
-                            style.addSource(source);
+                            StyleExtensionImplKt.addSource(style, source);
                             CircleLayer layer = new CircleLayer("rotapark-parking-circles", "rotapark-parking-source");
                             layer.circleRadius(5.0);
                             layer.circleColor("#D4AF37");
                             layer.circleStrokeWidth(1.5);
                             layer.circleStrokeColor("#111111");
-                            style.addLayer(layer);
+                            StyleExtensionImplKt.addLayer(style, layer);
                         });
                     });
                     status = "Native otopark pinleri: " + count + " / " + points.length();
