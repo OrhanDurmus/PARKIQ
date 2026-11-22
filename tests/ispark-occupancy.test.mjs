@@ -3,7 +3,7 @@ import {test} from 'node:test';
 import {onRequestGet} from '../functions/api/ispark-occupancy.js';
 import {onRequestPost} from '../functions/api/ispark-upload.js';
 
-test('İSPARK only reads storage, shares misses and rechecks freshness at serve time', async t => {
+test('İSPARK only reads storage, shares misses and keeps source snapshots out of live occupancy', async t => {
   const start = Date.parse('2026-11-21T19:00:00Z');
   let now = start;
   t.mock.method(Date, 'now', () => now);
@@ -24,7 +24,7 @@ test('İSPARK only reads storage, shares misses and rechecks freshness at serve 
   let reads = 0;
   let storageDown = false;
   const snapshot = {collectedAt:new Date(start).toISOString(), points:[
-    {id:'1', freeSpaces:3, measuredAt:new Date(start-14*60000-45000).toISOString()},
+    {id:'1', freeSpaces:3, measuredAt:new Date(start-45000).toISOString(), verifiedLive:true},
     {id:'2', freeSpaces:2},
     {id:'3', freeSpaces:1, measuredAt:new Date(start+1).toISOString()}
   ]};
@@ -37,14 +37,16 @@ test('İSPARK only reads storage, shares misses and rechecks freshness at serve 
   const call = async () => (await onRequestGet({request, env})).json();
   const simultaneous = await Promise.all([call(), call(), call()]);
   assert.equal(reads, 1);
-  assert.deepEqual(simultaneous.map(d => d.liveCount), [1,1,1]);
+  assert.deepEqual(simultaneous.map(d => d.liveCount), [0,0,0]);
+  assert.equal(simultaneous[0].points[0].verifiedLive, false);
+  assert.equal(simultaneous[0].points[0].freeSpaces, 3);
   assert.equal(simultaneous[0].points[1].verifiedLive, false);
   assert.equal(simultaneous[0].points[2].verifiedLive, false);
 
   now += 16000;
   const hit = await call();
   assert.equal(hit.points[0].occupancyUpdatedAt, null);
-  assert.equal(hit.points[0].measuredAt, snapshot.points[0].measuredAt);
+  assert.equal(hit.points[0].measuredAt, null);
   assert.equal(reads, 1);
 
   now += 15000;
@@ -83,7 +85,7 @@ test('İSPARK upload preserves the last good collection after partial or older u
   const collection = (values, age) => ({rows:values, collectedAt:new Date(now-age).toISOString()});
   assert.equal((await upload(collection(rows,1000), 'incorrect')).status, 401);
   assert.equal((await upload(collection(rows,1000))).status, 200);
-  assert.equal(saved.points[0].measuredAt, '2026-11-21T18:58:00.000Z');
+  assert.equal(saved.points[0].sourceUpdatedAt, '2026-11-21T18:58:00.000Z');
   assert.equal(saved.points[0].freeSpaces, 0);
   const original = saved;
   assert.equal((await upload(collection(rows.slice(0,120),500))).status, 409);

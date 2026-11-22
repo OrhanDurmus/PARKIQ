@@ -1,4 +1,4 @@
-import { LIVE_WINDOW_MS, SNAPSHOT_WINDOW_MS, repairName } from '../_shared/ispark.js';
+import { SNAPSHOT_WINDOW_MS, repairName } from '../_shared/ispark.js';
 
 const SNAPSHOT_FRESH_MS = 15 * 60 * 1000;
 const READ_TIMEOUT_MS = 1500;
@@ -72,16 +72,13 @@ export async function onRequestGet({request, env, waitUntil}) {
   }
 
   const stale = age >= SNAPSHOT_FRESH_MS || Boolean(reason);
-  const points = snapshot.points.filter(point => point && typeof point === 'object').map(point => {
-    const measuredAt = point.measuredAt ?? point.occupancyUpdatedAt ?? null;
-    const measurementAge = now - Date.parse(measuredAt ?? '');
-    const verifiedLive = !stale && Number.isInteger(point.freeSpaces) && point.freeSpaces >= 0
-      && measurementAge >= 0 && measurementAge < LIVE_WINDOW_MS;
-    return {...point, name:repairName(point.name), measuredAt, verifiedLive,
-      occupancyUpdatedAt:verifiedLive ? measuredAt : null, sourceSnapshot:true};
-  });
+  // The current sources do not document a verified per-facility occupancy measurement.
+  const points = snapshot.points.filter(point => point && typeof point === 'object').map(point => ({
+    ...point, name:repairName(point.name), measuredAt:null, verifiedLive:false,
+    occupancyUpdatedAt:null, sourceSnapshot:true
+  }));
   return Response.json({...snapshot, points, sourceSnapshot:true, snapshotAgeMinutes:Math.floor(age/60000),
-    upstreamUnavailable:stale, liveCount:points.filter(point => point.verifiedLive).length,
+    upstreamUnavailable:stale, verifiedLive:false, liveCount:0,
     ...(stale ? {diagnostic:reason ? {stage:'storage',reason} : {stage:'collection',reason:'snapshot_stale'}} : {})
   }, {headers});
 }

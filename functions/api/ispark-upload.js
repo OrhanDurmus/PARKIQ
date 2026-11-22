@@ -78,11 +78,11 @@ export async function onRequestPost({request,env}){
     const parkId=String(id).trim().slice(0,32);
     if(!parkId||ids.has(parkId))continue;
     ids.add(parkId);
-    const measuredAt=measurementTime(item.lastUpdate??item.LastUpdate??item.updatedAt??item.UpdatedAt??item.occupancyUpdatedAt??item.updateDate??item.UpdateDate);
+    const sourceUpdatedAt=measurementTime(item.lastUpdate??item.LastUpdate??item.updatedAt??item.UpdatedAt??item.occupancyUpdatedAt??item.updateDate??item.UpdateDate);
     points.push({id:parkId,name:repairName(name.trim()),lat,lng,
       capacity:Number.isInteger(capacity)&&capacity>0?capacity:null,
       freeSpaces:Number.isInteger(free)&&free>=0&&(capacity===null||free<=capacity)?free:null,
-      measuredAt,occupancyUpdatedAt:null,verifiedLive:false,sourceSnapshot:true});
+      sourceUpdatedAt,occupancyUpdatedAt:null,verifiedLive:false,sourceSnapshot:true});
   }
   if(points.length===0)return json({ok:false,error:'no_valid_parks'},400);
   if(automated&&points.length<100)return json({ok:false,error:'incomplete_snapshot'},400);
