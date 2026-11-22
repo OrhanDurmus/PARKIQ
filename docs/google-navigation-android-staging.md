@@ -26,3 +26,9 @@ https://developers.google.com/maps/documentation/navigation/android-sdk/route
 - `stop` currently reports inactive but does not terminate an already opened native Activity. Do not expose stop as functional until native session lifecycle handling is implemented and tested.
 - Build success alone does not prove API-key configuration, SDK initialization, route guidance, navigation camera smoothness, rerouting, or GPS performance on a moving device.
 - Next gate: secure key injection into a staging-only Android build (never GitHub source or chat), real device smoke tests for navigation startup/stop/restart, background/foreground and denied permissions, and explicit opt-in from the web UI with web fallback.
+
+### Restricted key injection for staging test builds
+
+Set `ROTAPARK_STAGING_GOOGLE_MAPS_API_KEY` in a secure local build environment or protected CI secret when invoking `node scripts/native/apply-navigation-sdk-staging.cjs`. The installer writes the Android manifest `com.google.android.geo.API_KEY` entry and enables `rotapark.navigation.sdk.enabled` only when the variable is present. Without the variable, the bridge stays disabled. Never commit a key, print it to logs, or put it into the website JavaScript. Restrict the key to `tr.com.rotapark.app` and the **staging test APK's signing certificate SHA-1**; enable the required Navigation SDK service in the appropriate Google Cloud project and confirm terms/billing. APK-contained API keys are extractable, so Android app restrictions are mandatory.
+
+The CI opt-in smoke check uses a dummy nonfunctional value only after its credential-free SDK compile. It does not prove that live Navigation SDK initialization succeeds. If rebuilding a generated Android project after enabling a key, recreate the project or inspect its manifest to ensure no stale key is carried forward.
