@@ -53,6 +53,14 @@ fs.copyFileSync(nativeSrc,nativeDst);
 if(!m.includes('android.permission.ACCESS_FINE_LOCATION')){
  m=m.replace('<application','<uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />\n    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />\n    <application');
 }
+// Bundle the existing parking dataset as an Android asset for the native data layer.
+// Do not fetch the website or depend on WebView at runtime.
+const parkingSource=path.join(root,'data/parking-turkiye.json');
+if(!fs.existsSync(parkingSource))throw Error('Native parking dataset missing: data/parking-turkiye.json');
+const parkingAsset=path.join(android,'app/src/main/assets/rotapark-parking.json');
+fs.mkdirSync(path.dirname(parkingAsset),{recursive:true});
+fs.copyFileSync(parkingSource,parkingAsset);
+console.log('Bundled parking dataset for native Android: '+fs.statSync(parkingAsset).size+' bytes');
 const res=path.join(android,'app/src/main/res/values/mapbox_access_token.xml');
 fs.mkdirSync(path.dirname(res),{recursive:true});
 fs.writeFileSync(res,'<?xml version="1.0" encoding="utf-8"?><resources><string name="mapbox_access_token">'+publicToken+'</string></resources>\n');
