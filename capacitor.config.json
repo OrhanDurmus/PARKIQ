@@ -6,7 +6,8 @@
     "url": "https://beta.rotapark.com.tr",
     "cleartext": false,
     "allowNavigation": [
-      "beta.rotapark.com.tr"
+      "beta.rotapark.com.tr",
+      "plain-feather-2800.cloudflareaccess.com"
     ]
   }
 }
