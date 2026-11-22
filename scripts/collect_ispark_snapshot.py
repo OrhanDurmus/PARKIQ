@@ -1,13 +1,29 @@
 #!/usr/bin/env python3
 """Fetch and validate an ISPARK snapshot; upload only on success."""
-import json, os, sys, time, urllib.request, urllib.error
+from datetime import datetime, timezone
+from urllib.parse import urlsplit
+import json, os, sys, time, urllib.request
 SOURCE="https://api.ibb.gov.tr/ispark/Park"
-TARGET="https://rotapark.com.tr/api/ispark-upload"
-def main():
-    token=os.environ.get("ISPARK_UPLOAD_TOKEN","")
-    if not token:
-        sys.exit("Missing GitHub Actions secret ISPARK_UPLOAD_TOKEN")
+PRODUCTION_TARGET="https://rotapark.com.tr/api/ispark-upload"
+
+class NoUploadRedirect(urllib.request.HTTPRedirectHandler):
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        return None
+
+def upload_target():
+    if os.environ.get("GITHUB_REF") == "refs/heads/main":
+        return PRODUCTION_TARGET
+    origin = os.environ.get("ISPARK_PREVIEW_ORIGIN", "")
+    url = urlsplit(origin)
+    if (url.scheme != "https" or not url.hostname or url.netloc != url.hostname
+        or not url.hostname.endswith(".pages.dev") or len(url.hostname.split(".")) < 4
+        or url.path not in ("", "/") or url.query or url.fragment):
+        sys.exit("Set ISPARK_PREVIEW_ORIGIN to a branch-specific Cloudflare Pages preview origin")
+    return origin.rstrip("/") + "/api/ispark-upload"
+
+def collect_snapshot():
     rows=None
+    collected_at=None
     for attempt in range(3):
         try:
             req=urllib.request.Request(SOURCE,headers={"Accept":"application/json","User-Agent":"ROTAPARK-ISPARK-collector/1.0"})
@@ -21,18 +37,35 @@ def main():
                 raise ValueError("Too few valid parking records")
             print("Validated source records:",len(valid))
             rows=valid[:2000]
+            collected_at=datetime.now(timezone.utc).isoformat(timespec="milliseconds").replace("+00:00","Z")
             break
         except Exception as error:
             print("Source attempt",attempt+1,"failed:",type(error).__name__,str(error)[:150],flush=True)
             if attempt<2: time.sleep(3*(attempt+1))
-    if not isinstance(rows,list):
+    if collected_at is None:
         print("::warning title=ISPARK source unavailable::Source fetch failed after 3 attempts; existing snapshot retained. No upload performed.",flush=True)
+        sys.exit(1)
+    return {"collectedAt":collected_at,"rows":rows}
+
+def main():
+    if sys.argv[1:] == ["--probe"]:
+        snapshot=collect_snapshot()
+        print("Official source accessible; successful read at",snapshot["collectedAt"])
         return
-    body=json.dumps(rows,ensure_ascii=False,separators=(",",":")).encode("utf-8")
+    if sys.argv[1:]:
+        sys.exit("Usage: collect_ispark_snapshot.py [--probe]")
+    target=upload_target()
+    token_name="ISPARK_UPLOAD_TOKEN" if os.environ.get("GITHUB_REF") == "refs/heads/main" else "ISPARK_PREVIEW_UPLOAD_TOKEN"
+    token=os.environ.get(token_name,"")
+    if not token:
+        sys.exit(f"Missing GitHub Actions secret {token_name}")
+    snapshot=collect_snapshot()
+    body=json.dumps(snapshot,ensure_ascii=False,separators=(",",":")).encode("utf-8")
     if len(body)>1500000:
         sys.exit("Snapshot exceeds upload size limit")
-    req=urllib.request.Request(TARGET,data=body,method="POST",headers={"Authorization":"Bearer "+token,"Content-Type":"application/json; charset=utf-8","Accept":"application/json"})
-    with urllib.request.urlopen(req,timeout=25) as response:
+    req=urllib.request.Request(target,data=body,method="POST",headers={"Authorization":"Bearer "+token,"Content-Type":"application/json; charset=utf-8","Accept":"application/json"})
+    uploader=urllib.request.build_opener(NoUploadRedirect())
+    with uploader.open(req,timeout=25) as response:
         result=json.load(response)
     if not result.get("ok") or result.get("accepted",0)<100:
         sys.exit("Upload not accepted")

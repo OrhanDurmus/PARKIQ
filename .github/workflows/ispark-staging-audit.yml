@@ -1,0 +1,43 @@
+name: ROTAPARK Staging read-only audit
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    paths:
+      - '.github/workflows/ispark-staging-audit.yml'
+      - 'scripts/audit_ispark_staging.py'
+      - 'scripts/audit_public_ispark_pages.py'
+      - 'scripts/audit_ispark_browser.mjs'
+permissions:
+  contents: read
+jobs:
+  audit:
+    if: github.event.pull_request.number == 381 && github.event.pull_request.head.repo.full_name == github.repository && github.head_ref == 'staging/rotapark-occupancy'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Inspect Staging Cloudflare metadata
+        env:
+          CLOUDFLARE_STAGING_READ_TOKEN: ${{ secrets.CLOUDFLARE_STAGING_READ_TOKEN }}
+        run: python3 scripts/audit_ispark_staging.py cloudflare
+      - name: Identify the İBB network failure phase
+        if: always()
+        run: python3 scripts/audit_ispark_staging.py ibb
+
+  public-pages:
+    if: github.event.pull_request.number == 381 && github.event.pull_request.head.repo.full_name == github.repository && github.head_ref == 'staging/rotapark-occupancy'
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Inspect official public pages and linked scripts
+        run: python3 scripts/audit_public_ispark_pages.py
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Observe requests from a normal public MVY page load
+        run: timeout 40s node scripts/audit_ispark_browser.mjs

@@ -25,3 +25,14 @@ jobs:
         run: node scripts/check-staff-pages.cjs
       - name: Validate parking API and app startup syntax
         run: node --test tests/parking-api.test.mjs tests/business-parking.test.mjs tests/ispark-occupancy.test.mjs tests/app-smoke.test.mjs
+  regression:
+    name: Full Node regression suite
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Run all Node test files
+        run: node --test --experimental-test-isolation=none tests/*.test.mjs
