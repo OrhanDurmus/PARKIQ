@@ -35,6 +35,24 @@ public class RotaparkNavigationPlugin extends Plugin {
         call.resolve(result);
     }
 
+    // Read-only diagnostics for emulator GPS failures. No SDK key is required.
+    @PluginMethod
+    public void getLocationDiagnostics(PluginCall call) {
+        JSObject result = new JSObject();
+        boolean fine = ContextCompat.checkSelfPermission(getContext(), Manifest.permission.ACCESS_FINE_LOCATION)
+                == PackageManager.PERMISSION_GRANTED;
+        boolean coarse = ContextCompat.checkSelfPermission(getContext(), Manifest.permission.ACCESS_COARSE_LOCATION)
+                == PackageManager.PERMISSION_GRANTED;
+        result.put("finePermission", fine);
+        result.put("coarsePermission", coarse);
+        android.location.LocationManager manager =
+                (android.location.LocationManager) getContext().getSystemService(android.content.Context.LOCATION_SERVICE);
+        result.put("gpsEnabled", manager != null && manager.isProviderEnabled(android.location.LocationManager.GPS_PROVIDER));
+        result.put("networkEnabled", manager != null && manager.isProviderEnabled(android.location.LocationManager.NETWORK_PROVIDER));
+        result.put("webViewOrigin", getBridge().getWebView().getUrl());
+        call.resolve(result);
+    }
+
     @PluginMethod
     public void start(PluginCall call) {
         Double latitude = call.getDouble("latitude");
