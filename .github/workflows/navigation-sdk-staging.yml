@@ -58,6 +58,21 @@ jobs:
           fi
       - name: Compile Android SDK probe
         run: cd android && ./gradlew assembleDebug --no-daemon
+      - name: Inspect unsigned staging debug APK metadata
+        run: |
+          test -s android/app/build/outputs/apk/debug/app-debug.apk
+          sha256sum android/app/build/outputs/apk/debug/app-debug.apk
+          unzip -l android/app/build/outputs/apk/debug/app-debug.apk | grep -E 'classes[0-9]*.dex'
+          if ! grep -q 'rotapark.navigation.sdk.enabled' android/app/src/main/AndroidManifest.xml; then
+            echo 'Expected SDK to remain disabled in distributable debug APK' >&2
+          fi
+      - name: Upload keyless staging APK for emulator inspection
+        uses: actions/upload-artifact@v4
+        with:
+          name: rotapark-staging-sdk-keyless-debug
+          path: android/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
+          retention-days: 3
       - name: Verify staging-only key opt-in without publishing credentials
         env:
           ROTAPARK_STAGING_GOOGLE_MAPS_API_KEY: 'TEST_KEY_NOT_VALID_FOR_NAVIGATION_123456'
