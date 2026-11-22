@@ -34,5 +34,14 @@ for(const name of ['RotaparkGuidanceActivity.java','RotaparkNavigationPlugin.jav
  const src=path.join(root,'scripts/native/android',name);
  write(path.join(javaDir,name),requireFile(src));
 }
+// Register the native Capacitor bridge in this staging-only generated Android app.
+const mainActivity=path.join(javaDir,'MainActivity.java');
+let main=requireFile(mainActivity);
+if(!main.includes('registerPlugin(RotaparkNavigationPlugin.class)')){
+  const anchor='public class MainActivity extends BridgeActivity {';
+  if(!main.includes(anchor))throw new Error('Unexpected MainActivity layout; cannot safely register SDK plugin');
+  main=main.replace(anchor,anchor+"\n    @Override public void onCreate(android.os.Bundle savedInstanceState) {\n        registerPlugin(RotaparkNavigationPlugin.class);\n        super.onCreate(savedInstanceState);\n    }");
+}
+write(mainActivity,main);
 write(gradle,g);write(manifest,m);write(vars,v);write(projectGradle,pg);write(wrapper,w);
 console.log('Staging SDK native sources and dependency installed; navigation remains disabled until secure key and plugin wiring are validated.');
