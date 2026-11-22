@@ -62,15 +62,33 @@ def project_audit(token, account, project):
     prod_namespace = ((production.get("kv_namespaces") or {}).get("ISPARK_SNAPSHOTS") or {}).get("namespace_id")
     shared = bool(namespace and namespace in {prod_namespace, PRODUCTION_KV})
     print(f"Pages project {name}: preview KV bound={bool(namespace)}, shared with Production={shared}")
+    if namespace and not shared and (prod_namespace or STAGING_NAME.search(name)):
+        kv_path = account + "/storage/kv/namespaces/" + quote(namespace, safe="")
+        details = cf_get(token, "Preview KV namespace metadata", kv_path)
+        print(f"Preview KV namespace metadata visible={isinstance(details, dict)}")
+        try:
+            snapshot = read(CF_API + kv_path + "/values/latest", token)
+            print("Preview KV latest snapshot:", {
+                "collectedAt": snapshot.get("collectedAt"),
+                "receivedAt": snapshot.get("receivedAt"),
+                "pointCount": len(snapshot.get("points") or []),
+            })
+        except HTTPError as error:
+            print(f"Preview KV latest snapshot: HTTP {error.code}")
+        except (URLError, ValueError, OSError) as error:
+            print(f"Preview KV latest snapshot: {type(error).__name__}")
     env_var = (preview.get("env_vars") or {}).get("ISPARK_UPLOAD_TOKEN") or {}
     print(f"Pages preview upload secret configured={env_var.get('type') == 'secret_text'}")
 
-    query = urlencode({"env": "preview", "branch": BRANCH, "per_page": 10})
+    query = urlencode({"env": "preview", "per_page": 10})
     deployments = cf_get(token, "Pages preview deployments", path + "/deployments?" + query)
     matches = [item for item in deployments or [] if item.get("environment") == "preview"
                and (item.get("deployment_trigger", {}).get("metadata") or {}).get("branch") == BRANCH]
-    print(f"Pages preview deployments for PR branch: {len(matches)}")
+    print(f"Pages preview deployments returned: {len(deployments or [])}; matching PR branch: {len(matches)}")
     if not matches:
+        staging_previews = [item for item in deployments or [] if item.get("environment") == "preview"
+                            and STAGING_NAME.search((item.get("deployment_trigger", {}).get("metadata") or {}).get("branch", ""))]
+        print(f"Other Staging/Preview branch deployments in latest page: {len(staging_previews)}")
         return
     deployment = matches[0]
     stages = {key: deployment.get("latest_stage", {}).get(key) for key in ("name", "status")}
@@ -140,7 +158,7 @@ def cloudflare():
             account_token = cf_get(token, "Cloudflare account-token verification", account + "/tokens/verify")
             if account_token:
                 print(f"Cloudflare account-token active={account_token.get('status') == 'active'}")
-        projects = cf_get(token, "Pages projects", account + "/pages/projects?per_page=100")
+        projects = cf_get(token, "Pages projects", account + "/pages/projects")
         relevant = [project for project in projects or [] if "rotapark" in project.get("name", "").lower()
                     or "parkiq" in project.get("name", "").lower()]
         print(f"Matching Pages projects: {len(relevant)}")
