@@ -25,6 +25,8 @@ jobs:
       - run: npm install --no-audit --no-fund
       - name: Validate installer
         run: node --check scripts/native/apply-mapbox-navigation-staging.cjs
+      - name: Audit isolated Mapbox staging wiring
+        run: node scripts/native/audit-mapbox-staging.cjs
       - run: npm run mobile:prepare
       - name: Use local staging web assets
         run: node scripts/native/prepare-local-navigation-staging.cjs
