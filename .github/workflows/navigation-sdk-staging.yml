@@ -31,3 +31,10 @@ jobs:
         run: node scripts/native/apply-navigation-sdk-staging.cjs
       - name: Compile Android SDK probe
         run: cd android && ./gradlew assembleDebug --no-daemon
+      - name: Verify staging-only key opt-in without publishing credentials
+        env:
+          ROTAPARK_STAGING_GOOGLE_MAPS_API_KEY: 'TEST_KEY_NOT_VALID_FOR_NAVIGATION_123456'
+        run: |
+          node scripts/native/apply-navigation-sdk-staging.cjs
+          grep -q 'rotapark.navigation.sdk.enabled' android/app/src/main/AndroidManifest.xml
+          grep -q 'com.google.android.geo.API_KEY' android/app/src/main/AndroidManifest.xml
