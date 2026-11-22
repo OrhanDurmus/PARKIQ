@@ -51,7 +51,10 @@ public class RotaparkGuidanceActivity extends AppCompatActivity {
                 .replace(container.getId(), fragment).commitNow();
         NavigationApi.getNavigator(this, new NavigationApi.NavigatorListener() {
             @Override public void onNavigatorReady(Navigator value) {
-                if (closed || isFinishing()) return;
+                if (closed || isFinishing()) {
+                    value.cleanup();
+                    return;
+                }
                 navigator = value;
                 fragment.setNavigationUiEnabled(true);
                 fragment.getMapAsync(map -> {
