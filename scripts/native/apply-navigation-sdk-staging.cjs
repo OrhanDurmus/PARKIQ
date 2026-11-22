@@ -31,12 +31,15 @@ m=m.replace('</application>','<activity android:name="tr.com.rotapark.app.Rotapa
 }
 // Enable only explicitly configured staging test APKs. Never print or commit the key.
 const sdkKey=process.env.ROTAPARK_STAGING_GOOGLE_MAPS_API_KEY||'';
+if(!sdkKey && (m.includes('rotapark.navigation.sdk.enabled') || m.includes('com.google.android.geo.API_KEY'))){
+ throw new Error('Generated Android manifest contains prior SDK credentials; regenerate Android project before a keyless build');
+}
 if(sdkKey){
  if(!/^[A-Za-z0-9_-]{20,200}$/.test(sdkKey))throw new Error('Invalid staging Google Maps API key format');
  if(!m.includes('com.google.android.geo.API_KEY')){
   m=m.replace('</application>','<meta-data android:name="com.google.android.geo.API_KEY" android:value="'+sdkKey+'" />\n    <meta-data android:name="rotapark.navigation.sdk.enabled" android:value="true" />\n    </application>');
- }else if(!m.includes('rotapark.navigation.sdk.enabled')){
-  throw new Error('Existing Google Maps key without ROTAPARK SDK opt-in; inspect generated manifest');
+ }else {
+  throw new Error('Existing Google Maps API key in generated manifest; regenerate Android project before injecting credentials');
  }
 }
 fs.mkdirSync(javaDir,{recursive:true});
@@ -54,4 +57,4 @@ if(!main.includes('registerPlugin(RotaparkNavigationPlugin.class)')){
 }
 write(mainActivity,main);
 write(gradle,g);write(manifest,m);write(vars,v);write(projectGradle,pg);write(wrapper,w);
-console.log('Staging SDK native sources and dependency installed; navigation remains disabled until secure key and plugin wiring are validated.');
+console.log(sdkKey ? 'Staging SDK installed with explicit Android test-build opt-in.' : 'Staging SDK installed with navigation disabled (no key supplied).');
