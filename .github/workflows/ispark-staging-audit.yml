@@ -1,0 +1,25 @@
+name: ROTAPARK Staging read-only audit
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    paths:
+      - '.github/workflows/ispark-staging-audit.yml'
+      - 'scripts/audit_ispark_staging.py'
+permissions:
+  contents: read
+jobs:
+  audit:
+    if: github.event.pull_request.number == 381 && github.event.pull_request.head.repo.full_name == github.repository && github.head_ref == 'staging/rotapark-occupancy'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Inspect Staging Cloudflare metadata
+        env:
+          CLOUDFLARE_STAGING_READ_TOKEN: ${{ secrets.CLOUDFLARE_STAGING_READ_TOKEN }}
+        run: python3 scripts/audit_ispark_staging.py cloudflare
+      - name: Identify the İBB network failure phase
+        if: always()
+        run: python3 scripts/audit_ispark_staging.py ibb
