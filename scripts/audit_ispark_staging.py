@@ -49,7 +49,13 @@ def cf_get(token, label, path):
     return response.get("result")
 
 
-def project_audit(token, account, project):
+def occupancy_namespace(project, environment):
+    config = (project.get("deployment_configs") or {}).get(environment) or {}
+    bindings = config.get("kv_namespaces") or {}
+    return (bindings.get("ISPARK_SNAPSHOTS") or {}).get("namespace_id")
+
+
+def project_audit(token, account, project, production_project):
     name = project["name"]
     if project.get("production_branch") == BRANCH or project.get("production_branch") is None:
         print("Skipped Pages project without a confirmed separate production branch")
@@ -57,13 +63,15 @@ def project_audit(token, account, project):
     path = account + "/pages/projects/" + quote(name, safe="")
     config = project.get("deployment_configs") or {}
     preview = config.get("preview") or {}
-    production = config.get("production") or {}
-    binding = (preview.get("kv_namespaces") or {}).get("ISPARK_SNAPSHOTS") or {}
-    namespace = binding.get("namespace_id")
-    prod_namespace = ((production.get("kv_namespaces") or {}).get("ISPARK_SNAPSHOTS") or {}).get("namespace_id")
-    shared = bool(namespace and namespace in {prod_namespace, PRODUCTION_KV})
-    print(f"Pages project {name}: preview KV bound={bool(namespace)}, shared with Production={shared}")
-    if namespace and not shared and (prod_namespace or STAGING_NAME.search(name)):
+    namespace = occupancy_namespace(project, "preview")
+    production_namespace = occupancy_namespace(production_project or {}, "production")
+    isolated = bool(namespace and production_namespace
+                    and namespace not in {production_namespace, PRODUCTION_KV})
+    print(f"Direct Pages binding check: Staging Preview present={bool(namespace)}; "
+          f"Production present={bool(production_namespace)}; isolated={isolated}")
+    if not isolated:
+        return False
+    if namespace:
         kv_path = account + "/storage/kv/namespaces/" + quote(namespace, safe="")
         details = cf_get(token, "Preview KV namespace metadata", kv_path)
         print(f"Preview KV namespace metadata visible={isinstance(details, dict)}")
@@ -90,7 +98,7 @@ def project_audit(token, account, project):
         staging_previews = [item for item in deployments or [] if item.get("environment") == "preview"
                             and STAGING_NAME.search((item.get("deployment_trigger", {}).get("metadata") or {}).get("branch", ""))]
         print(f"Other Staging/Preview branch deployments in latest page: {len(staging_previews)}")
-        return
+        return True
     deployment = matches[0]
     deployment_id = quote(deployment["id"], safe="")
     deployment_path = f"{path}/deployments/{deployment_id}"
@@ -113,7 +121,7 @@ def project_audit(token, account, project):
     host = urlsplit(deployment.get("url") or "").hostname or ""
     suffix = "." + name + ".pages.dev"
     if not host.endswith(suffix) or host.count(".") != suffix.count("."):
-        return
+        return True
     try:
         status = read("https://" + host + "/api/ispark-status")
         keys = ("ok", "status", "parkingCount", "verifiedLiveCount", "receivedAt",
@@ -129,6 +137,8 @@ def project_audit(token, account, project):
         print(f"Preview occupancy status: HTTP {error.code}; Cloudflare Access signal={access_signal}; challenge signal={challenge_signal}")
     except (URLError, ValueError, OSError) as error:
         print(f"Preview occupancy status: {type(error).__name__}")
+
+    return True
 
 
 def workers_audit(token, account):
@@ -166,18 +176,24 @@ def cloudflare():
     accounts = cf_get(token, "Cloudflare accessible accounts", "/accounts?per_page=50")
     if not accounts:
         sys.exit("No accessible Cloudflare account found")
+    confirmed = False
     for item in accounts:
         account = "/accounts/" + quote(item["id"], safe="")
         if not verified:
             account_token = cf_get(token, "Cloudflare account-token verification", account + "/tokens/verify")
             if account_token:
                 print(f"Cloudflare account-token active={account_token.get('status') == 'active'}")
-        projects = cf_get(token, "Pages projects", account + "/pages/projects")
-        relevant = [project for project in projects or [] if project.get("name") == PAGES_PROJECT]
-        print(f"Matching Pages projects: {len(relevant)}")
-        for project in relevant:
-            project_audit(token, account, project)
+        pages = account + "/pages/projects/"
+        staging = cf_get(token, "Direct Staging Pages project", pages + PAGES_PROJECT)
+        if not staging or staging.get("name") != PAGES_PROJECT:
+            continue
+        production = cf_get(token, "Direct Production Pages binding metadata", pages + "rotapark")
+        if production and production.get("name") != "rotapark":
+            production = None
+        confirmed = project_audit(token, account, staging, production) or confirmed
         workers_audit(token, account)
+    if not confirmed:
+        sys.exit("Staging KV isolation was not confirmed by both Pages bindings")
 
 
 def ibb():
