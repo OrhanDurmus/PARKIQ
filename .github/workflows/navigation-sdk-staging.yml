@@ -21,6 +21,8 @@ jobs:
           distribution: temurin
           java-version: '21'
       - run: npm install --no-audit --no-fund
+      - name: Validate SDK installer JavaScript syntax
+        run: node --check scripts/native/apply-navigation-sdk-staging.cjs
       - run: npm run mobile:prepare
       - run: npx cap add android
       - name: Install staging Navigation SDK
