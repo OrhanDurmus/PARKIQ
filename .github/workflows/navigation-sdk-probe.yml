@@ -29,27 +29,8 @@ jobs:
           cat android/build.gradle
           cat android/gradle/wrapper/gradle-wrapper.properties
           ls "$ANDROID_HOME/platforms"
-      - name: Compile preparation bridge without SDK or credentials
+      - name: Compile registered Google Navigation SDK bridge (no credentials)
         run: |
-          cp scripts/native/android/RotaparkNavigationPlugin.java android/app/src/main/java/tr/com/rotapark/app/
-          cd android
-          ./gradlew assembleDebug --no-daemon
-      - name: Compile actual Google Navigation SDK dependency (no credentials)
-        run: |
-          sed -i 's/com.android.tools.build:gradle:8.7.2/com.android.tools.build:gradle:8.13.2/' android/build.gradle
-          sed -i 's/gradle-8.11.1-all.zip/gradle-8.13-all.zip/' android/gradle/wrapper/gradle-wrapper.properties
-          sed -i -E 's/minSdkVersion = 23/minSdkVersion = 24/;s/(compileSdkVersion|targetSdkVersion) = 35/\1 = 36/' android/variables.gradle
-          cat >> android/app/build.gradle <<'EOF'
-          android {
-              compileOptions {
-                  coreLibraryDesugaringEnabled true
-              }
-          }
-          dependencies {
-              implementation 'com.google.android.libraries.navigation:navigation:7.9.0'
-              coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs_nio:2.1.5'
-          }
-          EOF
-          cp scripts/native/android/RotaparkGuidanceActivity.java android/app/src/main/java/tr/com/rotapark/app/
+          node scripts/native/apply-navigation-sdk-staging.cjs
           cd android
           ./gradlew assembleDebug --no-daemon
