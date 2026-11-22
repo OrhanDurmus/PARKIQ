@@ -1,5 +1,9 @@
 package tr.com.rotapark.app;
 
+import android.content.Intent;
+import android.content.pm.PackageManager;
+import android.Manifest;
+import androidx.core.content.ContextCompat;
 import com.getcapacitor.JSObject;
 import com.getcapacitor.Plugin;
 import com.getcapacitor.PluginCall;
@@ -12,11 +16,20 @@ import com.getcapacitor.annotation.CapacitorPlugin;
  */
 @CapacitorPlugin(name = "RotaparkNavigation")
 public class RotaparkNavigationPlugin extends Plugin {
+    private static final String SDK_FLAG = "rotapark.navigation.sdk.enabled";
+    private boolean enabled() {
+        try {
+            android.content.pm.ApplicationInfo info = getContext().getPackageManager().getApplicationInfo(
+                getContext().getPackageName(), PackageManager.GET_META_DATA);
+            return info.metaData != null && info.metaData.getBoolean(SDK_FLAG, false);
+        } catch (PackageManager.NameNotFoundException e) { return false; }
+    }
+
     @PluginMethod
     public void getCapabilities(PluginCall call) {
         JSObject result = new JSObject();
-        result.put("available", false);
-        result.put("reason", "SDK_NOT_CONFIGURED");
+        result.put("available", enabled());
+        result.put("reason", enabled() ? "READY_FOR_DEVICE_VALIDATION" : "SDK_NOT_CONFIGURED");
         call.resolve(result);
     }
 
@@ -30,7 +43,22 @@ public class RotaparkNavigationPlugin extends Plugin {
             call.reject("Invalid destination coordinates", "INVALID_DESTINATION");
             return;
         }
-        call.reject("Google navigation is not configured", "SDK_NOT_CONFIGURED");
+        if (!enabled()) {
+            call.reject("Google navigation is not configured", "SDK_NOT_CONFIGURED");
+            return;
+        }
+        if (ContextCompat.checkSelfPermission(getContext(), Manifest.permission.ACCESS_FINE_LOCATION)
+                != PackageManager.PERMISSION_GRANTED) {
+            call.reject("Precise location permission required", "LOCATION_PERMISSION_REQUIRED");
+            return;
+        }
+        Intent intent = new Intent(getContext(), RotaparkGuidanceActivity.class);
+        intent.putExtra("latitude", latitude);
+        intent.putExtra("longitude", longitude);
+        getActivity().startActivity(intent);
+        JSObject result = new JSObject();
+        result.put("launched", true);
+        call.resolve(result);
     }
 
     @PluginMethod
