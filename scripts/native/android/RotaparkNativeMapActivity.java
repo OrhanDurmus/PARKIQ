@@ -11,6 +11,8 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 import com.mapbox.maps.MapView;
 import com.mapbox.maps.Style;
+import com.mapbox.maps.CameraOptions;
+import com.mapbox.geojson.Point;
 
 /** Staging-only native map shell. Parking data and turn-by-turn navigation are not wired yet. */
 public final class RotaparkNativeMapActivity extends Activity {
@@ -21,6 +23,11 @@ public final class RotaparkNativeMapActivity extends Activity {
         mapView = new MapView(this);
         FrameLayout root = new FrameLayout(this);
         root.addView(mapView, new FrameLayout.LayoutParams(-1, -1));
+        // Show a useful Istanbul fallback without waiting for GPS permission.
+        mapView.getMapboxMap().setCamera(new CameraOptions.Builder()
+                .center(Point.fromLngLat(29.0, 41.02))
+                .zoom(12.0)
+                .build());
         mapView.getMapboxMap().loadStyleUri(Style.SATELLITE_STREETS);
 
         LinearLayout header = new LinearLayout(this);
