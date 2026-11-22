@@ -25,6 +25,16 @@ if(!pg.includes('ROTAPARK_MAPBOX_MAVEN')){
 if(!g.includes('com.mapbox.navigationcore:android:3.34.4')){
  g+='\n// ROTAPARK staging-only Mapbox Navigation SDK\ndependencies { implementation "com.mapbox.navigationcore:android:3.34.4" }\n';
 }
+if(!g.includes('com.mapbox.maps:android:11.')) {
+ g+='\n// ROTAPARK native map screen (staging)\ndependencies { implementation "com.mapbox.maps:android:11.16.0" }\n';
+}
+if(!m.includes('RotaparkNativeMapActivity')) {
+ m=m.replace('</application>', '    <activity android:name=".RotaparkNativeMapActivity" android:exported="false" />\n    </application>');
+}
+const nativeSrc=path.join(root,'scripts/native/android/RotaparkNativeMapActivity.java');
+const nativeDst=path.join(android,'app/src/main/java/tr/com/rotapark/app/RotaparkNativeMapActivity.java');
+fs.mkdirSync(path.dirname(nativeDst),{recursive:true});
+fs.copyFileSync(nativeSrc,nativeDst);
 if(!m.includes('android.permission.ACCESS_FINE_LOCATION')){
  m=m.replace('<application','<uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />\n    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />\n    <application');
 }
@@ -32,4 +42,4 @@ const res=path.join(android,'app/src/main/res/values/mapbox_access_token.xml');
 fs.mkdirSync(path.dirname(res),{recursive:true});
 fs.writeFileSync(res,'<?xml version="1.0" encoding="utf-8"?><resources><string name="mapbox_access_token">'+publicToken+'</string></resources>\n');
 fs.writeFileSync(gradle,g);fs.writeFileSync(projectGradle,pg);fs.writeFileSync(manifest,m);
-console.log('Mapbox SDK 3.34.4 staging dependencies configured; no native guidance UI installed yet.');
+console.log('Mapbox SDK 3.34.4 staging dependencies configured; native map Activity installed (not yet launched); guidance UI not installed.');
