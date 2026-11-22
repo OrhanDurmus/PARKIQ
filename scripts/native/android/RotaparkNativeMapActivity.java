@@ -13,6 +13,11 @@ import com.mapbox.maps.MapView;
 import com.mapbox.maps.Style;
 import com.mapbox.maps.CameraOptions;
 import com.mapbox.geojson.Point;
+import org.json.JSONArray;
+import org.json.JSONObject;
+import java.io.ByteArrayOutputStream;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 
 /** Staging-only native map shell. Parking data and turn-by-turn navigation are not wired yet. */
 public final class RotaparkNativeMapActivity extends Activity {
@@ -63,7 +68,8 @@ public final class RotaparkNativeMapActivity extends Activity {
         root.addView(header, headerParams);
 
         TextView notice = new TextView(this);
-        notice.setText("Native harita önizlemesi • Otopark verileri henüz bağlı değil");
+        notice.setText("Native harita • Otopark verileri okunuyor…");
+        loadParkingSummary(notice);
         notice.setTextColor(Color.WHITE);
         notice.setTextSize(12);
         notice.setGravity(Gravity.CENTER);
@@ -72,6 +78,37 @@ public final class RotaparkNativeMapActivity extends Activity {
         FrameLayout.LayoutParams noticeParams = new FrameLayout.LayoutParams(-1, -2, Gravity.BOTTOM);
         root.addView(notice, noticeParams);
         setContentView(root);
+    }
+
+    /** Reads the packaged national parking data without WebView or a network request. */
+    private void loadParkingSummary(TextView notice) {
+        new Thread(() -> {
+            String status;
+            try (InputStream stream = getAssets().open("rotapark-parking.json");
+                 ByteArrayOutputStream buffer = new ByteArrayOutputStream()) {
+                byte[] chunk = new byte[16384];
+                int length;
+                while ((length = stream.read(chunk)) != -1) buffer.write(chunk, 0, length);
+                String json = buffer.toString(StandardCharsets.UTF_8.name());
+                Object root = new org.json.JSONTokener(json).nextValue();
+                JSONArray points = null;
+                if (root instanceof JSONArray) points = (JSONArray) root;
+                else if (root instanceof JSONObject) {
+                    JSONObject obj = (JSONObject) root;
+                    for (String key : new String[]{"points", "parkings", "parking", "features", "data", "items"}) {
+                        JSONArray candidate = obj.optJSONArray(key);
+                        if (candidate != null) { points = candidate; break; }
+                    }
+                }
+                if (points == null) status = "Otopark veri formatı kontrol edilmeli";
+                else status = "Yerel otopark kayıtları: " + points.length() + " • Pin katmanı hazırlanıyor";
+            } catch (Exception error) {
+                android.util.Log.e("ROTAPARK_NATIVE", "Parking asset read failed", error);
+                status = "Otopark verisi okunamadı";
+            }
+            final String result = status;
+            runOnUiThread(() -> { if (!isFinishing() && !isDestroyed()) notice.setText(result); });
+        }, "rotapark-parking-load").start();
     }
 
     private int dp(int value) { return Math.round(value * getResources().getDisplayMetrics().density); }
