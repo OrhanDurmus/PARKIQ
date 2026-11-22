@@ -36,6 +36,8 @@ jobs:
           MAPBOX_DOWNLOADS_TOKEN: ${{ secrets.MAPBOX_DOWNLOADS_TOKEN }}
           MAPBOX_PUBLIC_TOKEN: ${{ secrets.MAPBOX_PUBLIC_TOKEN }}
         run: node scripts/native/apply-mapbox-navigation-staging.cjs
+      - name: Audit generated Android SDK isolation
+        run: node scripts/native/audit-mapbox-staging.cjs --generated-android
       - name: Build staging APK
         env:
           MAPBOX_DOWNLOADS_TOKEN: ${{ secrets.MAPBOX_DOWNLOADS_TOKEN }}
