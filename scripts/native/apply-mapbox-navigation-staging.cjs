@@ -20,7 +20,7 @@ if(!pg.includes('ROTAPARK_MAPBOX_MAVEN')){
             authentication { basic(BasicAuthentication) }
         }`;
  if(!pg.includes('repositories {'))throw Error('Unexpected project build.gradle');
- pg=pg.replace(/repositories\\s*\\{/g, 'repositories {\\n        // ROTAPARK_MAPBOX_MAVEN\\n        '+repo);
+ pg=pg.replace(/repositories\s*\{/g, 'repositories {\n        // ROTAPARK_MAPBOX_MAVEN\n        '+repo);
 }
 if(!g.includes('com.mapbox.navigationcore:android:3.34.4')){
  g+='\n// ROTAPARK staging-only Mapbox Navigation SDK\ndependencies { implementation "com.mapbox.navigationcore:android:3.34.4" }\n';
