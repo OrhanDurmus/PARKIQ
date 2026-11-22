@@ -3,10 +3,10 @@
   "appName": "ROTAPARK",
   "webDir": "www",
   "server": {
-    "url": "https://rotapark.com.tr",
+    "url": "https://beta.rotapark.com.tr",
     "cleartext": false,
     "allowNavigation": [
-      "rotapark.com.tr"
+      "beta.rotapark.com.tr"
     ]
   }
 }
