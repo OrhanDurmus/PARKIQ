@@ -34,6 +34,8 @@ if (process.argv.includes('--generated-android')) {
   const manifest = fs.readFileSync(path.join(android, 'app/src/main/AndroidManifest.xml'), 'utf8');
   const main = fs.readFileSync(path.join(android, 'app/src/main/java/tr/com/rotapark/app/MainActivity.java'), 'utf8');
   const projectGradle = fs.readFileSync(path.join(android, 'build.gradle'), 'utf8');
+  const parkingAsset = path.join(android, 'app/src/main/assets/rotapark-parking.json');
+  if (!fs.existsSync(parkingAsset) || fs.statSync(parkingAsset).size === 0) throw Error('Native parking data asset missing or empty');
   if (!main.includes('ROTAPARK_NATIVE_MAP_STAGING_LAUNCH') || !main.includes('RotaparkNativeMapActivity.class')) throw Error('Native map is not the staging launch screen');
   if (!manifest.includes('android:name=".RotaparkNativeMapActivity"')) throw Error('Native map Activity missing from manifest');
   if (!appGradle.includes('com.mapbox.navigationcore:android:3.34.4')) {
