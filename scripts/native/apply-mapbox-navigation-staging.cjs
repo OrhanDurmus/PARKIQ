@@ -31,6 +31,21 @@ if(!g.includes('com.mapbox.maps:android:11.')) {
 if(!m.includes('RotaparkNativeMapActivity')) {
  m=m.replace('</application>', '    <activity android:name=".RotaparkNativeMapActivity" android:exported="false" />\n    </application>');
 }
+// Staging launch flow: native map first; Android Back returns to legacy WebView for comparison.
+const mainActivity=path.join(android,'app/src/main/java/tr/com/rotapark/app/MainActivity.java');
+let mainJava=required(mainActivity);
+if(!mainJava.includes('ROTAPARK_NATIVE_MAP_STAGING_LAUNCH')) {
+ if(!/public class MainActivity extends BridgeActivity\s*\{/.test(mainJava)) throw Error('Unexpected Capacitor MainActivity; refusing to change launcher');
+ mainJava=mainJava.replace(/public class MainActivity extends BridgeActivity\s*\{/, `public class MainActivity extends BridgeActivity {
+    // ROTAPARK_NATIVE_MAP_STAGING_LAUNCH
+    @Override public void onCreate(android.os.Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        if (savedInstanceState == null) {
+            startActivity(new android.content.Intent(this, RotaparkNativeMapActivity.class));
+        }
+    }`);
+ fs.writeFileSync(mainActivity,mainJava);
+}
 const nativeSrc=path.join(root,'scripts/native/android/RotaparkNativeMapActivity.java');
 const nativeDst=path.join(android,'app/src/main/java/tr/com/rotapark/app/RotaparkNativeMapActivity.java');
 fs.mkdirSync(path.dirname(nativeDst),{recursive:true});
