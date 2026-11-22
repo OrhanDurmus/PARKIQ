@@ -1,0 +1,95 @@
+name: ROTAPARK SDK staging installer
+on:
+  pull_request:
+    paths:
+      - 'scripts/native/**'
+      - '.github/workflows/navigation-sdk-staging.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  android:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - run: npm install --no-audit --no-fund
+      - name: Validate SDK installer JavaScript syntax
+        run: node --check scripts/native/apply-navigation-sdk-staging.cjs
+      - run: npm run mobile:prepare
+      - name: Use local web assets in isolated staging Android test build
+        run: |
+          node scripts/native/prepare-local-navigation-staging.cjs
+          node -e "const c=require('./capacitor.config.json');if(c.server)process.exit(1)"
+          grep -q 'requestedNativeTarget' www/index.html
+          node -e "const fs=require('fs');const html=fs.readFileSync('www/index.html','utf8');if(!html.includes('nativeNavigation.start(')||!html.includes('getCapabilities()'))process.exit(1)"
+          node -e "const fs=require('fs');const html=fs.readFileSync('www/index.html','utf8');const config=require('./capacitor.config.json');if(config.server||!html.includes('RotaparkNavigation'))process.exit(1)"
+      - run: npx cap add android
+      - name: Ensure Android location permissions
+        run: node scripts/native/ensure-android-location-permissions.cjs
+      - name: Install staging Navigation SDK
+        run: node scripts/native/apply-navigation-sdk-staging.cjs
+      - name: Check installer is repeatable
+        run: node scripts/native/apply-navigation-sdk-staging.cjs
+      - name: Assert SDK is disabled without a staging key
+        run: |
+          if grep -q 'rotapark.navigation.sdk.enabled' android/app/src/main/AndroidManifest.xml; then
+            echo 'Unexpected SDK activation in keyless build' >&2
+            exit 1
+          fi
+          if grep -q 'com.google.android.geo.API_KEY' android/app/src/main/AndroidManifest.xml; then
+            echo 'Unexpected Google Maps key in keyless build' >&2
+            exit 1
+          fi
+      - name: Reject malformed staging key without leaking it
+        run: |
+          if ROTAPARK_STAGING_GOOGLE_MAPS_API_KEY=invalid node scripts/native/apply-navigation-sdk-staging.cjs; then
+            echo 'Invalid key was unexpectedly accepted' >&2
+            exit 1
+          fi
+          if grep -q 'rotapark.navigation.sdk.enabled' android/app/src/main/AndroidManifest.xml; then
+            echo 'Invalid key unexpectedly enabled SDK' >&2
+            exit 1
+          fi
+      - name: Compile Android SDK probe
+        run: cd android && ./gradlew assembleDebug --no-daemon
+      - name: Inspect unsigned staging debug APK metadata
+        run: |
+          test -s android/app/build/outputs/apk/debug/app-debug.apk
+          sha256sum android/app/build/outputs/apk/debug/app-debug.apk
+          unzip -l android/app/build/outputs/apk/debug/app-debug.apk | grep -E 'classes[0-9]*.dex'
+          if grep -q 'rotapark.navigation.sdk.enabled' android/app/src/main/AndroidManifest.xml; then
+            echo 'Keyless debug APK unexpectedly enables native guidance' >&2
+            exit 1
+          fi
+          if grep -q 'com.google.android.geo.API_KEY' android/app/src/main/AndroidManifest.xml; then
+            echo 'Keyless debug APK unexpectedly includes Google Maps credentials' >&2
+            exit 1
+          fi
+      - name: Upload keyless staging APK for emulator inspection
+        uses: actions/upload-artifact@v4
+        with:
+          name: rotapark-staging-sdk-keyless-debug
+          path: android/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
+          retention-days: 3
+      - name: Verify staging-only key opt-in without publishing credentials
+        env:
+          ROTAPARK_STAGING_GOOGLE_MAPS_API_KEY: 'TEST_KEY_NOT_VALID_FOR_NAVIGATION_123456'
+        run: |
+          node scripts/native/apply-navigation-sdk-staging.cjs
+          grep -q 'rotapark.navigation.sdk.enabled' android/app/src/main/AndroidManifest.xml
+          grep -q 'com.google.android.geo.API_KEY' android/app/src/main/AndroidManifest.xml
+      - name: Reject stale credential reuse in keyless builds
+        run: |
+          if node scripts/native/apply-navigation-sdk-staging.cjs; then
+            echo 'Keyless rerun incorrectly accepted previously configured credentials' >&2
+            exit 1
+          fi

@@ -28,6 +28,8 @@ jobs:
         run: npm run mobile:prepare
       - name: Generate Android project
         run: npx cap add android
+      - name: Ensure Android location permissions
+        run: node scripts/native/ensure-android-location-permissions.cjs
       - name: Compile debug APK
         working-directory: android
         run: ./gradlew assembleDebug --no-daemon

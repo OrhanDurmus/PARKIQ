@@ -16,6 +16,15 @@ import com.google.android.gms.maps.GoogleMap;
 
 /** Experimental native guidance screen; not registered or enabled in production. */
 public class RotaparkGuidanceActivity extends AppCompatActivity {
+    private static java.lang.ref.WeakReference<RotaparkGuidanceActivity> current = new java.lang.ref.WeakReference<>(null);
+    public static boolean isActive() {
+        RotaparkGuidanceActivity activity = current.get();
+        return activity != null && !activity.closed && !activity.isFinishing();
+    }
+    public static void stopActive() {
+        RotaparkGuidanceActivity activity = current.get();
+        if (activity != null) activity.runOnUiThread(activity::finish);
+    }
     private Navigator navigator;
     private boolean closed;
     private double latitude;
@@ -23,6 +32,8 @@ public class RotaparkGuidanceActivity extends AppCompatActivity {
 
     @Override protected void onCreate(Bundle state) {
         super.onCreate(state);
+        if (isActive()) { finish(); return; }
+        current = new java.lang.ref.WeakReference<>(this);
         latitude = getIntent().getDoubleExtra("latitude", Double.NaN);
         longitude = getIntent().getDoubleExtra("longitude", Double.NaN);
         if (!Double.isFinite(latitude) || !Double.isFinite(longitude)
@@ -40,7 +51,10 @@ public class RotaparkGuidanceActivity extends AppCompatActivity {
                 .replace(container.getId(), fragment).commitNow();
         NavigationApi.getNavigator(this, new NavigationApi.NavigatorListener() {
             @Override public void onNavigatorReady(Navigator value) {
-                if (closed || isFinishing()) return;
+                if (closed || isFinishing()) {
+                    value.cleanup();
+                    return;
+                }
                 navigator = value;
                 fragment.setNavigationUiEnabled(true);
                 fragment.getMapAsync(map -> {
@@ -70,6 +84,7 @@ public class RotaparkGuidanceActivity extends AppCompatActivity {
 
     @Override protected void onDestroy() {
         closed = true;
+        if (current.get() == this) current.clear();
         if (navigator != null) {
             navigator.stopGuidance();
             navigator.clearDestinations();
