@@ -58,3 +58,9 @@ jobs:
           node scripts/native/apply-navigation-sdk-staging.cjs
           grep -q 'rotapark.navigation.sdk.enabled' android/app/src/main/AndroidManifest.xml
           grep -q 'com.google.android.geo.API_KEY' android/app/src/main/AndroidManifest.xml
+      - name: Reject stale credential reuse in keyless builds
+        run: |
+          if node scripts/native/apply-navigation-sdk-staging.cjs; then
+            echo 'Keyless rerun incorrectly accepted previously configured credentials' >&2
+            exit 1
+          fi
