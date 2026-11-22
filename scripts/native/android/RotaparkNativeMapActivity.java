@@ -24,6 +24,6 @@ public final class RotaparkNativeMapActivity extends Activity {
 
     @Override protected void onStart() { super.onStart(); if (mapView != null) mapView.onStart(); }
     @Override protected void onStop() { if (mapView != null) mapView.onStop(); super.onStop(); }
-    @Override protected void onLowMemory() { super.onLowMemory(); if (mapView != null) mapView.onLowMemory(); }
+    @Override public void onLowMemory() { super.onLowMemory(); if (mapView != null) mapView.onLowMemory(); }
     @Override protected void onDestroy() { if (mapView != null) mapView.onDestroy(); super.onDestroy(); }
 }
