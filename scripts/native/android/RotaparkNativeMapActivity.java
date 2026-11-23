@@ -13,13 +13,6 @@ import com.mapbox.maps.MapView;
 import com.mapbox.maps.Style;
 import com.mapbox.maps.CameraOptions;
 import com.mapbox.geojson.Point;
-import com.mapbox.geojson.Feature;
-import com.mapbox.geojson.FeatureCollection;
-import com.mapbox.maps.extension.style.sources.generated.GeoJsonSource;
-import com.mapbox.maps.extension.style.layers.generated.CircleLayer;
-import com.mapbox.maps.extension.style.StyleExtensionImplKt;
-import java.util.ArrayList;
-import java.util.List;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import java.io.ByteArrayOutputStream;
@@ -108,40 +101,7 @@ public final class RotaparkNativeMapActivity extends Activity {
                     }
                 }
                 if (points == null) status = "Otopark veri formatı kontrol edilmeli";
-                else {
-                    List<Feature> features = new ArrayList<>();
-                    for (int i = 0; i < points.length(); i++) {
-                        JSONObject item = points.optJSONObject(i);
-                        if (item == null) continue;
-                        JSONObject geometry = item.optJSONObject("geometry");
-                        JSONArray coordinates = geometry == null ? null : geometry.optJSONArray("coordinates");
-                        double lat = item.optDouble("lat", item.optDouble("latitude", Double.NaN));
-                        double lng = item.optDouble("lng", item.optDouble("lon", item.optDouble("longitude", Double.NaN)));
-                        if (coordinates != null && coordinates.length() >= 2) {
-                            lng = coordinates.optDouble(0, Double.NaN);
-                            lat = coordinates.optDouble(1, Double.NaN);
-                        }
-                        if (!Double.isFinite(lat) || !Double.isFinite(lng) || Math.abs(lat) > 90 || Math.abs(lng) > 180) continue;
-                        features.add(Feature.fromGeometry(Point.fromLngLat(lng, lat)));
-                    }
-                    final FeatureCollection collection = FeatureCollection.fromFeatures(features);
-                    final int count = features.size();
-                    runOnUiThread(() -> {
-                        if (isFinishing() || isDestroyed()) return;
-                        mapView.getMapboxMap().getStyle(style -> {
-                            GeoJsonSource source = new GeoJsonSource.Builder("rotapark-parking-source")
-                                .featureCollection(collection).build();
-                            StyleExtensionImplKt.addSource(style, source);
-                            CircleLayer layer = new CircleLayer("rotapark-parking-circles", "rotapark-parking-source");
-                            layer.circleRadius(5.0);
-                            layer.circleColor("#D4AF37");
-                            layer.circleStrokeWidth(1.5);
-                            layer.circleStrokeColor("#111111");
-                            StyleExtensionImplKt.addLayer(style, layer);
-                        });
-                    });
-                    status = "Native otopark pinleri: " + count + " / " + points.length();
-                }
+                else status = "Yerel otopark kayıtları: " + points.length() + " • Pin katmanı test bekliyor";
             } catch (Exception error) {
                 android.util.Log.e("ROTAPARK_NATIVE", "Parking asset read failed", error);
                 status = "Otopark verisi okunamadı";
