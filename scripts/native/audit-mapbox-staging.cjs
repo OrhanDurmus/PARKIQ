@@ -37,6 +37,7 @@ if (process.argv.includes('--generated-android')) {
   const parkingAsset = path.join(android, 'app/src/main/assets/rotapark-parking.json');
   const nativeMap = fs.readFileSync(path.join(android, 'app/src/main/java/tr/com/rotapark/app/RotaparkNativeMapActivity.java'), 'utf8');
   if (!nativeMap.includes('rotapark-parking.json') || !nativeMap.includes('loadParkingSummary')) throw Error('Native parking asset reader missing');
+  if (!nativeMap.includes('addStyleSource') || !nativeMap.includes('addStyleLayer') || !nativeMap.includes('rotapark-parking-circles')) throw Error('Native Mapbox parking layer missing');
   if (!fs.existsSync(parkingAsset) || fs.statSync(parkingAsset).size === 0) throw Error('Native parking data asset missing or empty');
   if (!main.includes('ROTAPARK_NATIVE_MAP_STAGING_LAUNCH') || !main.includes('RotaparkNativeMapActivity.class')) throw Error('Native map is not the staging launch screen');
   if (!manifest.includes('android:name=".RotaparkNativeMapActivity"')) throw Error('Native map Activity missing from manifest');
