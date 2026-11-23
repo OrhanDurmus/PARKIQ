@@ -32,13 +32,13 @@ jobs:
           node scripts/prepare-beta-capacitor.cjs --check
           node scripts/prepare-beta-capacitor.cjs
           cp build/beta/capacitor.config.json capacitor.config.json
-          node -e "const c=require('./capacitor.config.json'); if(c.server.url!=='https://beta.rotapark.com.tr'||c.server.cleartext!==false||JSON.stringify(c.server.allowNavigation)!=='[\"beta.rotapark.com.tr\"]')process.exit(1)"
+          node -e "const c=require('./capacitor.config.json'); if(c.appId!=='tr.com.rotapark.app.beta'||c.server.url!=='https://beta.rotapark.com.tr'||c.server.cleartext!==false||JSON.stringify(c.server.allowNavigation)!=='[\"beta.rotapark.com.tr\"]')process.exit(1)"
       - name: Generate Android project for beta only
         run: npx cap add android
       - name: Confirm generated Android config targets beta
         run: |
           test -f android/app/src/main/assets/capacitor.config.json
-          node -e "const c=require('./android/app/src/main/assets/capacitor.config.json');if(c.server.url!=='https://beta.rotapark.com.tr')process.exit(1)"
+          node -e "const c=require('./android/app/src/main/assets/capacitor.config.json');if(c.appId!=='tr.com.rotapark.app.beta'||c.server.url!=='https://beta.rotapark.com.tr')process.exit(1)"
       - name: Build test-only beta debug APK
         working-directory: android
         run: ./gradlew assembleDebug --no-daemon
