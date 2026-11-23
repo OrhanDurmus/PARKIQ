@@ -69,6 +69,20 @@ jobs:
           path: android/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
           retention-days: 2
+      - name: Check Mapbox style and tile access
+        env:
+          MAPBOX_PUBLIC_TOKEN: ${{ secrets.MAPBOX_PUBLIC_TOKEN }}
+        shell: bash
+        run: |
+          for resource in \
+              styles/v1/mapbox/satellite-streets-v12 \
+              styles/v1/mapbox/streets-v12 \
+              v4/mapbox.satellite/12/2377/1535.jpg90 \
+              v4/mapbox.mapbox-streets-v8/12/2377/1535.vector.pbf; do
+            status="$(curl --silent --max-time 20 --get --data-urlencode "access_token=$MAPBOX_PUBLIC_TOKEN" \
+              --output /dev/null --write-out '%{http_code}' "https://api.mapbox.com/$resource")" || true
+            printf '%s HTTP %s\n' "$resource" "$status"
+          done | tee mapbox-render/mapbox-http-status.txt
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
