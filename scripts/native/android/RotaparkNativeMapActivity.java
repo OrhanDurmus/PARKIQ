@@ -44,10 +44,13 @@ public final class RotaparkNativeMapActivity extends ComponentActivity {
     }
 
     @Override public void onCreate(Bundle state) {
-        super.onCreate(state);
         String testCase = getIntent().getStringExtra("mapbox_visual_test");
-        boolean offlineProbe = "probe-surface".equals(testCase) || "probe-texture".equals(testCase);
-        boolean texture = !"probe-surface".equals(testCase) && !"surface".equals(testCase);
+        boolean legacyTheme = "probe-legacy-theme".equals(testCase);
+        if (legacyTheme) setTheme(R.style.AppTheme_NoActionBarLaunch);
+        super.onCreate(state);
+        boolean offlineProbe = legacyTheme || "probe-surface".equals(testCase)
+                || "probe-texture".equals(testCase);
+        boolean texture = !legacyTheme && !"probe-surface".equals(testCase);
         MapInitOptions options = new MapInitOptions(this);
         options.setTextureView(texture);
         mapView = new MapView(this, options);
@@ -56,7 +59,10 @@ public final class RotaparkNativeMapActivity extends ComponentActivity {
         record("RENDER_CONFIG: texture=" + texture
                 + ", density=" + getResources().getDisplayMetrics().density
                 + ", densityDpi=" + getResources().getDisplayMetrics().densityDpi
-                + ", pixelRatio=" + options.getMapOptions().getPixelRatio());
+                + ", pixelRatio=" + options.getMapOptions().getPixelRatio()
+                + ", legacyTheme=" + legacyTheme
+                + ", mapBackground=" + (mapView.getBackground() == null ? "none"
+                    : mapView.getBackground().getClass().getSimpleName()));
         mapView.post(() -> record("HW_ACCELERATED: " + mapView.isHardwareAccelerated()));
         if (offlineProbe) {
             setContentView(root);

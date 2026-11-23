@@ -95,7 +95,7 @@ def run_case(case, out):
         result["pixels_passed"] = drawn
     finally:
         log = collect_diagnostics(out / f"{case}.log")
-    expected_renderer = "false" if case == "probe-surface" else "true"
+    expected_renderer = "false" if case in ("probe-surface", "probe-legacy-theme") else "true"
     result["renderer_logged"] = f"RENDER_CONFIG: texture={expected_renderer}" in log
     result["hardware_accelerated"] = "HW_ACCELERATED: true" in log
     result["passed"] = drawn and result["renderer_logged"] and result["hardware_accelerated"]
@@ -111,7 +111,7 @@ def main():
         + "\n".join(line for line in surface_flinger.splitlines()
                     if "GLES:" in line or "EGL" in line) + "\n")
     results = {}
-    for case in ("probe-surface", "probe-texture", "satellite", "streets"):
+    for case in ("probe-legacy-theme", "probe-surface", "probe-texture", "satellite", "streets"):
         try:
             results[case] = run_case(case, out)
         except (OSError, RuntimeError, subprocess.SubprocessError) as error:
