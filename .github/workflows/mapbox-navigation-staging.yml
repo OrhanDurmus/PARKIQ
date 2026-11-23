@@ -24,6 +24,7 @@ jobs:
         with:
           distribution: temurin
           java-version: '21'
+          cache: gradle
       - run: npm install --no-audit --no-fund
       - name: Validate installer
         run: node --check scripts/native/apply-mapbox-navigation-staging.cjs
@@ -43,7 +44,19 @@ jobs:
       - name: Build staging APK
         env:
           MAPBOX_DOWNLOADS_TOKEN: ${{ secrets.MAPBOX_DOWNLOADS_TOKEN }}
-        run: cd android && ./gradlew assembleDebug --no-daemon
+        run: |
+          cd android
+          for attempt in 1 2 3; do
+            if ./gradlew assembleDebug --no-daemon; then
+              exit 0
+            fi
+            if [ "$attempt" -eq 3 ]; then
+              echo "Gradle build failed after 3 attempts"
+              exit 1
+            fi
+            echo "Gradle failed; retrying after transient repository rate-limit window..."
+            sleep $((attempt * 45))
+          done
       - name: Upload APK for dependency smoke test
         uses: actions/upload-artifact@v4
         with:
