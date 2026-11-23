@@ -2,6 +2,10 @@ package tr.com.rotapark.app;
 
 import androidx.activity.ComponentActivity;
 import android.graphics.Color;
+import android.content.ClipData;
+import android.content.ClipboardManager;
+import android.content.Context;
+import android.widget.ScrollView;
 import android.graphics.Typeface;
 import android.os.Bundle;
 import android.util.Log;
@@ -26,6 +30,13 @@ import java.nio.charset.StandardCharsets;
 public final class RotaparkNativeMapActivity extends ComponentActivity {
     private static final String TAG = "ROTAPARK_NATIVE";
     private MapView mapView;
+    private final StringBuilder diagnostics = new StringBuilder();
+    private TextView diagnosticsText;
+    private void record(String message) {
+        Log.i(TAG, message);
+        diagnostics.append(message).append('\n');
+        if (diagnosticsText != null) diagnosticsText.setText(diagnostics.toString());
+    }
 
     @Override public void onCreate(Bundle state) {
         super.onCreate(state);
@@ -40,22 +51,22 @@ public final class RotaparkNativeMapActivity extends ComponentActivity {
         // Observe the actual Mapbox style/resource lifecycle; never log the token value.
         int tokenId = getResources().getIdentifier("mapbox_access_token", "string", getPackageName());
         String token = tokenId == 0 ? "" : getString(tokenId);
-        Log.i(TAG, "Mapbox public token present=" + token.startsWith("pk.") + ", style=" + Style.SATELLITE_STREETS);
+        record("Token present=" + token.startsWith("pk.") + ", style=" + Style.SATELLITE_STREETS);
         mapView.getMapboxMap().subscribeMapLoadingError(event ->
-                Log.e(TAG, "MAP_LOADING_ERROR: " + event));
+                record("MAP_LOADING_ERROR: " + event));
         mapView.getMapboxMap().subscribeStyleLoaded(event ->
-                Log.i(TAG, "STYLE_LOADED: " + event));
+                record("STYLE_LOADED: " + event));
         // A loaded style is not proof that the first map frame was rendered.
         mapView.getMapboxMap().subscribeMapLoaded(event ->
-                Log.i(TAG, "MAP_LOADED: " + event));
+                record("MAP_LOADED: " + event));
         mapView.addOnLayoutChangeListener((v, left, top, right, bottom, oldLeft, oldTop, oldRight, oldBottom) ->
-                Log.i(TAG, "MAP_VIEW_LAYOUT: width=" + (right - left)
+                record("MAP_VIEW_LAYOUT: width=" + (right - left)
                         + ", height=" + (bottom - top)
                         + ", shown=" + v.isShown()
                         + ", alpha=" + v.getAlpha()
                         + ", visibility=" + v.getVisibility()));
         mapView.getMapboxMap().loadStyleUri(Style.SATELLITE_STREETS, style ->
-                Log.i(TAG, "STYLE_CALLBACK: satellite-streets style available"));
+                record("STYLE_CALLBACK: satellite-streets style available"));
 
         LinearLayout header = new LinearLayout(this);
         header.setOrientation(LinearLayout.HORIZONTAL);
@@ -99,6 +110,39 @@ public final class RotaparkNativeMapActivity extends ComponentActivity {
         notice.setBackgroundColor(Color.rgb(24, 24, 24));
         FrameLayout.LayoutParams noticeParams = new FrameLayout.LayoutParams(-1, -2, Gravity.BOTTOM);
         root.addView(notice, noticeParams);
+        TextView diagnosticsButton = new TextView(this);
+        diagnosticsButton.setText("TEŞHİS / KOPYALA");
+        diagnosticsButton.setTextColor(Color.WHITE);
+        diagnosticsButton.setTextSize(14);
+        diagnosticsButton.setGravity(Gravity.CENTER);
+        diagnosticsButton.setBackgroundColor(Color.rgb(15, 15, 15));
+        FrameLayout.LayoutParams buttonParams = new FrameLayout.LayoutParams(dp(180), dp(48), Gravity.TOP | Gravity.RIGHT);
+        buttonParams.topMargin = dp(72);
+        root.addView(diagnosticsButton, buttonParams);
+        ScrollView diagnosticPanel = new ScrollView(this);
+        diagnosticPanel.setBackgroundColor(Color.rgb(20, 20, 20));
+        diagnosticsText = new TextView(this);
+        diagnosticsText.setTextColor(Color.WHITE);
+        diagnosticsText.setTextSize(12);
+        diagnosticsText.setPadding(dp(12), dp(12), dp(12), dp(12));
+        diagnosticsText.setText("ROTAPARK STAGING DIAGNOSTICS\\n" + diagnostics);
+        diagnosticPanel.addView(diagnosticsText);
+        FrameLayout.LayoutParams panelParams = new FrameLayout.LayoutParams(-1, dp(280), Gravity.BOTTOM);
+        panelParams.bottomMargin = dp(65);
+        root.addView(diagnosticPanel, panelParams);
+        diagnosticPanel.setVisibility(View.GONE);
+        diagnosticsButton.setOnClickListener(v -> {
+            if (diagnosticPanel.getVisibility() == View.GONE) {
+                diagnosticPanel.setVisibility(View.VISIBLE);
+                diagnosticsButton.setText("KOPYALA / KAPAT");
+            } else {
+                ClipboardManager clipboard = (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
+                clipboard.setPrimaryClip(ClipData.newPlainText("ROTAPARK diagnostics", diagnostics.toString()));
+                diagnosticPanel.setVisibility(View.GONE);
+                diagnosticsButton.setText("TEŞHİS / KOPYALA");
+            }
+        });
+        record("DIAGNOSTICS_READY");
         setContentView(root);
     }
 
