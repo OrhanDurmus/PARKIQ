@@ -1,6 +1,6 @@
 package tr.com.rotapark.app;
 
-import android.app.Activity;
+import androidx.activity.ComponentActivity;
 import android.graphics.Color;
 import android.graphics.Typeface;
 import android.os.Bundle;
@@ -22,7 +22,7 @@ import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 
 /** Staging-only native map shell. Parking data and turn-by-turn navigation are not wired yet. */
-public final class RotaparkNativeMapActivity extends Activity {
+public final class RotaparkNativeMapActivity extends ComponentActivity {
     private MapView mapView;
 
     @Override public void onCreate(Bundle state) {
