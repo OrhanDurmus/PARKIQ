@@ -28,24 +28,15 @@ if(!g.includes('com.mapbox.navigationcore:android:3.34.4')){
 if(!g.includes('com.mapbox.maps:android:11.')) {
  g+='\n// ROTAPARK native map screen (staging)\ndependencies { implementation "com.mapbox.maps:android:11.16.0" }\n';
 }
-if(!m.includes('RotaparkNativeMapActivity')) {
- m=m.replace('</application>', '    <activity android:name=".RotaparkNativeMapActivity" android:exported="false" />\n    </application>');
+// Launch the native Activity directly. Starting BridgeActivity first initializes a WebView
+// before the map, which can crash on devices without a working WebView provider.
+// Keep the Capacitor Activity available as an unlaunched legacy comparison screen.
+if(!m.includes('android:name=".MainActivity"'))throw Error('MainActivity missing from generated manifest');
+if(!m.includes('android:name=".RotaparkNativeMapActivity"')) {
+ m=m.replace('android:name=".MainActivity"', 'android:name=".RotaparkNativeMapActivity"');
+ m=m.replace('</application>', '    <activity android:name=".MainActivity" android:exported="false" />\n    </application>');
 }
-// Staging launch flow: native map first; Android Back returns to legacy WebView for comparison.
-const mainActivity=path.join(android,'app/src/main/java/tr/com/rotapark/app/MainActivity.java');
-let mainJava=required(mainActivity);
-if(!mainJava.includes('ROTAPARK_NATIVE_MAP_STAGING_LAUNCH')) {
- if(!/public class MainActivity extends BridgeActivity\s*\{/.test(mainJava)) throw Error('Unexpected Capacitor MainActivity; refusing to change launcher');
- mainJava=mainJava.replace(/public class MainActivity extends BridgeActivity\s*\{/, `public class MainActivity extends BridgeActivity {
-    // ROTAPARK_NATIVE_MAP_STAGING_LAUNCH
-    @Override public void onCreate(android.os.Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        if (savedInstanceState == null) {
-            startActivity(new android.content.Intent(this, RotaparkNativeMapActivity.class));
-        }
-    }`);
- fs.writeFileSync(mainActivity,mainJava);
-}
+if(!m.includes('android:name=".RotaparkNativeMapActivity"'))throw Error('Native launcher not registered');
 const nativeSrc=path.join(root,'scripts/native/android/RotaparkNativeMapActivity.java');
 const nativeDst=path.join(android,'app/src/main/java/tr/com/rotapark/app/RotaparkNativeMapActivity.java');
 fs.mkdirSync(path.dirname(nativeDst),{recursive:true});
@@ -65,4 +56,4 @@ const res=path.join(android,'app/src/main/res/values/mapbox_access_token.xml');
 fs.mkdirSync(path.dirname(res),{recursive:true});
 fs.writeFileSync(res,'<?xml version="1.0" encoding="utf-8"?><resources><string name="mapbox_access_token">'+publicToken+'</string></resources>\n');
 fs.writeFileSync(gradle,g);fs.writeFileSync(projectGradle,pg);fs.writeFileSync(manifest,m);
-console.log('Mapbox SDK 3.34.4 staging dependencies configured; native map Activity installed (not yet launched); guidance UI not installed.');
+console.log('Mapbox SDK 3.34.4 staging dependencies configured; native map Activity configured as direct launcher; guidance UI not installed.');
