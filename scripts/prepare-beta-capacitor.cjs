@@ -11,6 +11,8 @@ if (config.appId !== 'tr.com.rotapark.app') throw new Error('Unexpected appId; i
 if (config.server?.url && !/^https:\/\//.test(config.server.url)) throw new Error('Insecure production origin');
 const beta = {
   ...config,
+  appId: 'tr.com.rotapark.app.beta',
+  appName: 'ROTAPARK Beta',
   server: { ...config.server, url: origin, cleartext: false, allowNavigation: ['beta.rotapark.com.tr'] }
 };
 if (process.argv.includes('--check')) {
