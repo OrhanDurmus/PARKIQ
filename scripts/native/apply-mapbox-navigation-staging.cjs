@@ -43,7 +43,7 @@ if(!m.includes('android:name=".RotaparkNativeMapActivity"'))throw Error('Native 
 m=m.replace(/(<activity\s+android:name="\.RotaparkNativeMapActivity")/, '$1 android:theme="@style/RotaparkMapboxStagingTheme"');
 const themeFile=path.join(android,'app/src/main/res/values/rotapark_mapbox_staging_theme.xml');
 fs.mkdirSync(path.dirname(themeFile),{recursive:true});
-fs.writeFileSync(themeFile,'<?xml version="1.0" encoding="utf-8"?><resources><style name="RotaparkMapboxStagingTheme" parent="Theme.AppCompat.DayNight.NoActionBar"><item name="android:windowLightStatusBar">false</item><item name="android:statusBarColor">#0F0F0F</item><item name="android:navigationBarColor">#0F0F0F</item></style></resources>\\n');
+fs.writeFileSync(themeFile,'<?xml version="1.0" encoding="utf-8"?><resources><style name="RotaparkMapboxStagingTheme" parent="Theme.AppCompat.DayNight.NoActionBar"><item name="android:windowLightStatusBar">false</item><item name="android:statusBarColor">#0F0F0F</item><item name="android:navigationBarColor">#0F0F0F</item></style></resources>');
 const nativeSrc=path.join(root,'scripts/native/android/RotaparkNativeMapActivity.java');
 const nativeDst=path.join(android,'app/src/main/java/tr/com/rotapark/app/RotaparkNativeMapActivity.java');
 fs.mkdirSync(path.dirname(nativeDst),{recursive:true});
