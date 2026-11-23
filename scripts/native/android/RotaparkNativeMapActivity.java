@@ -4,6 +4,7 @@ import androidx.activity.ComponentActivity;
 import android.graphics.Color;
 import android.graphics.Typeface;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.Gravity;
 import android.view.View;
 import android.widget.FrameLayout;
@@ -23,6 +24,7 @@ import java.nio.charset.StandardCharsets;
 
 /** Staging-only native map shell. Parking data and turn-by-turn navigation are not wired yet. */
 public final class RotaparkNativeMapActivity extends ComponentActivity {
+    private static final String TAG = "ROTAPARK_NATIVE";
     private MapView mapView;
 
     @Override public void onCreate(Bundle state) {
@@ -35,7 +37,16 @@ public final class RotaparkNativeMapActivity extends ComponentActivity {
                 .center(Point.fromLngLat(29.0, 41.02))
                 .zoom(12.0)
                 .build());
-        mapView.getMapboxMap().loadStyleUri(Style.SATELLITE_STREETS);
+        // Observe the actual Mapbox style/resource lifecycle; never log the token value.
+        int tokenId = getResources().getIdentifier("mapbox_access_token", "string", getPackageName());
+        String token = tokenId == 0 ? "" : getString(tokenId);
+        Log.i(TAG, "Mapbox public token present=" + token.startsWith("pk.") + ", style=" + Style.SATELLITE_STREETS);
+        mapView.getMapboxMap().subscribeMapLoadingError(event ->
+                Log.e(TAG, "MAP_LOADING_ERROR: " + event));
+        mapView.getMapboxMap().subscribeStyleLoaded(event ->
+                Log.i(TAG, "STYLE_LOADED: " + event));
+        mapView.getMapboxMap().loadStyleUri(Style.SATELLITE_STREETS, style ->
+                Log.i(TAG, "STYLE_CALLBACK: satellite-streets style available"));
 
         LinearLayout header = new LinearLayout(this);
         header.setOrientation(LinearLayout.HORIZONTAL);
@@ -161,8 +172,6 @@ public final class RotaparkNativeMapActivity extends ComponentActivity {
     }
 
     private int dp(int value) { return Math.round(value * getResources().getDisplayMetrics().density); }
-    @Override protected void onStart() { super.onStart(); if (mapView != null) mapView.onStart(); }
-    @Override protected void onStop() { if (mapView != null) mapView.onStop(); super.onStop(); }
-    @Override public void onLowMemory() { super.onLowMemory(); if (mapView != null) mapView.onLowMemory(); }
-    @Override protected void onDestroy() { if (mapView != null) mapView.onDestroy(); super.onDestroy(); }
+    // ComponentActivity is a LifecycleOwner; Mapbox v11 manages MapView lifecycle automatically.
+    // Do not forward onStart/onStop/onDestroy manually: it double-dispatches lifecycle events.
 }
