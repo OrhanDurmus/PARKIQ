@@ -13,6 +13,8 @@ import com.mapbox.maps.MapView;
 import com.mapbox.maps.Style;
 import com.mapbox.maps.CameraOptions;
 import com.mapbox.geojson.Point;
+import com.mapbox.bindgen.Value;
+import com.mapbox.bindgen.Expected;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import java.io.ByteArrayOutputStream;
@@ -101,7 +103,54 @@ public final class RotaparkNativeMapActivity extends Activity {
                     }
                 }
                 if (points == null) status = "Otopark veri formatı kontrol edilmeli";
-                else status = "Yerel otopark kayıtları: " + points.length() + " • Pin katmanı test bekliyor";
+                else {
+                    JSONArray features = new JSONArray();
+                    for (int i = 0; i < points.length(); i++) {
+                        JSONObject item = points.optJSONObject(i);
+                        if (item == null) continue;
+                        JSONObject geometry = item.optJSONObject("geometry");
+                        JSONArray coords = geometry == null ? null : geometry.optJSONArray("coordinates");
+                        double lat = item.optDouble("lat", item.optDouble("latitude", Double.NaN));
+                        double lng = item.optDouble("lng", item.optDouble("lon", item.optDouble("longitude", Double.NaN)));
+                        if (coords != null && coords.length() >= 2) {
+                            lng = coords.optDouble(0, Double.NaN);
+                            lat = coords.optDouble(1, Double.NaN);
+                        }
+                        if (!Double.isFinite(lat) || !Double.isFinite(lng) || Math.abs(lat) > 90 || Math.abs(lng) > 180) continue;
+                        JSONObject point = new JSONObject().put("type", "Point")
+                            .put("coordinates", new JSONArray().put(lng).put(lat));
+                        features.put(new JSONObject().put("type", "Feature").put("geometry", point)
+                            .put("properties", new JSONObject()));
+                    }
+                    JSONObject geojson = new JSONObject().put("type", "FeatureCollection").put("features", features);
+                    JSONObject source = new JSONObject().put("type", "geojson").put("data", geojson);
+                    JSONObject paint = new JSONObject().put("circle-radius", 5)
+                        .put("circle-color", "#D4AF37").put("circle-stroke-width", 1.5)
+                        .put("circle-stroke-color", "#111111");
+                    JSONObject layer = new JSONObject().put("id", "rotapark-parking-circles")
+                        .put("type", "circle").put("source", "rotapark-parking-source").put("paint", paint);
+                    final String sourceJson = source.toString(), layerJson = layer.toString();
+                    final int validCount = features.length(), totalCount = points.length();
+                    runOnUiThread(() -> {
+                        if (isFinishing() || isDestroyed()) return;
+                        mapView.getMapboxMap().getStyle(style -> {
+                            try {
+                                Expected<String, Value> src = Value.fromJson(sourceJson);
+                                Expected<String, Value> lyr = Value.fromJson(layerJson);
+                                if (src.getValue() == null || lyr.getValue() == null) throw new IllegalStateException("Invalid style JSON");
+                                if (style.addStyleSource("rotapark-parking-source", src.getValue()).getError() != null)
+                                    throw new IllegalStateException("Mapbox rejected parking source");
+                                if (style.addStyleLayer(lyr.getValue(), null).getError() != null)
+                                    throw new IllegalStateException("Mapbox rejected parking layer");
+                                notice.setText("Native otopark pinleri: " + validCount + " / " + totalCount);
+                            } catch (Exception ex) {
+                                android.util.Log.e("ROTAPARK_NATIVE", "Parking layer failed", ex);
+                                notice.setText("Otopark pin katmanı yüklenemedi");
+                            }
+                        });
+                    });
+                    status = "Otopark koordinatları hazır: " + validCount + " / " + totalCount;
+                }
             } catch (Exception error) {
                 android.util.Log.e("ROTAPARK_NATIVE", "Parking asset read failed", error);
                 status = "Otopark verisi okunamadı";
