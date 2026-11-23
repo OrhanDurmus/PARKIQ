@@ -25,7 +25,7 @@ if(!pg.includes('ROTAPARK_MAPBOX_MAVEN')){
 if(!g.includes('com.mapbox.navigationcore:android:3.34.4')){
  g+='\n// ROTAPARK staging-only Mapbox Navigation SDK\ndependencies { implementation "com.mapbox.navigationcore:android:3.34.4" }\n';
 }
-if(!g.includes('com.mapbox.maps:android:11.')) {
+if(!g.includes('androidx.appcompat:appcompat:')) {\n g+='\n// AppCompat theme required by Mapbox compass/logo/attribution views\ndependencies { implementation "androidx.appcompat:appcompat:1.7.0" }\n';\n}\nif(!g.includes('com.mapbox.maps:android:11.')) {
  g+='\n// ROTAPARK native map screen (staging)\ndependencies { implementation "com.mapbox.maps:android:11.16.0" }\n';
 }
 // Launch the native Activity directly. Starting BridgeActivity first initializes a WebView
@@ -36,7 +36,7 @@ if(!m.includes('android:name=".RotaparkNativeMapActivity"')) {
  m=m.replace('android:name=".MainActivity"', 'android:name=".RotaparkNativeMapActivity"');
  m=m.replace('</application>', '    <activity android:name=".MainActivity" android:exported="false" />\n    </application>');
 }
-if(!m.includes('android:name=".RotaparkNativeMapActivity"'))throw Error('Native launcher not registered');
+if(!m.includes('android:name=".RotaparkNativeMapActivity"'))throw Error('Native launcher not registered');\n// Mapbox SDK's compass, logo and attribution views require an AppCompat theme.\nm=m.replace(/(<activity\\s+android:name="\\.RotaparkNativeMapActivity")/, '$1 android:theme="@style/RotaparkMapboxStagingTheme"');\nconst themeFile=path.join(android,'app/src/main/res/values/rotapark_mapbox_staging_theme.xml');\nfs.mkdirSync(path.dirname(themeFile),{recursive:true});\nfs.writeFileSync(themeFile,'<?xml version="1.0" encoding="utf-8"?><resources><style name="RotaparkMapboxStagingTheme" parent="Theme.AppCompat.DayNight.NoActionBar"><item name="android:windowLightStatusBar">false</item><item name="android:statusBarColor">#0F0F0F</item><item name="android:navigationBarColor">#0F0F0F</item></style></resources>\n');
 const nativeSrc=path.join(root,'scripts/native/android/RotaparkNativeMapActivity.java');
 const nativeDst=path.join(android,'app/src/main/java/tr/com/rotapark/app/RotaparkNativeMapActivity.java');
 fs.mkdirSync(path.dirname(nativeDst),{recursive:true});
