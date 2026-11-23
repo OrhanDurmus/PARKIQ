@@ -45,6 +45,9 @@ if (process.argv.includes('--generated-android')) {
   if (!appGradle.includes('com.mapbox.navigationcore:android:3.34.4')) {
     throw Error('Generated APK does not include expected Mapbox SDK dependency');
   }
+  if (!appGradle.includes('com.mapbox.maps:android:11.34.4')) {
+    throw Error('Mapbox Maps SDK is misaligned with Navigation SDK 3.34.4');
+  }
   if (!projectGradle.includes('ROTAPARK_MAPBOX_MAVEN')) {
     throw Error('Generated Android project missing Mapbox Maven repository');
   }

@@ -9,10 +9,12 @@ on:
       - 'scripts/native/apply-mapbox-navigation-staging.cjs'
       - 'scripts/native/android/RotaparkNativeMapActivity.java'
       - 'scripts/native/audit-mapbox-staging.cjs'
+      - 'scripts/native/check-mapbox-render.py'
 permissions:
   contents: read
 jobs:
   android:
+    if: github.ref == 'refs/heads/feature/staging-mapbox-navigation-20261123'
     runs-on: ubuntu-latest
     timeout-minutes: 40
     steps:
@@ -41,25 +43,54 @@ jobs:
       - name: Audit generated Android SDK isolation
         run: node scripts/native/audit-mapbox-staging.cjs --generated-android
       - uses: gradle/actions/setup-gradle@v4
-      - name: Build staging APK
+      - name: Build staging APK and record resolved dependencies
         env:
           MAPBOX_DOWNLOADS_TOKEN: ${{ secrets.MAPBOX_DOWNLOADS_TOKEN }}
+        working-directory: android
+        shell: bash
         run: |
-          cd android
+          mkdir -p ../mapbox-render
           for attempt in 1 2 3; do
-            if ./gradlew assembleDebug --no-daemon; then
-              exit 0
+            if ./gradlew --console=plain :app:assembleDebug :app:dependencies --configuration debugRuntimeClasspath > /tmp/mapbox-gradle.log 2>&1; then
+              cat /tmp/mapbox-gradle.log
+              cp /tmp/mapbox-gradle.log ../mapbox-render/gradle-dependencies.log
+              break
             fi
-            if [ "$attempt" -eq 3 ]; then
-              echo "Gradle build failed after 3 attempts"
+            cat /tmp/mapbox-gradle.log
+            if [[ "$attempt" == 3 ]] || ! grep -Eq '(HTTP[^0-9]*|status code )429' /tmp/mapbox-gradle.log; then
               exit 1
             fi
-            echo "Gradle failed; retrying after transient repository rate-limit window..."
-            sleep $((attempt * 45))
+            sleep "$((attempt * 45))"
           done
-      - name: Upload APK for dependency smoke test
+      - name: Upload staging APK
         uses: actions/upload-artifact@v4
         with:
           name: rotapark-mapbox-staging-sdk-smoke-apk
           path: android/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
           retention-days: 2
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install image analysis dependency
+        run: python -m pip install Pillow==11.3.0
+      - name: Enable emulator acceleration
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+      - name: Verify native Mapbox pixels on Android
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          arch: x86_64
+          target: google_apis
+          emulator-options: -no-window -no-snapshot -gpu swiftshader_indirect -noaudio -no-boot-anim
+          script: adb install android/app/build/outputs/apk/debug/app-debug.apk && python scripts/native/check-mapbox-render.py mapbox-render
+      - name: Upload Mapbox rendering evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: rotapark-mapbox-render-evidence
+          path: mapbox-render/
+          retention-days: 7

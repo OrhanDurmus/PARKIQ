@@ -19,6 +19,7 @@ import android.widget.FrameLayout;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import com.mapbox.maps.MapView;
+import com.mapbox.maps.MapInitOptions;
 import com.mapbox.maps.Style;
 import com.mapbox.maps.CameraOptions;
 import com.mapbox.geojson.Point;
@@ -30,7 +31,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 
-/** Staging-only native map shell. Parking data and turn-by-turn navigation are not wired yet. */
+/** Staging-only native map and parking layer. */
 public final class RotaparkNativeMapActivity extends ComponentActivity {
     private static final String TAG = "ROTAPARK_NATIVE";
     private MapView mapView;
@@ -44,9 +45,26 @@ public final class RotaparkNativeMapActivity extends ComponentActivity {
 
     @Override public void onCreate(Bundle state) {
         super.onCreate(state);
-        mapView = new MapView(this);
+        String testCase = getIntent().getStringExtra("mapbox_visual_test");
+        boolean offlineProbe = "probe-surface".equals(testCase) || "probe-texture".equals(testCase);
+        boolean texture = !"probe-surface".equals(testCase) && !"surface".equals(testCase);
+        MapInitOptions options = new MapInitOptions(this);
+        options.setTextureView(texture);
+        mapView = new MapView(this, options);
         FrameLayout root = new FrameLayout(this);
         root.addView(mapView, new FrameLayout.LayoutParams(-1, -1));
+        record("RENDER_CONFIG: texture=" + texture
+                + ", density=" + getResources().getDisplayMetrics().density
+                + ", densityDpi=" + getResources().getDisplayMetrics().densityDpi
+                + ", pixelRatio=" + options.getMapOptions().getPixelRatio());
+        mapView.post(() -> record("HW_ACCELERATED: " + mapView.isHardwareAccelerated()));
+        if (offlineProbe) {
+            setContentView(root);
+            mapView.getMapboxMap().loadStyleJson(
+                    "{\"version\":8,\"sources\":{},\"layers\":[{\"id\":\"probe\","
+                    + "\"type\":\"background\",\"paint\":{\"background-color\":\"#297b63\"}}]}");
+            return;
+        }
         // Show a useful Istanbul fallback without waiting for GPS permission.
         mapView.getMapboxMap().setCamera(new CameraOptions.Builder()
                 .center(Point.fromLngLat(29.0, 41.02))
@@ -55,7 +73,8 @@ public final class RotaparkNativeMapActivity extends ComponentActivity {
         // Observe the actual Mapbox style/resource lifecycle; never log the token value.
         int tokenId = getResources().getIdentifier("mapbox_access_token", "string", getPackageName());
         String token = tokenId == 0 ? "" : getString(tokenId);
-        record("Token present=" + token.startsWith("pk.") + ", style=" + Style.SATELLITE_STREETS);
+        String initialStyle = "streets".equals(testCase) ? Style.MAPBOX_STREETS : Style.SATELLITE_STREETS;
+        record("Token present=" + token.startsWith("pk.") + ", style=" + initialStyle);
         mapView.getMapboxMap().subscribeMapLoadingError(event ->
                 record("MAP_LOADING_ERROR: " + event));
         mapView.getMapboxMap().subscribeStyleLoaded(event ->
@@ -69,8 +88,8 @@ public final class RotaparkNativeMapActivity extends ComponentActivity {
                         + ", shown=" + v.isShown()
                         + ", alpha=" + v.getAlpha()
                         + ", visibility=" + v.getVisibility()));
-        mapView.getMapboxMap().loadStyleUri(Style.SATELLITE_STREETS, style ->
-                record("STYLE_CALLBACK: satellite-streets style available"));
+        mapView.getMapboxMap().loadStyleUri(initialStyle, style ->
+                record("STYLE_CALLBACK: " + initialStyle));
 
         LinearLayout header = new LinearLayout(this);
         header.setOrientation(LinearLayout.HORIZONTAL);
@@ -162,7 +181,6 @@ public final class RotaparkNativeMapActivity extends ComponentActivity {
             }
         });
         record("DEVICE: " + Build.MANUFACTURER + " " + Build.MODEL + ", Android " + Build.VERSION.RELEASE);
-        record("HW_ACCELERATED: " + mapView.isHardwareAccelerated());
         mapView.postDelayed(() -> {
             record("RENDER_VIEW_TREE:");
             inspectRenderViews(mapView, 0);

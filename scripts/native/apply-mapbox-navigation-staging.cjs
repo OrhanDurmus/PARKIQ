@@ -14,22 +14,30 @@ if(g.includes('com.google.android.libraries.navigation'))throw Error('Google Nav
 const projectGradle=path.join(android,'build.gradle');
 let pg=required(projectGradle);
 if(!pg.includes('ROTAPARK_MAPBOX_MAVEN')){
- const repo=`maven {
-            url 'https://api.mapbox.com/downloads/v2/releases/maven'
-            credentials { username = 'mapbox'; password = System.getenv('MAPBOX_DOWNLOADS_TOKEN') ?: '' }
-            authentication { basic(BasicAuthentication) }
-        }`;
- if(!pg.includes('repositories {'))throw Error('Unexpected project build.gradle');
- pg=pg.replace(/repositories\s*\{/g, 'repositories {\n        // ROTAPARK_MAPBOX_MAVEN\n        '+repo);
+ const allProjects = /allprojects\s*\{\s*repositories\s*\{/;
+ if(!allProjects.test(pg))throw Error('Unexpected project dependency repositories');
+ pg=pg.replace(allProjects, `$&
+        // ROTAPARK_MAPBOX_MAVEN
+        exclusiveContent {
+            forRepository {
+                maven {
+                    url 'https://api.mapbox.com/downloads/v2/releases/maven'
+                    credentials { username = 'mapbox'; password = System.getenv('MAPBOX_DOWNLOADS_TOKEN') ?: '' }
+                    authentication { basic(BasicAuthentication) }
+                }
+            }
+            filter { includeGroupByRegex 'com[.]mapbox([.].*)?' }
+        }`);
 }
-if(!g.includes('com.mapbox.navigationcore:android:3.34.4')){
- g+='\n// ROTAPARK staging-only Mapbox Navigation SDK\ndependencies { implementation "com.mapbox.navigationcore:android:3.34.4" }\n';
-}
-if(!g.includes('androidx.appcompat:appcompat:')) {
- g+='\\n// AppCompat theme required by Mapbox controls\\ndependencies { implementation "androidx.appcompat:appcompat:1.7.0" }\\n';
-}
-if(!g.includes('com.mapbox.maps:android:11.')) {
- g+='\n// ROTAPARK native map screen (staging)\ndependencies { implementation "com.mapbox.maps:android:11.16.0" }\n';
+if(!g.includes('// ROTAPARK staging-only Mapbox SDKs')){
+ g+=`
+ // ROTAPARK staging-only Mapbox SDKs
+ dependencies {
+     implementation "com.mapbox.navigationcore:android:3.34.4"
+     implementation "com.mapbox.maps:android:11.34.4"
+     implementation "androidx.appcompat:appcompat:1.7.0"
+ }
+ `;
 }
 // Launch the native Activity directly. Starting BridgeActivity first initializes a WebView
 // before the map, which can crash on devices without a working WebView provider.
@@ -40,7 +48,9 @@ if(!m.includes('android:name=".RotaparkNativeMapActivity"')) {
  m=m.replace('</application>', '    <activity android:name=".MainActivity" android:exported="false" />\n    </application>');
 }
 if(!m.includes('android:name=".RotaparkNativeMapActivity"'))throw Error('Native launcher not registered');
-m=m.replace(/(<activity\s+android:name="\.RotaparkNativeMapActivity")/, '$1 android:theme="@style/RotaparkMapboxStagingTheme"');
+m=m.replace(/<activity\s+android:name="\.RotaparkNativeMapActivity"[^>]*>/, tag =>
+ tag.replace(/\s+android:(theme|hardwareAccelerated)="[^"]*"/g, '')
+    .replace(/>$/, ' android:theme="@style/RotaparkMapboxStagingTheme" android:hardwareAccelerated="true">'));
 const themeFile=path.join(android,'app/src/main/res/values/rotapark_mapbox_staging_theme.xml');
 fs.mkdirSync(path.dirname(themeFile),{recursive:true});
 fs.writeFileSync(themeFile,'<?xml version="1.0" encoding="utf-8"?><resources><style name="RotaparkMapboxStagingTheme" parent="Theme.AppCompat.DayNight.NoActionBar"><item name="android:windowLightStatusBar">false</item><item name="android:statusBarColor">#0F0F0F</item><item name="android:navigationBarColor">#0F0F0F</item></style></resources>');
