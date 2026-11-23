@@ -116,6 +116,21 @@ public final class RotaparkNativeMapActivity extends ComponentActivity {
         diagnosticsButton.setTextSize(14);
         diagnosticsButton.setGravity(Gravity.CENTER);
         diagnosticsButton.setBackgroundColor(Color.rgb(15, 15, 15));
+        TextView styleButton = new TextView(this);
+        styleButton.setText("HARİTA TESTİ");
+        styleButton.setTextColor(Color.WHITE);
+        styleButton.setTextSize(13);
+        styleButton.setGravity(Gravity.CENTER);
+        styleButton.setBackgroundColor(Color.rgb(45, 45, 45));
+        FrameLayout.LayoutParams styleParams = new FrameLayout.LayoutParams(dp(180), dp(48), Gravity.TOP | Gravity.LEFT);
+        styleParams.topMargin = dp(72);
+        root.addView(styleButton, styleParams);
+        styleButton.setOnClickListener(v -> {
+            record("STYLE_TEST: switching to streets-v12");
+            styleButton.setText("SOKAK HARİTASI");
+            mapView.getMapboxMap().loadStyleUri(Style.MAPBOX_STREETS, style ->
+                    record("STYLE_TEST_CALLBACK: streets style available"));
+        });
         FrameLayout.LayoutParams buttonParams = new FrameLayout.LayoutParams(dp(180), dp(48), Gravity.TOP | Gravity.RIGHT);
         buttonParams.topMargin = dp(72);
         root.addView(diagnosticsButton, buttonParams);
