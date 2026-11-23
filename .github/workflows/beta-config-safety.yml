@@ -1,0 +1,23 @@
+name: ROTAPARK Beta Config Safety
+on:
+  pull_request:
+    paths:
+      - 'capacitor.config.json'
+      - 'scripts/prepare-beta-capacitor.cjs'
+      - 'tests/prepare-beta-capacitor.test.cjs'
+      - '.github/workflows/beta-config-safety.yml'
+  workflow_dispatch:
+jobs:
+  beta-config-tests:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify beta configuration generator
+        run: node --test tests/prepare-beta-capacitor.test.cjs
+      - name: Read-only beta config check
+        run: node scripts/prepare-beta-capacitor.cjs --check
