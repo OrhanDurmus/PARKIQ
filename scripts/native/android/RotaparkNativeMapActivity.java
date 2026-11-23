@@ -149,14 +149,14 @@ public final class RotaparkNativeMapActivity extends Activity {
                             }
                         });
                     });
-                    status = "Otopark koordinatları hazır: " + validCount + " / " + totalCount;
+                    status = null; // The style callback owns the final pin count or error message.
                 }
             } catch (Exception error) {
                 android.util.Log.e("ROTAPARK_NATIVE", "Parking asset read failed", error);
                 status = "Otopark verisi okunamadı";
             }
             final String result = status;
-            runOnUiThread(() -> { if (!isFinishing() && !isDestroyed()) notice.setText(result); });
+            if (result != null) runOnUiThread(() -> { if (!isFinishing() && !isDestroyed()) notice.setText(result); });
         }, "rotapark-parking-load").start();
     }
 
