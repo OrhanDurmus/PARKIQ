@@ -56,7 +56,7 @@ def launch(case):
 
 
 def collect_diagnostics(path):
-    log = adb("logcat", "-d", "-s", "ROTAPARK_NATIVE:I", "AndroidRuntime:E",
+    log = adb("logcat", "-d", "-s", "ROTAPARK_NATIVE:D", "AndroidRuntime:E",
               "MapboxLifecyclePlugin:I", "OpenGLRenderer:W", "EGL_emulation:W",
               "libEGL:W", "ActivityTaskManager:I").decode(errors="replace")
     safe = re.sub(r"(?:pk|sk)\.[A-Za-z0-9._-]+", "[redacted]", log)
@@ -64,7 +64,9 @@ def collect_diagnostics(path):
     lines = [line for line in safe.splitlines()
              if "ActivityTaskManager" not in line or "tr.com.rotapark.app" in line]
     print(f"--- {path.stem} device log ---", flush=True)
-    print("\n".join(lines[-80:]), flush=True)
+    main_lines = [line for line in lines if "SOURCE_DATA:" not in line]
+    sources = [line for line in lines if "SOURCE_DATA:" in line]
+    print("\n".join(main_lines[-80:] + sources[:12]), flush=True)
     return safe
 
 
@@ -104,7 +106,7 @@ def run_case(case, out):
         result["pixels_passed"] = drawn
     finally:
         log = collect_diagnostics(out / f"{case}.log")
-    expected_renderer = "false" if case in ("probe-surface", "probe-legacy-theme") else "true"
+    expected_renderer = "true" if case in ("probe-texture", "minimal-texture") else "false"
     result["renderer_logged"] = f"RENDER_CONFIG: texture={expected_renderer}" in log
     result["hardware_accelerated"] = "HW_ACCELERATED: true" in log
     result["passed"] = drawn and result["renderer_logged"] and result["hardware_accelerated"]
@@ -120,7 +122,11 @@ def main():
         + "\n".join(line for line in surface_flinger.splitlines()
                     if "GLES:" in line or "EGL" in line) + "\n")
     results = {}
-    for case in ("probe-legacy-theme", "probe-surface", "probe-texture", "satellite", "streets"):
+    cases = ("probe-legacy-theme", "probe-surface", "probe-texture", "satellite", "streets")
+    for case in cases + ("minimal-surface", "minimal-texture"):
+        if case.startswith("minimal-") and all(results[style]["passed"]
+                                               for style in ("satellite", "streets")):
+            break
         try:
             results[case] = run_case(case, out)
         except (OSError, RuntimeError, subprocess.SubprocessError) as error:
@@ -128,7 +134,7 @@ def main():
         print(f"{case} {json.dumps(results[case])}", flush=True)
     (out / "pixel-results.json").write_text(json.dumps(results, indent=2) + "\n")
     return 0 if all(results[case]["passed"] for case in
-                    ("probe-texture", "satellite", "streets")) else 1
+                    ("probe-surface", "probe-texture", "satellite", "streets")) else 1
 
 
 if __name__ == "__main__":

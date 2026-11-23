@@ -22,6 +22,7 @@ import com.mapbox.maps.MapView;
 import com.mapbox.maps.MapInitOptions;
 import com.mapbox.maps.Style;
 import com.mapbox.maps.CameraOptions;
+import com.mapbox.maps.CameraState;
 import com.mapbox.geojson.Point;
 import com.mapbox.bindgen.Value;
 import com.mapbox.bindgen.Expected;
@@ -50,9 +51,17 @@ public final class RotaparkNativeMapActivity extends ComponentActivity {
         super.onCreate(state);
         boolean offlineProbe = legacyTheme || "probe-surface".equals(testCase)
                 || "probe-texture".equals(testCase);
-        boolean texture = !legacyTheme && !"probe-surface".equals(testCase);
-        MapInitOptions options = new MapInitOptions(this);
-        options.setTextureView(texture);
+        boolean texture = "probe-texture".equals(testCase) || "minimal-texture".equals(testCase);
+        String initialStyle = "streets".equals(testCase) ? Style.MAPBOX_STREETS : Style.SATELLITE_STREETS;
+        // Set the camera during map construction, before the lifecycle plugin loads the style.
+        CameraOptions camera = new CameraOptions.Builder()
+                .center(Point.fromLngLat(29.0, 41.02))
+                .zoom(12.0)
+                .build();
+        MapInitOptions options = new MapInitOptions(this,
+                MapInitOptions.Companion.getDefaultMapOptions(this),
+                MapInitOptions.Companion.getDefaultPluginList(),
+                camera, texture, offlineProbe ? null : initialStyle);
         mapView = new MapView(this, options);
         FrameLayout root = new FrameLayout(this);
         root.addView(mapView, new FrameLayout.LayoutParams(-1, -1));
@@ -71,20 +80,20 @@ public final class RotaparkNativeMapActivity extends ComponentActivity {
                     + "\"type\":\"background\",\"paint\":{\"background-color\":\"#297b63\"}}]}");
             return;
         }
-        // Show a useful Istanbul fallback without waiting for GPS permission.
-        mapView.getMapboxMap().setCamera(new CameraOptions.Builder()
-                .center(Point.fromLngLat(29.0, 41.02))
-                .zoom(12.0)
-                .build());
         // Observe the actual Mapbox style/resource lifecycle; never log the token value.
         int tokenId = getResources().getIdentifier("mapbox_access_token", "string", getPackageName());
         String token = tokenId == 0 ? "" : getString(tokenId);
-        String initialStyle = "streets".equals(testCase) ? Style.MAPBOX_STREETS : Style.SATELLITE_STREETS;
         record("Token present=" + token.startsWith("pk.") + ", style=" + initialStyle);
         mapView.getMapboxMap().subscribeMapLoadingError(event ->
                 record("MAP_LOADING_ERROR: " + event));
-        mapView.getMapboxMap().subscribeStyleLoaded(event ->
-                record("STYLE_LOADED: " + event));
+        mapView.getMapboxMap().subscribeStyleLoaded(event -> {
+            CameraState current = mapView.getMapboxMap().getCameraState();
+            record("STYLE_LOADED: center=" + current.getCenter() + ", zoom=" + current.getZoom());
+        });
+        if (testCase != null) {
+            mapView.getMapboxMap().subscribeSourceDataLoaded(event ->
+                    Log.d(TAG, "SOURCE_DATA: " + event));
+        }
         // A loaded style is not proof that the first map frame was rendered.
         mapView.getMapboxMap().subscribeMapLoaded(event ->
                 record("MAP_LOADED: " + event));
@@ -94,8 +103,10 @@ public final class RotaparkNativeMapActivity extends ComponentActivity {
                         + ", shown=" + v.isShown()
                         + ", alpha=" + v.getAlpha()
                         + ", visibility=" + v.getVisibility()));
-        mapView.getMapboxMap().loadStyleUri(initialStyle, style ->
-                record("STYLE_CALLBACK: " + initialStyle));
+        if ("minimal-surface".equals(testCase) || "minimal-texture".equals(testCase)) {
+            setContentView(root);
+            return;
+        }
 
         LinearLayout header = new LinearLayout(this);
         header.setOrientation(LinearLayout.HORIZONTAL);
@@ -198,7 +209,7 @@ public final class RotaparkNativeMapActivity extends ComponentActivity {
     private void inspectRenderViews(View view, int depth) {
         if (depth > 5) return;
         String type = view.getClass().getSimpleName();
-        record("  ".repeat(depth) + type + " " + view.getWidth() + "x" + view.getHeight()
+        record("          ".substring(0, depth * 2) + type + " " + view.getWidth() + "x" + view.getHeight()
                 + " shown=" + view.isShown() + " hw=" + view.isHardwareAccelerated());
         if (view instanceof SurfaceView) {
             SurfaceView surface = (SurfaceView) view;
