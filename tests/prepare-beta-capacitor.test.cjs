@@ -28,7 +28,8 @@ test('beta output is isolated; production config remains unchanged', () => {
     assert.equal(beta.server.url,'https://beta.rotapark.com.tr');
     assert.deepEqual(beta.server.allowNavigation,['beta.rotapark.com.tr']);
     assert.equal(beta.server.cleartext,false);
-    assert.equal(beta.appId,production.appId);
+    assert.equal(beta.appId,'tr.com.rotapark.app.beta');
+    assert.equal(beta.appName,'ROTAPARK Beta');
     assert.equal(fs.readFileSync(path.join(f.root,'capacitor.config.json'),'utf8'),f.original);
   } finally { f.cleanup(); }
 });
