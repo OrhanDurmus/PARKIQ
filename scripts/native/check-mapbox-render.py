@@ -56,11 +56,15 @@ def launch(case):
 
 
 def collect_diagnostics(path):
-    log = adb("logcat", "-d", "-t", "2500").decode(errors="replace")
-    lines = [line for line in log.splitlines()
-             if re.search(r"ROTAPARK_NATIVE|MapboxLifecyclePlugin|EGL_|eglCreate|OpenGLRenderer|FATAL EXCEPTION", line)]
-    safe = re.sub(r"(?:pk|sk)\.[A-Za-z0-9._-]+", "[redacted]", "\n".join(lines))
-    path.write_text(safe + "\n")
+    log = adb("logcat", "-d", "-s", "ROTAPARK_NATIVE:I", "AndroidRuntime:E",
+              "MapboxLifecyclePlugin:I", "OpenGLRenderer:W", "EGL_emulation:W",
+              "libEGL:W", "ActivityTaskManager:I").decode(errors="replace")
+    safe = re.sub(r"(?:pk|sk)\.[A-Za-z0-9._-]+", "[redacted]", log)
+    path.write_text(safe)
+    lines = [line for line in safe.splitlines()
+             if "ActivityTaskManager" not in line or "tr.com.rotapark.app" in line]
+    print(f"--- {path.stem} device log ---", flush=True)
+    print("\n".join(lines[-80:]), flush=True)
     return safe
 
 
@@ -73,7 +77,12 @@ def run_case(case, out):
         while True:
             image = capture(image_path)
             result = metrics(image)
-            drawn = result["probe_fraction"] >= 0.9 if probe else map_drawn(result)
+            resumed = adb("shell", "dumpsys", "activity", "activities").decode(errors="replace")
+            foreground = any("ResumedActivity" in line and COMPONENT in line
+                             for line in resumed.splitlines())
+            content_drawn = result["probe_fraction"] >= 0.9 if probe else map_drawn(result)
+            drawn = foreground and content_drawn
+            result["activity_resumed"] = foreground
             if drawn or time.monotonic() >= deadline:
                 break
             time.sleep(3)
