@@ -11,6 +11,10 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.Gravity;
 import android.view.View;
+import android.view.ViewGroup;
+import android.view.SurfaceView;
+import android.view.TextureView;
+import android.os.Build;
 import android.widget.FrameLayout;
 import android.widget.LinearLayout;
 import android.widget.TextView;
@@ -157,8 +161,32 @@ public final class RotaparkNativeMapActivity extends ComponentActivity {
                 diagnosticsButton.setText("TEŞHİS / KOPYALA");
             }
         });
+        record("DEVICE: " + Build.MANUFACTURER + " " + Build.MODEL + ", Android " + Build.VERSION.RELEASE);
+        record("HW_ACCELERATED: " + mapView.isHardwareAccelerated());
+        mapView.postDelayed(() -> {
+            record("RENDER_VIEW_TREE:");
+            inspectRenderViews(mapView, 0);
+        }, 2500);
         record("DIAGNOSTICS_READY");
         setContentView(root);
+    }
+
+    private void inspectRenderViews(View view, int depth) {
+        if (depth > 5) return;
+        String type = view.getClass().getSimpleName();
+        record("  ".repeat(depth) + type + " " + view.getWidth() + "x" + view.getHeight()
+                + " shown=" + view.isShown() + " hw=" + view.isHardwareAccelerated());
+        if (view instanceof SurfaceView) {
+            SurfaceView surface = (SurfaceView) view;
+            record("SURFACE_VALID: " + surface.getHolder().getSurface().isValid());
+        }
+        if (view instanceof TextureView) {
+            record("TEXTURE_AVAILABLE: " + ((TextureView) view).isAvailable());
+        }
+        if (view instanceof ViewGroup) {
+            ViewGroup group = (ViewGroup) view;
+            for (int i = 0; i < group.getChildCount(); i++) inspectRenderViews(group.getChildAt(i), depth + 1);
+        }
     }
 
     /** Reads the packaged national parking data without WebView or a network request. */
