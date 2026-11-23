@@ -45,6 +45,15 @@ public final class RotaparkNativeMapActivity extends ComponentActivity {
                 Log.e(TAG, "MAP_LOADING_ERROR: " + event));
         mapView.getMapboxMap().subscribeStyleLoaded(event ->
                 Log.i(TAG, "STYLE_LOADED: " + event));
+        // A loaded style is not proof that the first map frame was rendered.
+        mapView.getMapboxMap().subscribeMapLoaded(event ->
+                Log.i(TAG, "MAP_LOADED: " + event));
+        mapView.addOnLayoutChangeListener((v, left, top, right, bottom, oldLeft, oldTop, oldRight, oldBottom) ->
+                Log.i(TAG, "MAP_VIEW_LAYOUT: width=" + (right - left)
+                        + ", height=" + (bottom - top)
+                        + ", shown=" + v.isShown()
+                        + ", alpha=" + v.getAlpha()
+                        + ", visibility=" + v.getVisibility()));
         mapView.getMapboxMap().loadStyleUri(Style.SATELLITE_STREETS, style ->
                 Log.i(TAG, "STYLE_CALLBACK: satellite-streets style available"));
 
