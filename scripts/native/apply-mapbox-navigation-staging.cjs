@@ -47,8 +47,9 @@ if(!m.includes('android:name=".RotaparkNativeMapActivity"')) {
  m=m.replace('android:name=".MainActivity"', 'android:name=".RotaparkNativeMapActivity"');
  m=m.replace('</application>', '    <activity android:name=".MainActivity" android:exported="false" />\n    </application>');
 }
-if(!m.includes('android:name=".RotaparkNativeMapActivity"'))throw Error('Native launcher not registered');
-m=m.replace(/<activity\s+android:name="\.RotaparkNativeMapActivity"[^>]*>/, tag =>
+const nativeActivity = /<activity\b[^>]*\bandroid:name="\.RotaparkNativeMapActivity"[^>]*>/;
+if(!nativeActivity.test(m))throw Error('Native launcher not registered');
+m=m.replace(nativeActivity, tag =>
  tag.replace(/\s+android:(theme|hardwareAccelerated)="[^"]*"/g, '')
     .replace(/>$/, ' android:theme="@style/RotaparkMapboxStagingTheme" android:hardwareAccelerated="true">'));
 const themeFile=path.join(android,'app/src/main/res/values/rotapark_mapbox_staging_theme.xml');

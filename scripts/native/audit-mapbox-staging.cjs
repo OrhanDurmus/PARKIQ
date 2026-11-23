@@ -40,6 +40,11 @@ if (process.argv.includes('--generated-android')) {
   if (!nativeMap.includes('addStyleSource') || !nativeMap.includes('addStyleLayer') || !nativeMap.includes('rotapark-parking-circles')) throw Error('Native Mapbox parking layer missing');
   if (!fs.existsSync(parkingAsset) || fs.statSync(parkingAsset).size === 0) throw Error('Native parking data asset missing or empty');
   if (!manifest.includes('android:name=".RotaparkNativeMapActivity"') || !manifest.includes('android:name=".MainActivity"')) throw Error('Native launcher or legacy activity missing');
+  const nativeActivity = manifest.match(/<activity\b[^>]*\bandroid:name="\.RotaparkNativeMapActivity"[^>]*>/)?.[0];
+  if (!nativeActivity?.includes('android:theme="@style/RotaparkMapboxStagingTheme"')
+      || !nativeActivity.includes('android:hardwareAccelerated="true"')) {
+    throw Error('Native launcher must use the staging theme and hardware acceleration');
+  }
   if (main.includes('ROTAPARK_NATIVE_MAP_STAGING_LAUNCH')) throw Error('Legacy WebView-first launcher detected');
   if (!/android:name="\.RotaparkNativeMapActivity"[\s\S]*?<intent-filter>[\s\S]*?android.intent.action.MAIN[\s\S]*?<\/intent-filter>/.test(manifest)) throw Error('Native map is not the launcher Activity');
   if (!appGradle.includes('com.mapbox.navigationcore:android:3.34.4')) {
