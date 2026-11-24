@@ -6,7 +6,7 @@ const PERMISSIONS = new Set([
   'staff.moderators.manage', 'parking_records.edit',
 ]);
 // Never forward a service-role or secret key to Supabase as the public API key.
-function isPublicSupabaseKey(key) {
+export function isPublicSupabaseKey(key) {
   if (/^sb_publishable_[A-Za-z0-9_-]+$/.test(key)) return true;
   const jwt = /^[A-Za-z0-9_-]+\.([A-Za-z0-9_-]+)\.[A-Za-z0-9_-]+$/.exec(key);
   if (!jwt) return false;

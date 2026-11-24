@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex,nofollow">
+  <title>ROTAPARK SHIELD</title>
+  <link rel="stylesheet" href="./shield.css">
+</head>
+<body>
+  <main>
+    <nav><a href="/staff/">← Yönetim Merkezi</a></nav>
+    <h1>ROTAPARK SHIELD</h1>
+    <p id="status" role="status">Staging bağlantısı kontrol ediliyor…</p>
+    <form id="mfa" hidden>
+      <label for="code">Kimlik doğrulama uygulamasındaki 6 haneli kod</label>
+      <input id="code" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6}" required>
+      <button>Oturumu doğrula</button>
+    </form>
+    <div id="panel" hidden>
+      <section>
+        <h2>Güvenlik modu</h2>
+        <p id="mode"></p>
+        <p>Mod seçimleri Staging ses ve OTP ön kontrol uçlarını kapsar. Savunma kotaları sıkılaştırır. Acil Durum Güvenli Modu ses isteklerini durdurur.</p>
+        <form id="change">
+          <label for="next">Yeni mod</label>
+          <select id="next" required>
+            <option value="">Mod seç</option>
+            <option value="normal">Normal</option>
+            <option value="defense">Savunma · 60 dk</option>
+            <option value="emergency">Acil Durum Güvenli Modu · 15 dk</option>
+          </select>
+          <button>Modu değiştir</button>
+        </form>
+      </section>
+      <section>
+        <h2>Güvenlik olayları</h2>
+        <ul id="events"></ul>
+        <h3>Bugünkü otomatik engellemeler (UTC)</h3>
+        <ul id="signals"></ul>
+        <p id="alert" role="status"></p>
+      </section>
+    </div>
+  </main>
+  <script type="module" src="./shield.mjs"></script>
+</body>
+</html>

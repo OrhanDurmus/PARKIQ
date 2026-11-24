@@ -1,6 +1,10 @@
+import { shieldEnabled, shieldGuard, shieldReadJson } from '../_lib/shield.mjs';
+
 const json=(body,status=200)=>Response.json(body,{status,headers:{'Cache-Control':'no-store','X-Content-Type-Options':'nosniff'}});
 export async function onRequestPost({request,env}){
- let email;try{const body=await request.json();email=String(body.email||'').trim().toLowerCase()}catch{return json({ok:false,error:'invalid_request'},400)}
+ const blockedByShield = await shieldGuard({ request, env }, 'otp-preflight');
+ if (blockedByShield) return blockedByShield;
+ let email;try{const body=(shieldEnabled(env) ? await shieldReadJson(request) : await request.json());email=String(body.email||'').trim().toLowerCase()}catch{return json({ok:false,error:'invalid_request'},400)}
  if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)||email.length>254)return json({ok:false,error:'invalid_email'},400);
  const url=String(env.SUPABASE_URL||'').replace(/\/$/,'');
  const service=String(env.SUPABASE_SERVICE_ROLE_KEY||'');
