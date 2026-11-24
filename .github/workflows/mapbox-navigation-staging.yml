@@ -20,13 +20,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        include:
-          - variant: navigation
-            maps-only-version: ''
-          - variant: maps-only-current
-            maps-only-version: '11.34.4'
-          - variant: maps-only-original
-            maps-only-version: '11.16.0'
+        variant: [map, navigation-compile]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -58,14 +52,14 @@ jobs:
       - name: Build staging APK and record resolved dependencies
         env:
           MAPBOX_DOWNLOADS_TOKEN: ${{ secrets.MAPBOX_DOWNLOADS_TOKEN }}
-          MAPS_ONLY_VERSION: ${{ matrix.maps-only-version }}
+          STAGING_VARIANT: ${{ matrix.variant }}
         working-directory: android
         shell: bash
         run: |
           mkdir -p ../mapbox-render
           gradle_args=()
-          if [[ -n "$MAPS_ONLY_VERSION" ]]; then
-            gradle_args+=("-ProtaparkMapsOnlyVersion=$MAPS_ONLY_VERSION")
+          if [[ "$STAGING_VARIANT" == "navigation-compile" ]]; then
+            gradle_args+=("-ProtaparkNavigationSmoke")
           fi
           for attempt in 1 2 3; do
             if ./gradlew "${gradle_args[@]}" --console=plain :app:assembleDebug :app:dependencies --configuration debugRuntimeClasspath > /tmp/mapbox-gradle.log 2>&1; then
@@ -82,11 +76,12 @@ jobs:
       - name: Upload staging APK
         uses: actions/upload-artifact@v4
         with:
-          name: rotapark-mapbox-staging-${{ matrix.variant }}-apk
+          name: ${{ matrix.variant == 'map' && 'rotapark-mapbox-staging-apk' || 'rotapark-mapbox-staging-sdk-smoke-apk' }}
           path: android/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
           retention-days: 2
       - name: Check Mapbox style and tile access
+        if: matrix.variant == 'map'
         env:
           MAPBOX_PUBLIC_TOKEN: ${{ secrets.MAPBOX_PUBLIC_TOKEN }}
         shell: bash
@@ -101,16 +96,20 @@ jobs:
             printf '%s HTTP %s\n' "$resource" "$status"
           done | tee mapbox-render/mapbox-http-status.txt
       - uses: actions/setup-python@v5
+        if: matrix.variant == 'map'
         with:
           python-version: '3.12'
       - name: Install image analysis dependency
+        if: matrix.variant == 'map'
         run: python -m pip install Pillow==11.3.0
       - name: Enable emulator acceleration
+        if: matrix.variant == 'map'
         run: |
           echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
           sudo udevadm control --reload-rules
           sudo udevadm trigger --name-match=kvm
       - name: Verify native Mapbox pixels on Android
+        if: matrix.variant == 'map'
         uses: reactivecircus/android-emulator-runner@v2
         with:
           api-level: 35
@@ -121,9 +120,16 @@ jobs:
           emulator-options: -no-window -no-snapshot -gpu swiftshader -feature -Vulkan -noaudio -no-boot-anim
           script: adb shell wm size 800x1340 && adb shell wm density 240 && adb install android/app/build/outputs/apk/debug/app-debug.apk && python scripts/native/check-mapbox-render.py mapbox-render
       - name: Upload Mapbox rendering evidence
-        if: always()
+        if: always() && matrix.variant == 'map'
         uses: actions/upload-artifact@v4
         with:
-          name: rotapark-mapbox-render-${{ matrix.variant }}
+          name: rotapark-mapbox-render-evidence
           path: mapbox-render/
+          retention-days: 7
+      - name: Upload Navigation compile evidence
+        if: always() && matrix.variant == 'navigation-compile'
+        uses: actions/upload-artifact@v4
+        with:
+          name: rotapark-mapbox-navigation-dependencies
+          path: mapbox-render/gradle-dependencies.log
           retention-days: 7

@@ -32,13 +32,12 @@ if(!pg.includes('ROTAPARK_MAPBOX_MAVEN')){
 if(!g.includes('// ROTAPARK staging-only Mapbox SDKs')){
  g+=`
  // ROTAPARK staging-only Mapbox SDKs
- def rotaparkMapsOnlyVersion = providers.gradleProperty("rotaparkMapsOnlyVersion").orNull
  dependencies {
-     if (rotaparkMapsOnlyVersion == null) {
+     if (providers.gradleProperty("rotaparkNavigationSmoke").isPresent()) {
          implementation "com.mapbox.navigationcore:android:3.34.4"
          implementation "com.mapbox.maps:android:11.34.4"
      } else {
-         implementation "com.mapbox.maps:android:\${rotaparkMapsOnlyVersion}"
+         implementation "com.mapbox.maps:android:11.16.0"
      }
      implementation "androidx.appcompat:appcompat:1.7.0"
  }
@@ -79,4 +78,4 @@ const res=path.join(android,'app/src/main/res/values/mapbox_access_token.xml');
 fs.mkdirSync(path.dirname(res),{recursive:true});
 fs.writeFileSync(res,'<?xml version="1.0" encoding="utf-8"?><resources><string name="mapbox_access_token">'+publicToken+'</string></resources>\n');
 fs.writeFileSync(gradle,g);fs.writeFileSync(projectGradle,pg);fs.writeFileSync(manifest,m);
-console.log('Mapbox SDK 3.34.4 staging dependencies configured; native map Activity configured as direct launcher; guidance UI not installed.');
+console.log('Mapbox Maps staging launcher and separate Navigation SDK compile variant configured.');

@@ -47,11 +47,8 @@ if (process.argv.includes('--generated-android')) {
   }
   if (main.includes('ROTAPARK_NATIVE_MAP_STAGING_LAUNCH')) throw Error('Legacy WebView-first launcher detected');
   if (!/android:name="\.RotaparkNativeMapActivity"[\s\S]*?<intent-filter>[\s\S]*?android.intent.action.MAIN[\s\S]*?<\/intent-filter>/.test(manifest)) throw Error('Native map is not the launcher Activity');
-  if (!appGradle.includes('com.mapbox.navigationcore:android:3.34.4')) {
-    throw Error('Generated APK does not include expected Mapbox SDK dependency');
-  }
-  if (!appGradle.includes('com.mapbox.maps:android:11.34.4')) {
-    throw Error('Mapbox Maps SDK is misaligned with Navigation SDK 3.34.4');
+  if (!/rotaparkNavigationSmoke[\s\S]*?com\.mapbox\.navigationcore:android:3\.34\.4[\s\S]*?com\.mapbox\.maps:android:11\.34\.4[\s\S]*?else\s*\{\s*implementation "com\.mapbox\.maps:android:11\.16\.0"/.test(appGradle)) {
+    throw Error('Generated Android must separate the verified Maps launcher and the aligned Navigation compile variant');
   }
   if (!projectGradle.includes('ROTAPARK_MAPBOX_MAVEN')) {
     throw Error('Generated Android project missing Mapbox Maven repository');
