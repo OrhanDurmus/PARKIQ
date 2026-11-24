@@ -101,8 +101,10 @@ jobs:
           api-level: 35
           arch: x86_64
           target: google_apis
-          emulator-options: -no-window -no-snapshot -gpu swiftshader_indirect -noaudio -no-boot-anim
-          script: adb install android/app/build/outputs/apk/debug/app-debug.apk && python scripts/native/check-mapbox-render.py mapbox-render
+          cores: 4
+          ram-size: 4096M
+          emulator-options: -no-window -no-snapshot -gpu swiftshader -feature -Vulkan -noaudio -no-boot-anim
+          script: adb shell wm size 800x1340 && adb shell wm density 240 && adb install android/app/build/outputs/apk/debug/app-debug.apk && python scripts/native/check-mapbox-render.py mapbox-render
       - name: Upload Mapbox rendering evidence
         if: always()
         uses: actions/upload-artifact@v4
