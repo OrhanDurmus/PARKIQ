@@ -58,7 +58,7 @@ def launch(case):
 def collect_diagnostics(path):
     log = adb("logcat", "-d", "-s", "ROTAPARK_NATIVE:D", "AndroidRuntime:E",
               "MapboxLifecyclePlugin:I", "OpenGLRenderer:W", "EGL_emulation:W",
-              "libEGL:W", "ActivityTaskManager:I").decode(errors="replace")
+              "libEGL:W", "ActivityTaskManager:I", "Mapbox:W", "mbgl:W").decode(errors="replace")
     safe = re.sub(r"(?:pk|sk)\.[A-Za-z0-9._-]+", "[redacted]", log)
     path.write_text(safe)
     lines = [line for line in safe.splitlines()
@@ -109,6 +109,8 @@ def run_case(case, out):
     finally:
         log = collect_diagnostics(out / f"{case}.log")
     expected_renderer = "true" if case in ("probe-texture", "minimal-texture") else "false"
+    result["loaded_tile_events"] = sum("type: Tile, loaded: true" in line
+                                       for line in log.splitlines())
     result["renderer_logged"] = f"RENDER_CONFIG: texture={expected_renderer}" in log
     result["hardware_accelerated"] = "HW_ACCELERATED: true" in log
     result["passed"] = drawn and result["renderer_logged"] and result["hardware_accelerated"]

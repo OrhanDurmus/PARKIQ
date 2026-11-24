@@ -20,8 +20,6 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 import com.mapbox.maps.MapView;
 import com.mapbox.maps.MapInitOptions;
-import com.mapbox.maps.MapboxMapsOptions;
-import com.mapbox.maps.TileStoreUsageMode;
 import com.mapbox.maps.Style;
 import com.mapbox.maps.CameraOptions;
 import com.mapbox.maps.CameraState;
@@ -51,9 +49,6 @@ public final class RotaparkNativeMapActivity extends ComponentActivity {
         boolean legacyTheme = "probe-legacy-theme".equals(testCase);
         if (legacyTheme) setTheme(R.style.AppTheme_NoActionBarLaunch);
         super.onCreate(state);
-        // This launcher streams its basemap and has no downloaded map regions.
-        // Use the online tile path and its ambient cache.
-        MapboxMapsOptions.setTileStoreUsageMode(TileStoreUsageMode.DISABLED);
         boolean offlineProbe = legacyTheme || "probe-surface".equals(testCase)
                 || "probe-texture".equals(testCase);
         boolean texture = "probe-texture".equals(testCase) || "minimal-texture".equals(testCase);
@@ -74,7 +69,6 @@ public final class RotaparkNativeMapActivity extends ComponentActivity {
                 + ", density=" + getResources().getDisplayMetrics().density
                 + ", densityDpi=" + getResources().getDisplayMetrics().densityDpi
                 + ", pixelRatio=" + options.getMapOptions().getPixelRatio()
-                + ", tileStore=" + MapboxMapsOptions.getTileStoreUsageMode()
                 + ", legacyTheme=" + legacyTheme
                 + ", mapBackground=" + (mapView.getBackground() == null ? "none"
                     : mapView.getBackground().getClass().getSimpleName()));

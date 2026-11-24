@@ -32,9 +32,14 @@ if(!pg.includes('ROTAPARK_MAPBOX_MAVEN')){
 if(!g.includes('// ROTAPARK staging-only Mapbox SDKs')){
  g+=`
  // ROTAPARK staging-only Mapbox SDKs
+ def rotaparkMapsOnlyVersion = providers.gradleProperty("rotaparkMapsOnlyVersion").orNull
  dependencies {
-     implementation "com.mapbox.navigationcore:android:3.34.4"
-     implementation "com.mapbox.maps:android:11.34.4"
+     if (rotaparkMapsOnlyVersion == null) {
+         implementation "com.mapbox.navigationcore:android:3.34.4"
+         implementation "com.mapbox.maps:android:11.34.4"
+     } else {
+         implementation "com.mapbox.maps:android:\${rotaparkMapsOnlyVersion}"
+     }
      implementation "androidx.appcompat:appcompat:1.7.0"
  }
  `;

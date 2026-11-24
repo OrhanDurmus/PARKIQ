@@ -17,6 +17,16 @@ jobs:
     if: github.ref == 'refs/heads/feature/staging-mapbox-navigation-20261123'
     runs-on: ubuntu-latest
     timeout-minutes: 40
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - variant: navigation
+            maps-only-version: ''
+          - variant: maps-only-current
+            maps-only-version: '11.34.4'
+          - variant: maps-only-original
+            maps-only-version: '11.16.0'
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -48,12 +58,17 @@ jobs:
       - name: Build staging APK and record resolved dependencies
         env:
           MAPBOX_DOWNLOADS_TOKEN: ${{ secrets.MAPBOX_DOWNLOADS_TOKEN }}
+          MAPS_ONLY_VERSION: ${{ matrix.maps-only-version }}
         working-directory: android
         shell: bash
         run: |
           mkdir -p ../mapbox-render
+          gradle_args=()
+          if [[ -n "$MAPS_ONLY_VERSION" ]]; then
+            gradle_args+=("-ProtaparkMapsOnlyVersion=$MAPS_ONLY_VERSION")
+          fi
           for attempt in 1 2 3; do
-            if ./gradlew --console=plain :app:assembleDebug :app:dependencies --configuration debugRuntimeClasspath > /tmp/mapbox-gradle.log 2>&1; then
+            if ./gradlew "${gradle_args[@]}" --console=plain :app:assembleDebug :app:dependencies --configuration debugRuntimeClasspath > /tmp/mapbox-gradle.log 2>&1; then
               cat /tmp/mapbox-gradle.log
               cp /tmp/mapbox-gradle.log ../mapbox-render/gradle-dependencies.log
               break
@@ -67,7 +82,7 @@ jobs:
       - name: Upload staging APK
         uses: actions/upload-artifact@v4
         with:
-          name: rotapark-mapbox-staging-sdk-smoke-apk
+          name: rotapark-mapbox-staging-${{ matrix.variant }}-apk
           path: android/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
           retention-days: 2
@@ -109,6 +124,6 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: rotapark-mapbox-render-evidence
+          name: rotapark-mapbox-render-${{ matrix.variant }}
           path: mapbox-render/
           retention-days: 7
