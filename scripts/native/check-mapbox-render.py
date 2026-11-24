@@ -64,9 +64,11 @@ def collect_diagnostics(path):
     lines = [line for line in safe.splitlines()
              if "ActivityTaskManager" not in line or "tr.com.rotapark.app" in line]
     print(f"--- {path.stem} device log ---", flush=True)
-    main_lines = [line for line in lines if "SOURCE_DATA:" not in line]
+    main_lines = [line for line in lines if not any(
+        marker in line for marker in ("SOURCE_DATA:", "RESOURCE_REQUEST:"))]
     sources = [line for line in lines if "SOURCE_DATA:" in line]
-    print("\n".join(main_lines[-80:] + sources[:12]), flush=True)
+    requests = [line for line in lines if "RESOURCE_REQUEST:" in line]
+    print("\n".join(main_lines[-80:] + sources[:8] + requests[:30]), flush=True)
     return safe
 
 
@@ -75,7 +77,7 @@ def run_case(case, out):
         launch(case)
         probe = case.startswith("probe-")
         image_path = out / f"{case}.png"
-        deadline = time.monotonic() + (20 if probe else 85)
+        deadline = time.monotonic() + (20 if probe else 45)
         while True:
             image = capture(image_path)
             result = metrics(image)

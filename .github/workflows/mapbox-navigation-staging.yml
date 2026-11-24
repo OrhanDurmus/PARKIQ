@@ -43,6 +43,8 @@ jobs:
       - name: Audit generated Android SDK isolation
         run: node scripts/native/audit-mapbox-staging.cjs --generated-android
       - uses: gradle/actions/setup-gradle@v4
+        with:
+          cache-read-only: false
       - name: Build staging APK and record resolved dependencies
         env:
           MAPBOX_DOWNLOADS_TOKEN: ${{ secrets.MAPBOX_DOWNLOADS_TOKEN }}

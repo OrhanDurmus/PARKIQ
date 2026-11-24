@@ -93,6 +93,13 @@ public final class RotaparkNativeMapActivity extends ComponentActivity {
         if (testCase != null) {
             mapView.getMapboxMap().subscribeSourceDataLoaded(event ->
                     Log.d(TAG, "SOURCE_DATA: " + event));
+            mapView.getMapboxMap().subscribeResourceRequest(event -> {
+                String summary = ("source=" + event.getSource() + ", request=" + event.getRequest()
+                        + ", response=" + event.getResponse() + ", cancelled=" + event.getCancelled())
+                        .replaceAll("(?:pk|sk)\\.[A-Za-z0-9._-]+", "[redacted]")
+                        .replaceAll("(?i)(access_token|sku)=[^&\\s,\\]]+", "$1=[redacted]");
+                Log.d(TAG, "RESOURCE_REQUEST: " + summary.substring(0, Math.min(summary.length(), 1200)));
+            });
         }
         // A loaded style is not proof that the first map frame was rendered.
         mapView.getMapboxMap().subscribeMapLoaded(event ->
